@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>體育班評鑑文件工具 — 使用說明</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #223A52;
+    --navy-light: #2d4e6e;
+    --gold: #C9A24B;
+    --green: #2E7A2E;
+    --red: #8B2E2E;
+    --blue: #2E5EA0;
+    --bg: #F0EDE6;
+    --white: #fff;
+    --text: #333;
+    --muted: #666;
+    --border: #ddd;
+    --sidebar-w: 260px;
+  }
+  body { font-family: 'Microsoft JhengHei', '微軟正黑體', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w);
+    background: var(--navy); color: #fff;
+    position: fixed; top: 0; left: 0; height: 100vh;
+    overflow-y: auto; z-index: 100;
+    display: flex; flex-direction: column;
+    transition: transform .3s;
+  }
+  #sidebar-header { padding: 24px 20px 16px; border-bottom: 1px solid rgba(255,255,255,.12); }
+  #sidebar-header .site-name { font-size: 13px; color: var(--gold); letter-spacing: 1px; margin-bottom: 6px; }
+  #sidebar-header .doc-title { font-size: 16px; font-weight: bold; line-height: 1.4; }
+  nav { flex: 1; padding: 12px 0; }
+  nav a {
+    display: block; padding: 10px 20px; color: rgba(255,255,255,.78);
+    text-decoration: none; font-size: 14px; border-left: 3px solid transparent;
+    transition: all .2s; line-height: 1.4;
+  }
+  nav a:hover { background: rgba(255,255,255,.08); color: #fff; }
+  nav a.active { color: var(--gold); border-left-color: var(--gold); background: rgba(201,162,75,.08); }
+  nav .nav-section { padding: 14px 20px 4px; font-size: 11px; color: rgba(255,255,255,.38); letter-spacing: 1px; text-transform: uppercase; }
+  nav .sub { padding-left: 32px; font-size: 13px; }
+  #sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,.1); font-size: 12px; color: rgba(255,255,255,.4); }
+  #menu-toggle { display: none; }
+
+  /* ── Main ── */
+  #main { margin-left: var(--sidebar-w); flex: 1; min-width: 0; }
+  #topbar {
+    background: var(--navy); color: #fff; padding: 14px 32px;
+    display: flex; align-items: center; gap: 16px;
+    position: sticky; top: 0; z-index: 90;
+    box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  }
+  #topbar .hamburger { display: none; background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; padding: 2px 6px; }
+  #topbar .breadcrumb { font-size: 13px; color: rgba(255,255,255,.6); }
+  #topbar .breadcrumb span { color: var(--gold); }
+  #topbar .back-btn {
+    margin-left: auto; text-decoration: none;
+    background: rgba(255,255,255,.12); color: #fff;
+    padding: 6px 14px; border-radius: 6px; font-size: 13px;
+    transition: background .2s;
+  }
+  #topbar .back-btn:hover { background: rgba(255,255,255,.22); }
+
+  #content { padding: 40px 48px 80px; max-width: 860px; }
+
+  /* ── Hero ── */
+  .hero {
+    background: var(--navy); color: #fff; border-radius: 12px;
+    padding: 40px 40px 36px; margin-bottom: 40px;
+    background-image: linear-gradient(135deg, #223A52 60%, #2d5477);
+  }
+  .hero .badge { display: inline-block; background: var(--gold); color: #fff; font-size: 12px; font-weight: bold; padding: 3px 10px; border-radius: 4px; margin-bottom: 14px; letter-spacing: 1px; }
+  .hero h1 { font-size: 28px; font-weight: bold; line-height: 1.4; margin-bottom: 10px; }
+  .hero p { color: rgba(255,255,255,.72); font-size: 14px; line-height: 1.7; }
+  .hero .url-row { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .hero .url-chip { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); border-radius: 6px; padding: 6px 14px; font-size: 13px; color: rgba(255,255,255,.85); text-decoration: none; transition: background .2s; }
+  .hero .url-chip:hover { background: rgba(255,255,255,.2); }
+  .hero .url-chip .label { color: var(--gold); font-size: 11px; display: block; margin-bottom: 2px; }
+
+  /* ── Sections ── */
+  .section { margin-bottom: 56px; scroll-margin-top: 80px; }
+  .section-title {
+    font-size: 22px; font-weight: bold; color: var(--navy);
+    padding-bottom: 10px; border-bottom: 2px solid var(--navy);
+    margin-bottom: 24px; display: flex; align-items: center; gap: 10px;
+  }
+  .section-title .num { background: var(--navy); color: var(--gold); font-size: 14px; font-weight: bold; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .sub-title { font-size: 16px; font-weight: bold; color: var(--navy); margin: 28px 0 12px; padding-left: 10px; border-left: 4px solid var(--gold); }
+
+  /* ── Cards / Tables ── */
+  .info-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  .info-table th { background: var(--navy); color: #fff; padding: 10px 14px; text-align: left; font-weight: bold; }
+  .info-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .info-table tr:last-child td { border-bottom: none; }
+  .info-table tr:nth-child(even) td { background: #f8f6f2; }
+  .info-table td:first-child { white-space: nowrap; }
+
+  /* ── Badges ── */
+  .btn-badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; color: #fff; }
+  .btn-gold { background: var(--gold); }
+  .btn-green { background: var(--green); }
+  .btn-blue { background: var(--blue); }
+  .btn-red { background: var(--red); }
+
+  /* ── Steps ── */
+  .steps { list-style: none; counter-reset: step-counter; margin: 16px 0; }
+  .steps li { counter-increment: step-counter; display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
+  .steps li::before { content: counter(step-counter); background: var(--navy); color: var(--gold); font-size: 13px; font-weight: bold; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .steps li .step-body { flex: 1; font-size: 14px; line-height: 1.6; padding-top: 4px; }
+  .steps li .step-body strong { color: var(--navy); }
+
+  /* ── Note boxes ── */
+  .note { background: #EAF3FB; border-left: 4px solid var(--blue); border-radius: 0 6px 6px 0; padding: 12px 16px; margin: 16px 0; font-size: 13px; line-height: 1.6; color: #1a4e78; }
+  .note.warn { background: #FDF6E3; border-left-color: var(--gold); color: #6b4e0a; }
+  .note.danger { background: #FDECEA; border-left-color: var(--red); color: #6b1a1a; }
+  .note .note-icon { font-weight: bold; margin-right: 4px; }
+
+  /* ── QA ── */
+  .qa-item { border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; overflow: hidden; }
+  .qa-q { background: #f5f2ed; padding: 13px 16px; font-size: 14px; font-weight: bold; color: var(--navy); cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+  .qa-q:hover { background: #ede9e1; }
+  .qa-q .arrow { transition: transform .2s; font-size: 12px; color: var(--muted); }
+  .qa-item.open .qa-q .arrow { transform: rotate(180deg); }
+  .qa-a { display: none; padding: 13px 16px; font-size: 14px; line-height: 1.7; border-top: 1px solid var(--border); background: #fff; }
+  .qa-item.open .qa-a { display: block; }
+
+  /* ── Feature cards ── */
+  .card-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin: 16px 0; }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 18px; transition: box-shadow .2s; }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+  .card .card-icon { font-size: 24px; margin-bottom: 8px; }
+  .card .card-title { font-size: 14px; font-weight: bold; color: var(--navy); margin-bottom: 4px; }
+  .card .card-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* ── Bullets ── */
+  .bullets { list-style: none; margin: 12px 0 12px 4px; }
+  .bullets li { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; line-height: 1.6; margin-bottom: 6px; }
+  .bullets li::before { content: '▸'; color: var(--gold); flex-shrink: 0; margin-top: 1px; }
+
+  p.body { font-size: 14px; line-height: 1.75; margin-bottom: 12px; color: var(--text); }
+
+  /* ── Mobile ── */
+  #overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 99; }
+  @media (max-width: 768px) {
+    #sidebar { transform: translateX(-100%); }
+    #sidebar.open { transform: none; }
+    #overlay.open { display: block; }
+    #main { margin-left: 0; }
+    #topbar .hamburger { display: block; }
+    #content { padding: 24px 20px 60px; }
+    .hero { padding: 28px 24px; }
+    .hero h1 { font-size: 22px; }
+    .card-row { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="overlay" onclick="closeSidebar()"></div>
+
+<!-- Sidebar -->
+<aside id="sidebar">
+  <div id="sidebar-header">
+    <div class="site-name">右昌國小 · 體育組</div>
+    <div class="doc-title">評鑑文件工具<br>使用說明</div>
+  </div>
+  <nav id="nav">
+    <div class="nav-section">目錄</div>
+    <a href="#intro" onclick="closeSidebar()">一、系統簡介</a>
+    <a href="#overview" onclick="closeSidebar()">二、評鑑總覽網頁</a>
+    <a class="sub" href="#overview-open" onclick="closeSidebar()">2.1 開啟頁面</a>
+    <a class="sub" href="#overview-layout" onclick="closeSidebar()">2.2 頁面結構</a>
+    <a class="sub" href="#overview-filter" onclick="closeSidebar()">2.3 篩選人員</a>
+    <a class="sub" href="#overview-buttons" onclick="closeSidebar()">2.4 功能按鈕</a>
+    <a href="#upload" onclick="closeSidebar()">三、如何上傳文件</a>
+    <a class="sub" href="#upload-system" onclick="closeSidebar()">3.1 上傳系統</a>
+    <a class="sub" href="#upload-drive" onclick="closeSidebar()">3.2 直接存 Drive</a>
+    <a href="#tools" onclick="closeSidebar()">四、文件產生工具</a>
+    <a class="sub" href="#tools-modules" onclick="closeSidebar()">4.1 模組說明</a>
+    <a class="sub" href="#tools-steps" onclick="closeSidebar()">4.2 操作步驟</a>
+    <a href="#qa" onclick="closeSidebar()">五、常見問題</a>
+    <a href="#contact" onclick="closeSidebar()">六、聯絡資訊</a>
+  </nav>
+  <div id="sidebar-footer">115 學年度　體育班評鑑</div>
+</aside>
+
+<!-- Main -->
+<div id="main">
+  <div id="topbar">
+    <button class="hamburger" onclick="toggleSidebar()">☰</button>
+    <div class="breadcrumb">右昌國小體育組 › <span>使用說明</span></div>
+    <a class="back-btn" href="https://asics49.github.io/pe-tools/" target="_blank">← 回評鑑總覽</a>
+  </div>
+
+  <div id="content">
+
+    <!-- Hero -->
+    <div class="hero">
+      <div class="badge">115 學年度</div>
+      <h1>體育班評鑑文件工具<br>使用說明</h1>
+      <p>本說明適用對象：體育班各科任課教師、班導師、體育組行政人員<br>
+         涵蓋：評鑑總覽網頁操作、文件上傳、文件產生工具使用</p>
+      <div class="url-row">
+        <a class="url-chip" href="https://asics49.github.io/pe-tools/" target="_blank">
+          <span class="label">評鑑總覽</span>asics49.github.io/pe-tools/
+        </a>
+        <a class="url-chip" href="https://asics49.github.io/pe-tools/pe-class-tools.html" target="_blank">
+          <span class="label">文件產生工具</span>pe-class-tools.html
+        </a>
+        <a class="url-chip" href="https://script.google.com/macros/s/AKfycbyjVAz-JmkUU78HcnSMFjdsVa7FUPlAatFUhB1Yfbp2FantL5xG0dQ9cZR7qoSymHxQBw/exec" target="_blank">
+          <span class="label">上傳系統</span>體育組資料上傳系統
+        </a>
+      </div>
+    </div>
+
+    <!-- 一、系統簡介 -->
+    <div class="section" id="intro">
+      <div class="section-title"><div class="num">一</div>系統簡介</div>
+      <p class="body">右昌國小體育班評鑑文件工具包含兩個主要頁面，協助全體評鑑相關人員完成文件準備與上傳作業。</p>
+      <div class="card-row">
+        <div class="card">
+          <div class="card-icon">📋</div>
+          <div class="card-title">評鑑總覽</div>
+          <div class="card-desc">列出所有 89 筆評鑑文件，可篩選負責人員，並快速開啟對應工具或資料夾</div>
+        </div>
+        <div class="card">
+          <div class="card-icon">📝</div>
+          <div class="card-title">文件產生工具</div>
+          <div class="card-desc">5 種常用表單的線上填寫與 Word 下載功能（照片佐證、補課記錄、成果報告等）</div>
+        </div>
+        <div class="card">
+          <div class="card-icon">☁️</div>
+          <div class="card-title">資料上傳系統</div>
+          <div class="card-desc">上傳評鑑文件至 Google Drive，並自動記錄上傳者姓名與時間</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 二、評鑑總覽 -->
+    <div class="section" id="overview">
+      <div class="section-title"><div class="num">二</div>如何使用評鑑總覽網頁</div>
+
+      <div class="sub-title" id="overview-open">2.1　開啟頁面</div>
+      <p class="body">在瀏覽器（建議使用 Chrome）輸入以下網址，或點選上方連結開啟評鑑總覽：</p>
+      <div class="note"><span class="note-icon">🔗</span><a href="https://asics49.github.io/pe-tools/" target="_blank" style="color:inherit">https://asics49.github.io/pe-tools/</a></div>
+      <div class="note warn"><span class="note-icon">💡</span>建議將此頁面加入瀏覽器書籤，方便日後快速開啟。</div>
+
+      <div class="sub-title" id="overview-layout">2.2　頁面結構說明</div>
+      <p class="body">頁面由上到下分為三個區塊：</p>
+      <ul class="bullets">
+        <li><strong>頂部模組卡片列</strong>：快速開啟各種工具（文件產生、資料上傳）</li>
+        <li><strong>負責人員篩選列</strong>：點選姓名，只顯示該人員負責的項目</li>
+        <li><strong>評鑑文件清單</strong>：依大指標（壹、貳、肆）分組列出所有 89 筆文件</li>
+      </ul>
+
+      <div class="sub-title" id="overview-filter">2.3　篩選負責人員</div>
+      <p class="body">頁面頂端有負責人員的篩選按鈕列，點選後頁面自動過濾：</p>
+      <ul class="bullets">
+        <li>點選自己的名字或身份（如：<strong>體育班導師</strong>、<strong>體育老師</strong>），只顯示您負責的項目</li>
+        <li>點選「<strong>全部</strong>」可還原顯示所有項目</li>
+      </ul>
+
+      <div class="sub-title" id="overview-buttons">2.4　三種功能按鈕說明</div>
+      <p class="body">每筆評鑑文件右側有最多三個顏色按鈕：</p>
+      <table class="info-table">
+        <tr>
+          <th>按鈕</th>
+          <th>功能說明</th>
+        </tr>
+        <tr>
+          <td><span class="btn-badge btn-gold">使用工具</span></td>
+          <td>開啟對應的文件產生工具（填表後可下載 Word 檔）。<br><small style="color:#888">沒有對應工具的項目不會顯示此按鈕。</small></td>
+        </tr>
+        <tr>
+          <td><span class="btn-badge btn-green">上傳文件</span></td>
+          <td>開啟 Google Drive 上傳資料夾，或開啟體育組上傳系統。</td>
+        </tr>
+        <tr>
+          <td><span class="btn-badge btn-blue">參考資料</span></td>
+          <td>開啟 Google Drive 參考資料資料夾（範本、參考文件等）。</td>
+        </tr>
+      </table>
+      <div class="note danger"><span class="note-icon">⚠️</span>點選按鈕後若顯示「沒有存取權限」，表示未使用學校帳號（@yocps.kh.edu.tw）登入 Google，請先切換帳號。</div>
+    </div>
+
+    <!-- 三、上傳文件 -->
+    <div class="section" id="upload">
+      <div class="section-title"><div class="num">三</div>如何上傳評鑑文件</div>
+      <p class="body">上傳評鑑文件有兩種方式，依情況選用：</p>
+      <table class="info-table">
+        <tr><th>方式</th><th>適用情境</th></tr>
+        <tr><td>方式 A　上傳系統</td><td>需要記錄上傳者姓名、自動分類存放時使用</td></tr>
+        <tr><td>方式 B　直接存 Drive</td><td>已有完整檔案，直接上傳到指定資料夾</td></tr>
+      </table>
+
+      <div class="sub-title" id="upload-system">3.1　方式 A：使用體育組上傳系統</div>
+      <p class="body">從評鑑總覽點選綠色「上傳文件」按鈕，若連結到上傳系統，請依以下步驟操作：</p>
+      <ol class="steps">
+        <li><div class="step-body"><strong>選擇學年度</strong>　從下拉選單選擇「115學年度」</div></li>
+        <li><div class="step-body"><strong>選擇資料類型</strong>　選擇「文件」、「成果」或「計畫」</div></li>
+        <li><div class="step-body"><strong>選擇體育項目</strong>　選擇對應的體育班項目</div></li>
+        <li><div class="step-body"><strong>輸入評鑑子項目</strong>　填入對應子標號，例如：1-1 體育班發展委員會</div></li>
+        <li><div class="step-body"><strong>選擇檔案</strong>　點選上傳區域，選取要上傳的檔案（可多選）</div></li>
+        <li><div class="step-body"><strong>填入姓名</strong>　輸入您的姓名（系統會記住，下次自動帶入）</div></li>
+        <li><div class="step-body"><strong>選擇上傳日期</strong>　預設為今天，可依需求修改</div></li>
+        <li><div class="step-body"><strong>點選「開始上傳」</strong>　等待上傳完成，系統會顯示成功訊息</div></li>
+      </ol>
+      <div class="note"><span class="note-icon">💡</span>若從評鑑總覽點選綠色按鈕進入，學年度、子項目等欄位會<strong>自動帶入</strong>，只需填入姓名並選取檔案即可。</div>
+
+      <div class="sub-title" id="upload-drive">3.2　方式 B：直接存入 Drive 資料夾</div>
+      <ol class="steps">
+        <li><div class="step-body"><strong>開啟評鑑總覽</strong>　前往 <a href="https://asics49.github.io/pe-tools/" target="_blank">asics49.github.io/pe-tools/</a></div></li>
+        <li><div class="step-body"><strong>找到對應文件</strong>　篩選負責人員後找到對應的評鑑項目</div></li>
+        <li><div class="step-body"><strong>點選綠色「上傳文件」</strong>　會開啟該項目的 Google Drive 資料夾</div></li>
+        <li><div class="step-body"><strong>登入學校帳號</strong>　需使用 <strong>@yocps.kh.edu.tw</strong> 帳號登入，才有上傳權限</div></li>
+        <li><div class="step-body"><strong>上傳檔案</strong>　在 Drive 資料夾中直接拖曳或點選「新增」上傳檔案</div></li>
+      </ol>
+      <div class="note danger"><span class="note-icon">⚠️</span>上傳文件資料夾限學校網域帳號（@yocps.kh.edu.tw）使用，個人 Gmail 帳號無法上傳。若出現「沒有存取權限」，請確認是否已登入學校帳號。</div>
+    </div>
+
+    <!-- 四、文件產生工具 -->
+    <div class="section" id="tools">
+      <div class="section-title"><div class="num">四</div>如何使用文件產生工具</div>
+
+      <div class="sub-title" id="tools-modules">4.1　工具模組說明</div>
+      <p class="body">工具頁面共有 5 個分頁，以下分別說明：</p>
+      <table class="info-table">
+        <tr><th>模組</th><th>功能</th></tr>
+        <tr><td>m1　照片佐證資料</td><td>填入活動資訊與照片說明，產生照片佐證資料表 Word 檔</td></tr>
+        <tr><td>m2　補課紀錄表</td><td>填入補課日期、課程內容等，產生補課紀錄表 Word 檔</td></tr>
+        <tr><td>m3a　成果報告表頭</td><td>填入成果報告標題與基本資料，產生表頭 Word 檔</td></tr>
+        <tr><td>m3b　開課課程一覽</td><td>填入開課資訊，產生開課課程一覽表 Word 檔</td></tr>
+        <tr><td>m4　職業試探活動</td><td>填入活動資料，產生職業試探活動紀錄 Word 檔</td></tr>
+      </table>
+
+      <div class="sub-title" id="tools-steps">4.2　操作步驟</div>
+      <p class="body">開啟工具有兩種方式：</p>
+      <ul class="bullets">
+        <li>從評鑑總覽點選金色「使用工具」按鈕（會直接跳到對應分頁）</li>
+        <li>直接輸入網址：<a href="https://asics49.github.io/pe-tools/pe-class-tools.html" target="_blank">asics49.github.io/pe-tools/pe-class-tools.html</a></li>
+      </ul>
+      <br>
+      <ol class="steps">
+        <li><div class="step-body"><strong>選擇分頁</strong>　點選頁面頂部對應的模組標籤（m1～m4）</div></li>
+        <li><div class="step-body"><strong>填寫表單</strong>　依欄位填入相關資料，標示 * 的為必填欄位</div></li>
+        <li><div class="step-body"><strong>點選「下載 Word 檔」</strong>　系統自動產生並下載 .docx 格式文件</div></li>
+        <li><div class="step-body"><strong>確認文件內容</strong>　用 Word 或 Google 文件開啟，確認內容是否正確</div></li>
+        <li><div class="step-body"><strong>上傳至 Drive</strong>　確認無誤後，依第三章步驟上傳到對應資料夾</div></li>
+      </ol>
+      <div class="note"><span class="note-icon">💡</span>使用工具時建議開啟對應的「參考資料」資料夾（藍色按鈕），可對照範本填寫，確保格式正確。</div>
+    </div>
+
+    <!-- 五、常見問題 -->
+    <div class="section" id="qa">
+      <div class="section-title"><div class="num">五</div>常見問題</div>
+
+      <div class="qa-item">
+        <div class="qa-q" onclick="toggleQA(this)">Q1：點選按鈕後顯示「沒有存取權限」？<span class="arrow">▼</span></div>
+        <div class="qa-a">請確認您已用學校帳號（@yocps.kh.edu.tw）登入 Google。開啟 Google Drive 後切換到學校帳號，再重新點選按鈕。個人 Gmail 帳號（如 @gmail.com）無法存取評鑑資料夾。</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q" onclick="toggleQA(this)">Q2：下載的 Word 檔打開是亂碼？<span class="arrow">▼</span></div>
+        <div class="qa-a">請確認使用支援 .docx 格式的軟體開啟，建議使用 Microsoft Word 2016 以上版本，或在瀏覽器直接用 Google 文件開啟（右鍵 → 選擇開啟方式 → Google 文件）。</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q" onclick="toggleQA(this)">Q3：上傳後找不到檔案？<span class="arrow">▼</span></div>
+        <div class="qa-a">透過上傳系統上傳的檔案會存放在對應的評鑑子項目資料夾中。可從評鑑總覽點選對應項目的綠色按鈕，直接開啟 Drive 資料夾查看。</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q" onclick="toggleQA(this)">Q4：可以用手機上傳嗎？<span class="arrow">▼</span></div>
+        <div class="qa-a">可以。評鑑總覽和上傳系統都支援手機瀏覽器，但建議使用電腦操作以獲得最佳體驗。</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q" onclick="toggleQA(this)">Q5：同一個子項目可以上傳多個檔案嗎？<span class="arrow">▼</span></div>
+        <div class="qa-a">可以。上傳系統支援一次選取多個檔案，也可以分多次上傳，所有檔案都會存放在同一個資料夾中。</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q" onclick="toggleQA(this)">Q6：忘記自己負責哪些項目？<span class="arrow">▼</span></div>
+        <div class="qa-a">在評鑑總覽頁面頂端點選您的姓名或身份（如「體育班導師」），頁面會只顯示您負責的評鑑文件。</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q" onclick="toggleQA(this)">Q7：參考資料資料夾裡有什麼？<span class="arrow">▼</span></div>
+        <div class="qa-a">藍色「參考資料」按鈕連結到 Google Drive 的參考資料夾，裡面存放往年範本、格式說明、相關規定等參考文件，可供填寫時對照使用。</div>
+      </div>
+    </div>
+
+    <!-- 六、聯絡 -->
+    <div class="section" id="contact">
+      <div class="section-title"><div class="num">六</div>聯絡與支援</div>
+      <p class="body">若遇到本說明未涵蓋的問題，請聯絡體育組行政人員，或直接在學校信箱傳送截圖說明問題情況。</p>
+      <table class="info-table">
+        <tr><th>項目</th><th>說明</th></tr>
+        <tr><td>體育組信箱</td><td><a href="mailto:asics49@yocps.kh.edu.tw">asics49@yocps.kh.edu.tw</a></td></tr>
+        <tr><td>評鑑總覽</td><td><a href="https://asics49.github.io/pe-tools/" target="_blank">https://asics49.github.io/pe-tools/</a></td></tr>
+        <tr><td>文件產生工具</td><td><a href="https://asics49.github.io/pe-tools/pe-class-tools.html" target="_blank">https://asics49.github.io/pe-tools/pe-class-tools.html</a></td></tr>
+      </table>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+  // Sidebar toggle
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('open');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+  }
+
+  // Q&A accordion
+  function toggleQA(el) {
+    el.parentElement.classList.toggle('open');
+  }
+
+  // Active nav highlight on scroll
+  const sections = document.querySelectorAll('.section');
+  const navLinks = document.querySelectorAll('#nav a');
+  function updateActive() {
+    let current = '';
+    sections.forEach(s => { if (window.scrollY >= s.offsetTop - 120) current = s.id; });
+    navLinks.forEach(a => {
+      a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+    });
+  }
+  window.addEventListener('scroll', updateActive, { passive: true });
+  updateActive();
+</script>
+</body>
+</html>
