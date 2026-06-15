@@ -138,7 +138,7 @@ def build():
     for mid, badge, label, fname in FILES:
         src = extract_src(fname)
         js = get_js(src)
-        funcs = set(re.findall(r'(?m)^function\s+([A-Za-z_$][\w$]*)', js))
+        funcs = set(re.findall(r'(?m)^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)', js))
         for fn in funcs:
             all_funcs.setdefault(fn, []).append(mid)
         raw_modules.append({'mid': mid, 'badge': badge, 'label': label, 'src': src, 'funcs': funcs})

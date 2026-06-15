@@ -815,7 +815,7 @@ body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans
 <div class="bottom-bar">
   <div class="inner">
     <span class="status-msg" id="m1_statusMsg"></span>
-    <button class="primary-btn" id="m1_downloadBtn" onclick="generateDocx()">下載 Word 檔 (.docx)</button>
+    <button class="primary-btn" id="m1_downloadBtn" onclick="m1_generateDocx()">下載 Word 檔 (.docx)</button>
   </div>
 </div>
     </div>
@@ -890,7 +890,7 @@ body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans
 <div class="bottom-bar">
   <div class="inner">
     <span class="status-msg" id="m2_statusMsg"></span>
-    <button class="primary-btn" id="m2_downloadBtn" onclick="generateDocx()">下載 Word 檔 (.docx)</button>
+    <button class="primary-btn" id="m2_downloadBtn" onclick="m2_generateDocx()">下載 Word 檔 (.docx)</button>
   </div>
 </div>
     </div>
@@ -1019,7 +1019,7 @@ body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans
 <div class="bottom-bar">
   <div class="inner">
     <span class="status-msg" id="m3a_statusMsg"></span>
-    <button class="primary-btn" id="m3a_downloadBtn" onclick="generateDocx()">下載 Word 檔 (.docx)</button>
+    <button class="primary-btn" id="m3a_downloadBtn" onclick="m3a_generateDocx()">下載 Word 檔 (.docx)</button>
   </div>
 </div>
     </div>
@@ -1063,7 +1063,7 @@ body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans
 <div class="bottom-bar">
   <div class="bottom-inner">
     <span class="status-msg" id="m3b_statusMsg"></span>
-    <button class="primary-btn" id="m3b_dlBtn" onclick="generateDocx()">下載 Word 檔 (.docx)</button>
+    <button class="primary-btn" id="m3b_dlBtn" onclick="m3b_generateDocx()">下載 Word 檔 (.docx)</button>
   </div>
 </div>
     </div>
@@ -1120,7 +1120,7 @@ body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans
 <div class="bottom-bar">
   <div class="bottom-inner">
     <span class="status-msg" id="m4_statusMsg"></span>
-    <button class="primary-btn" id="m4_dlBtn" onclick="generateDocx()">下載 Word 檔 (.docx)</button>
+    <button class="primary-btn" id="m4_dlBtn" onclick="m4_generateDocx()">下載 Word 檔 (.docx)</button>
   </div>
 </div>
     </div>
@@ -1483,7 +1483,7 @@ function m1_setStatus(msg, type){
   el.className = 'status-msg' + (type ? ' '+type : '');
 }
 
-async function generateDocx(){
+async function m1_generateDocx(){
   const title = document.getElementById('m1_docTitle').value.trim();
   if(!title){
     m1_setStatus('請先輸入文件標題', 'error');
@@ -1947,7 +1947,7 @@ function m2_setStatus(msg, type){
   el.className = 'status-msg' + (type ? ' '+type : '');
 }
 
-async function generateDocx(){
+async function m2_generateDocx(){
   const title = document.getElementById('m2_docTitle').value.trim();
   const className = document.getElementById('className').value.trim();
 
@@ -2454,7 +2454,7 @@ function m3a_setStatus(msg, type){
   el.className = 'status-msg' + (type ? ' '+type : '');
 }
 
-async function generateDocx(){
+async function m3a_generateDocx(){
   if(!state_m3a.reportDateValue){
     m3a_setStatus('請先選擇日期', 'error');
     return;
@@ -3080,7 +3080,7 @@ function m3b_setStatus(msg, type){
   el.className = 'status-msg' + (type?' '+type:'');
 }
 
-async function generateDocx(){
+async function m3b_generateDocx(){
   if(state_m3b.blocks.length===0){ m3b_setStatus('請先新增至少一個開課區塊','err'); return; }
   const btn = document.getElementById('m3b_dlBtn');
   btn.disabled = true;
@@ -3728,7 +3728,7 @@ function buildHeaderXml(mediaFiles,headerRels){
 
 function m4_setStatus(msg,type){ const el=document.getElementById('m4_statusMsg'); el.textContent=msg; el.className='status-msg'+(type?' '+type:''); }
 
-async function generateDocx(){
+async function m4_generateDocx(){
   if(state_m4.activities.length===0){m4_setStatus('請先新增至少一場活動','err');return;}
   // 驗證滿意度欄位
   const errors=validateActivities();
