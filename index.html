@@ -113,6 +113,7 @@ const MODULES = [
   { id: 'm3b', badge: '模組三B',  name: '開課課程一覽' },
   { id: 'm4',  badge: '模組四',   name: '職業試探活動' },
 ];
+const UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbyjVAz-JmkUU78HcnSMFjdsVa7FUPlAatFUhB1Yfbp2FantL5xG0dQ9cZR7qoSymHxQBw/exec';
 
 // ── Render module cards ──
 var mc = document.getElementById('moduleCards');
@@ -126,6 +127,19 @@ MODULES.forEach(function(m){
     + '<span class="module-card-arrow">開啟工具 →</span>';
   mc.appendChild(a);
 });
+
+// ── Upload system card ──
+(function(){
+  var a = document.createElement('a');
+  a.className = 'module-card';
+  a.href = UPLOAD_URL;
+  a.target = '_blank';
+  a.style.borderColor = '#2E7A2E';
+  a.innerHTML = '<span class="module-card-badge" style="background:#2E7A2E;">上傳系統</span>'
+    + '<span class="module-card-name">體育組資料上傳</span>'
+    + '<span class="module-card-arrow" style="color:#2E7A2E;">開啟上傳 →</span>';
+  mc.appendChild(a);
+})();
 
 const DATA = [
   {
