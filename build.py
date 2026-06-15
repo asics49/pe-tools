@@ -251,7 +251,10 @@ function switchTab(id){{
   if(btn) btn.classList.add('active');
   if(!_tabInited[id]&&_tabInits[id]){{_tabInited[id]=true;_tabInits[id]();}}
 }}
-document.addEventListener('DOMContentLoaded',function(){{switchTab('m1');}});
+document.addEventListener('DOMContentLoaded',function(){{
+  var hash=location.hash.replace('#','');
+  switchTab(hash&&document.getElementById('panel_'+hash)?hash:'m1');
+}});
 {all_defs}
 </script>
 </body>
