@@ -140,6 +140,17 @@ MODULES.forEach(function(m){
     + '<span class="module-card-arrow" style="color:#2E7A2E;">開啟上傳 →</span>';
   mc.appendChild(a);
 })();
+(function(){
+  var a = document.createElement('a');
+  a.className = 'module-card';
+  a.href = 'guide.html';
+  a.target = '_blank';
+  a.style.borderColor = '#5A3E8A';
+  a.innerHTML = '<span class="module-card-badge" style="background:#5A3E8A;">說明</span>'
+    + '<span class="module-card-name">工具使用說明</span>'
+    + '<span class="module-card-arrow" style="color:#5A3E8A;">開啟說明 →</span>';
+  mc.appendChild(a);
+})();
 
 const DATA = [
   {
