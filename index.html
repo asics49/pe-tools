@@ -148,8 +148,8 @@ const DATA = [
       {
         id: '1-1', name: '體育班發展委員會設立與運作',
         docs: [
-          { name: '體育班發展委員會會議紀錄', person: '學務主任/體育組長', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1ivl6OTNuDMxlyWKy_-3TXDi6LpeCLgad', refUrl: 'https://drive.google.com/drive/folders/1XmFy7IWNUBdHExNu7V3vNoT7WVC69RH2' },
-          { name: '體發會委員組織辦法', person: '學務主任/體育組長', type: '既有公文', module: null, driveUrl: 'https://drive.google.com/drive/folders/1ivl6OTNuDMxlyWKy_-3TXDi6LpeCLgad', refUrl: 'https://drive.google.com/drive/folders/1XmFy7IWNUBdHExNu7V3vNoT7WVC69RH2' },
+          { name: '體育班發展委員會會議紀錄', person: '學務主任/體育組長', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1ivl6OTNuDMxlyWKy_-3TXDi6LpeCLgad', refUrl: 'https://drive.google.com/drive/folders/1XmFy7IWNUBdHExNu7V3vNoT7WVC69RH2', uploadSystemUrl: UPLOAD_URL + '#year=115%E5%AD%B8%E5%B9%B4%E5%BA%A6&type=%E6%96%87%E4%BB%B6&sport=%E8%A9%95%E9%91%91%E9%A0%85%E7%9B%AE&subCat=1-1%E9%AB%94%E8%82%B2%E7%8F%AD%E7%99%BC%E5%B1%95%E5%A7%94%E5%93%A1%E6%9C%83%E8%A8%AD%E7%AB%8B%E8%88%87%E9%81%8B%E4%BD%9C' },
+          { name: '體發會委員組織辦法', person: '學務主任/體育組長', type: '既有公文', module: null, driveUrl: 'https://drive.google.com/drive/folders/1ivl6OTNuDMxlyWKy_-3TXDi6LpeCLgad', refUrl: 'https://drive.google.com/drive/folders/1XmFy7IWNUBdHExNu7V3vNoT7WVC69RH2', uploadSystemUrl: UPLOAD_URL + '#year=115%E5%AD%B8%E5%B9%B4%E5%BA%A6&type=%E6%96%87%E4%BB%B6&sport=%E8%A9%95%E9%91%91%E9%A0%85%E7%9B%AE&subCat=1-1%E9%AB%94%E8%82%B2%E7%8F%AD%E7%99%BC%E5%B1%95%E5%A7%94%E5%93%A1%E6%9C%83%E8%A8%AD%E7%AB%8B%E8%88%87%E9%81%8B%E4%BD%9C' },
         ]
       },
       {
@@ -488,7 +488,7 @@ DATA.forEach(function(sec){
       if(doc.driveUrl) totalDrive++;
 
       var toolRow = doc.module ? '<div class="btn-row">'+modBtn(doc.module)+'</div>' : '';
-      var upRow = '<div class="btn-row">'+uploadBtn(doc.driveUrl)+refBtn(doc.refUrl)+'</div>';
+      var upRow = '<div class="btn-row">'+uploadBtn(doc.uploadSystemUrl || doc.driveUrl)+refBtn(doc.refUrl)+'</div>';
       html += '<tr'+dataAttr+'>'
             + '<td class="doc-name">'+doc.name+'</td>'
             + '<td>'+personTags(doc.person)+'</td>'
