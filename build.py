@@ -227,7 +227,13 @@ body{{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",san
 </head>
 <body>
 <div class="shell-header">
-  <div class="shell-title">右昌國小 <span>體育班評鑑文件工具</span></div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+    <a href="index.html" style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.85);text-decoration:none;border-radius:6px;padding:4px 10px;font-size:12px;font-family:inherit;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,.25)'" onmouseout="this.style.background='rgba(255,255,255,.15)'">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 12L6 8l4-4"/></svg>
+      回評鑑總覽
+    </a>
+    <div class="shell-title" style="margin-bottom:0;">右昌國小 <span>體育班評鑑文件工具</span></div>
+  </div>
   <div class="tab-bar">
 {tab_buttons}
   </div>
