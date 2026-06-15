@@ -48,21 +48,15 @@ body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;background:#F0ED
 .doc-name{font-size:13px;color:#2B2B28;}
 .person-tag{display:inline-block;background:#EBF0F5;color:#223A52;border-radius:4px;padding:2px 8px;font-size:11px;margin:1px;}
 
-/* ── Type Badge ── */
-.badge{display:inline-block;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap;}
-.badge-template{background:#FFF0E0;color:#B85C00;}
-.badge-doc{background:#F0F4FF;color:#2E4EA0;}
-.badge-photo{background:#F0F7EE;color:#2E7A2E;}
-.badge-other{background:#F5F5F5;color:#888;}
-
-/* ── Module Button ── */
+/* ── Buttons ── */
+.btn-group{display:flex;gap:6px;flex-wrap:wrap;}
 .mod-btn{display:inline-flex;align-items:center;gap:5px;background:#C9A24B;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;text-decoration:none;white-space:nowrap;transition:background .15s;}
 .mod-btn:hover{background:#B8913A;}
 .mod-btn svg{width:13px;height:13px;flex-shrink:0;}
-
-/* ── Legend ── */
-.legend{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px;background:#fff;border-bottom:1px solid #E1DCCF;font-size:11px;}
-.legend-item{display:flex;align-items:center;gap:4px;}
+.upload-btn{display:inline-flex;align-items:center;gap:5px;background:#2E7A2E;color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;text-decoration:none;white-space:nowrap;transition:background .15s;}
+.upload-btn:hover{background:#236023;}
+.upload-btn.disabled{background:#B0B0B0;cursor:default;pointer-events:none;}
+.upload-btn svg{width:13px;height:13px;flex-shrink:0;}
 
 /* ── Stats ── */
 .stats{display:flex;gap:16px;padding:10px 16px;background:#fff;border-bottom:2px solid #E1DCCF;font-size:12px;color:#6B675F;}
@@ -73,13 +67,7 @@ body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;background:#F0ED
 
 <div class="header">
   <div class="header-title">右昌國小 <span>115年度體育班評鑑文件總覽</span></div>
-  <div class="header-sub">點選負責人員可篩選項目；有對應工具的文件可直接點擊「點此使用工具」</div>
-</div>
-
-<div class="legend">
-  <span class="legend-item"><span class="badge badge-template">需制式範本</span>需建立統一格式表格</span>
-  <span class="legend-item"><span class="badge badge-doc">既有公文</span>上傳現有公文或掃描件</span>
-  <span class="legend-item"><span class="badge badge-photo">照片佐證</span>上傳活動照片即可</span>
+  <div class="header-sub">點選負責人員可篩選項目；綠色「上傳文件」可直接開啟對應雲端資料夾</div>
 </div>
 
 <div class="filter-bar" id="filterBar">
@@ -89,10 +77,8 @@ body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;background:#F0ED
 
 <div class="stats">
   <div>文件總數：<span class="stat-num" id="statTotal">—</span></div>
-  <div>需制式範本：<span class="stat-num" id="statTemplate">—</span></div>
-  <div>既有公文：<span class="stat-num" id="statDoc">—</span></div>
-  <div>照片佐證：<span class="stat-num" id="statPhoto">—</span></div>
   <div>有對應工具：<span class="stat-num" id="statModule">—</span></div>
+  <div>已設定上傳資料夾：<span class="stat-num" id="statDrive">—</span></div>
 </div>
 
 <div class="main" id="mainContent"></div>
@@ -115,98 +101,98 @@ const DATA = [
       {
         id: '1-1', name: '體育班發展委員會設立與運作',
         docs: [
-          { name: '體育班發展委員會會議紀錄', person: '學務主任/體育組長', type: '需制式範本', module: null },
-          { name: '體發會委員組織辦法', person: '學務主任/體育組長', type: '既有公文', module: null },
+          { name: '體育班發展委員會會議紀錄', person: '學務主任/體育組長', type: '需制式範本', module: null, driveUrl: null },
+          { name: '體發會委員組織辦法', person: '學務主任/體育組長', type: '既有公文', module: null, driveUrl: null },
         ]
       },
       {
         id: '1-1-2', name: '體育班課程規劃程序',
         docs: [
-          { name: '課發會會議紀錄', person: '教務處', type: '需制式範本', module: null },
-          { name: '課發會組織設置要點', person: '教務處', type: '既有公文', module: null },
-          { name: '12年國教校定課程計畫', person: '教務處', type: '既有公文', module: null },
-          { name: '5年級專長課程計畫（上下學期）', person: '體育專長教師', type: '需制式範本', module: 'm3b' },
-          { name: '6年級專長課程計畫（上下學期）', person: '體育專長教師', type: '需制式範本', module: 'm3b' },
+          { name: '課發會會議紀錄', person: '教務處', type: '需制式範本', module: null, driveUrl: null },
+          { name: '課發會組織設置要點', person: '教務處', type: '既有公文', module: null, driveUrl: null },
+          { name: '12年國教校定課程計畫', person: '教務處', type: '既有公文', module: null, driveUrl: null },
+          { name: '5年級專長課程計畫（上下學期）', person: '體育專長教師', type: '需制式範本', module: 'm3b', driveUrl: null },
+          { name: '6年級專長課程計畫（上下學期）', person: '體育專長教師', type: '需制式範本', module: 'm3b', driveUrl: null },
         ]
       },
       {
         id: '1-1-3', name: '課業成績出賽基準之訂定情形',
         docs: [
-          { name: '體育班參賽基準', person: '學務主任/體育組長', type: '需制式範本', module: null },
-          { name: '第一次體發會通過紀錄', person: '學務主任/體育組長', type: '需制式範本', module: null },
+          { name: '體育班參賽基準', person: '學務主任/體育組長', type: '需制式範本', module: null, driveUrl: null },
+          { name: '第一次體發會通過紀錄', person: '學務主任/體育組長', type: '需制式範本', module: null, driveUrl: null },
         ]
       },
       {
         id: '1-1-4', name: '體育班設班運動種類、招生人數、方式',
         docs: [
-          { name: '招生簡章', person: '學務主任/體育組長', type: '既有公文', module: null },
-          { name: '體育班錄取名單', person: '學務主任/體育組長', type: '需制式範本', module: null },
+          { name: '招生簡章', person: '學務主任/體育組長', type: '既有公文', module: null, driveUrl: null },
+          { name: '體育班錄取名單', person: '學務主任/體育組長', type: '需制式範本', module: null, driveUrl: null },
         ]
       },
       {
         id: '2-1-1', name: '一般學科及體育專業學科課程師資聘任',
         docs: [
-          { name: '體育班專科授課師資一覽表', person: '學務主任/體育組長/人事室', type: '需制式範本', module: null },
-          { name: '師資證明文件（掃描件）', person: '人事室', type: '既有公文', module: null },
-          { name: '體育專項科目授課師資一覽表', person: '體育組長', type: '需制式範本', module: null },
+          { name: '體育班專科授課師資一覽表', person: '學務主任/體育組長/人事室', type: '需制式範本', module: null, driveUrl: null },
+          { name: '師資證明文件（掃描件）', person: '人事室', type: '既有公文', module: null, driveUrl: null },
+          { name: '體育專項科目授課師資一覽表', person: '體育組長', type: '需制式範本', module: null, driveUrl: null },
         ]
       },
       {
         id: '2-1-2', name: '體育專項術科師資聘任情形',
         docs: [
-          { name: '體育班課表與授課師資名單', person: '體育組長', type: '需制式範本', module: null },
-          { name: '專任運動教練聘書（掃描件）', person: '人事室', type: '既有公文', module: null },
+          { name: '體育班課表與授課師資名單', person: '體育組長', type: '需制式範本', module: null, driveUrl: null },
+          { name: '專任運動教練聘書（掃描件）', person: '人事室', type: '既有公文', module: null, driveUrl: null },
         ]
       },
       {
         id: '2-1-3', name: '體育教師與設班種類是否相符',
         docs: [
-          { name: '體育專科授課師資一覽表', person: '體育組長', type: '需制式範本', module: null },
+          { name: '體育專科授課師資一覽表', person: '體育組長', type: '需制式範本', module: null, driveUrl: null },
         ]
       },
       {
         id: '2-1-4', name: '學校聘任專任運動教練情形',
         docs: [
-          { name: '田徑/足球教練專長證照（掃描件）', person: '體育組長', type: '既有公文', module: null },
-          { name: '專任運動教練聘書', person: '人事室', type: '既有公文', module: null },
-          { name: '專任運動教練審議委員會會議紀錄', person: '學務主任', type: '需制式範本', module: null },
+          { name: '田徑/足球教練專長證照（掃描件）', person: '體育組長', type: '既有公文', module: null, driveUrl: null },
+          { name: '專任運動教練聘書', person: '人事室', type: '既有公文', module: null, driveUrl: null },
+          { name: '專任運動教練審議委員會會議紀錄', person: '學務主任', type: '需制式範本', module: null, driveUrl: null },
         ]
       },
       {
         id: '3-1-1', name: '體育班訓練專用場地、空間',
         docs: [
-          { name: '學校運動場館資訊說明', person: '學務主任/體育組長', type: '需制式範本', module: null },
-          { name: '運動場館資料（含照片）', person: '體育組長', type: '照片佐證', module: 'm1' },
+          { name: '學校運動場館資訊說明', person: '學務主任/體育組長', type: '需制式範本', module: null, driveUrl: null },
+          { name: '運動場館資料（含照片）', person: '體育組長', type: '照片佐證', module: 'm1', driveUrl: null },
         ]
       },
       {
         id: '3-1-2', name: '體育班設備器材管理、維護及更新',
         docs: [
-          { name: '場地維護紀錄表', person: '總務主任/事務組長', type: '需制式範本', module: null },
-          { name: '體育設施檢核表', person: '總務主任', type: '需制式範本', module: null },
-          { name: '場館損壞自評及訪視意見表', person: '總務主任', type: '需制式範本', module: null },
-          { name: '場館管理注意事項/使用守則', person: '體育組長', type: '既有公文', module: null },
+          { name: '場地維護紀錄表', person: '總務主任/事務組長', type: '需制式範本', module: null, driveUrl: null },
+          { name: '體育設施檢核表', person: '總務主任', type: '需制式範本', module: null, driveUrl: null },
+          { name: '場館損壞自評及訪視意見表', person: '總務主任', type: '需制式範本', module: null, driveUrl: null },
+          { name: '場館管理注意事項/使用守則', person: '體育組長', type: '既有公文', module: null, driveUrl: null },
         ]
       },
       {
         id: '3-2-1', name: '運動防護措施',
         docs: [
-          { name: '運動意外傷害處理程序', person: '護理師', type: '既有公文', module: null },
-          { name: '教師健康促進研習活動成果', person: '護理師/體育組長', type: '需制式範本', module: null },
-          { name: '運動傷害與防護教學（照片）', person: '各團隊教師', type: '照片佐證', module: 'm1' },
-          { name: '校園緊急傷病事件處理要點', person: '護理師', type: '既有公文', module: null },
-          { name: '體育班與醫療院所簽訂契約', person: '學務主任', type: '既有公文', module: null },
-          { name: '運動防護相關證照（掃描件）', person: '護理師/教練', type: '既有公文', module: null },
+          { name: '運動意外傷害處理程序', person: '護理師', type: '既有公文', module: null, driveUrl: null },
+          { name: '教師健康促進研習活動成果', person: '護理師/體育組長', type: '需制式範本', module: null, driveUrl: null },
+          { name: '運動傷害與防護教學（照片）', person: '各團隊教師', type: '照片佐證', module: 'm1', driveUrl: null },
+          { name: '校園緊急傷病事件處理要點', person: '護理師', type: '既有公文', module: null, driveUrl: null },
+          { name: '體育班與醫療院所簽訂契約', person: '學務主任', type: '既有公文', module: null, driveUrl: null },
+          { name: '運動防護相關證照（掃描件）', person: '護理師/教練', type: '既有公文', module: null, driveUrl: null },
         ]
       },
       {
         id: '3-2-2', name: '運動防護紀錄',
         docs: [
-          { name: '體育班學生傷害防護日誌', person: '護理師', type: '需制式範本', module: null },
-          { name: '運動防護教學記錄', person: '體育組', type: '需制式範本', module: null },
-          { name: '體育班健康適能評估表', person: '護理師', type: '需制式範本', module: null },
-          { name: '聯合醫院合作備忘錄', person: '學務主任', type: '既有公文', module: null },
-          { name: '運動防護員契約', person: '學務主任', type: '既有公文', module: null },
+          { name: '體育班學生傷害防護日誌', person: '護理師', type: '需制式範本', module: null, driveUrl: null },
+          { name: '運動防護教學記錄', person: '體育組', type: '需制式範本', module: null, driveUrl: null },
+          { name: '體育班健康適能評估表', person: '護理師', type: '需制式範本', module: null, driveUrl: null },
+          { name: '聯合醫院合作備忘錄', person: '學務主任', type: '既有公文', module: null, driveUrl: null },
+          { name: '運動防護員契約', person: '學務主任', type: '既有公文', module: null, driveUrl: null },
         ]
       },
     ]
@@ -217,112 +203,112 @@ const DATA = [
       {
         id: '1-1-1', name: '公部門經費編列情形',
         docs: [
-          { name: '學年度經費支出明細表', person: '會計室', type: '需制式範本', module: null },
-          { name: '各項經費申請核定表', person: '會計室', type: '既有公文', module: null },
+          { name: '學年度經費支出明細表', person: '會計室', type: '需制式範本', module: null, driveUrl: null },
+          { name: '各項經費申請核定表', person: '會計室', type: '既有公文', module: null, driveUrl: null },
         ]
       },
       {
         id: '1-1-2', name: '籌措社會資源情形',
         docs: [
-          { name: '對外籌募經費支出明細表', person: '會計室/體育組', type: '需制式範本', module: null },
-          { name: '對外比賽經費補助辦法', person: '學務主任', type: '既有公文', module: null },
+          { name: '對外籌募經費支出明細表', person: '會計室/體育組', type: '需制式範本', module: null, driveUrl: null },
+          { name: '對外比賽經費補助辦法', person: '學務主任', type: '既有公文', module: null, driveUrl: null },
         ]
       },
       {
         id: '1-1-3', name: '公部門經費預算之執行情形',
         docs: [
-          { name: '體育班經費支用明細表', person: '會計室', type: '需制式範本', module: null },
+          { name: '體育班經費支用明細表', person: '會計室', type: '需制式範本', module: null, driveUrl: null },
         ]
       },
       {
         id: '2-1-1', name: '課程及訓練計畫規劃情形',
         docs: [
-          { name: '體育班課表及訓練規劃表', person: '體育組', type: '需制式範本', module: null },
-          { name: '課程架構說明', person: '教學組', type: '需制式範本', module: null },
-          { name: '5-6年級專長課程計畫', person: '體育班導師', type: '需制式範本', module: 'm3b' },
+          { name: '體育班課表及訓練規劃表', person: '體育組', type: '需制式範本', module: null, driveUrl: null },
+          { name: '課程架構說明', person: '教學組', type: '需制式範本', module: null, driveUrl: null },
+          { name: '5-6年級專長課程計畫', person: '體育班導師', type: '需制式範本', module: 'm3b', driveUrl: null },
         ]
       },
       {
         id: '2-1-2', name: '課程實施情形',
         docs: [
-          { name: '5年級班級日誌（上下學期連續4周）', person: '體育班導師', type: '需制式範本', module: null },
-          { name: '6年級班級日誌（上下學期連續4周）', person: '體育班導師', type: '需制式範本', module: null },
-          { name: '田徑隊訓練日誌（上下學期連續4周）', person: '田徑教練', type: '需制式範本', module: null },
-          { name: '足球隊訓練日誌（上下學期連續4周）', person: '足球教練', type: '需制式範本', module: null },
+          { name: '5年級班級日誌（上下學期連續4周）', person: '體育班導師', type: '需制式範本', module: null, driveUrl: null },
+          { name: '6年級班級日誌（上下學期連續4周）', person: '體育班導師', type: '需制式範本', module: null, driveUrl: null },
+          { name: '田徑隊訓練日誌（上下學期連續4周）', person: '田徑教練', type: '需制式範本', module: null, driveUrl: null },
+          { name: '足球隊訓練日誌（上下學期連續4周）', person: '足球教練', type: '需制式範本', module: null, driveUrl: null },
         ]
       },
       {
         id: '2-1-3', name: '體育專項術科訓練規劃執行情形',
         docs: [
-          { name: '田徑/足球訓練計畫', person: '田徑/足球教練', type: '需制式範本', module: null },
-          { name: '田徑/足球團隊公假統計表', person: '田徑/足球教練', type: '需制式範本', module: null },
-          { name: '體育班學生參賽日數統計表', person: '體育組', type: '需制式範本', module: null },
-          { name: '體育班競賽行事曆', person: '體育組', type: '需制式範本', module: null },
+          { name: '田徑/足球訓練計畫', person: '田徑/足球教練', type: '需制式範本', module: null, driveUrl: null },
+          { name: '田徑/足球團隊公假統計表', person: '田徑/足球教練', type: '需制式範本', module: null, driveUrl: null },
+          { name: '體育班學生參賽日數統計表', person: '體育組', type: '需制式範本', module: null, driveUrl: null },
+          { name: '體育班競賽行事曆', person: '體育組', type: '需制式範本', module: null, driveUrl: null },
         ]
       },
       {
         id: '3-1-1', name: '是否安排賽後補課情形',
         docs: [
-          { name: '體育班生活輔導及課業輔導管理辦法', person: '體育組', type: '既有公文', module: null },
-          { name: '課業輔導實施計畫', person: '體育組', type: '既有公文', module: null },
-          { name: '5年級賽後補課紀錄表', person: '5年級體育班導師', type: '需制式範本', module: 'm2' },
-          { name: '6年級賽後補課紀錄表', person: '6年級體育班導師', type: '需制式範本', module: 'm2' },
-          { name: '補救教學測驗歷程記錄', person: '輔導室', type: '需制式範本', module: null },
-          { name: '課業輔導照片', person: '課輔教師', type: '照片佐證', module: 'm1' },
-          { name: '體育班課業輔導日誌', person: '課輔教師', type: '需制式範本', module: null },
-          { name: '體育班寒暑訓課表', person: '體育組', type: '需制式範本', module: null },
+          { name: '體育班生活輔導及課業輔導管理辦法', person: '體育組', type: '既有公文', module: null, driveUrl: null },
+          { name: '課業輔導實施計畫', person: '體育組', type: '既有公文', module: null, driveUrl: null },
+          { name: '5年級賽後補課紀錄表', person: '5年級體育班導師', type: '需制式範本', module: 'm2', driveUrl: null },
+          { name: '6年級賽後補課紀錄表', person: '6年級體育班導師', type: '需制式範本', module: 'm2', driveUrl: null },
+          { name: '補救教學測驗歷程記錄', person: '輔導室', type: '需制式範本', module: null, driveUrl: null },
+          { name: '課業輔導照片', person: '課輔教師', type: '照片佐證', module: 'm1', driveUrl: null },
+          { name: '體育班課業輔導日誌', person: '課輔教師', type: '需制式範本', module: null, driveUrl: null },
+          { name: '體育班寒暑訓課表', person: '體育組', type: '需制式範本', module: null, driveUrl: null },
         ]
       },
       {
         id: '3-1-2', name: '學業成績未達參賽基準執行情形',
         docs: [
-          { name: '體育班學習輔助學生定期評量成績', person: '5/6年級導師', type: '需制式範本', module: null },
-          { name: '課業輔導照片', person: '課輔教師', type: '照片佐證', module: 'm1' },
+          { name: '體育班學習輔助學生定期評量成績', person: '5/6年級導師', type: '需制式範本', module: null, driveUrl: null },
+          { name: '課業輔導照片', person: '課輔教師', type: '照片佐證', module: 'm1', driveUrl: null },
         ]
       },
       {
         id: '3-1-3', name: '課業輔導情形',
         docs: [
-          { name: '體育班課業輔導課表', person: '體育組', type: '需制式範本', module: null },
-          { name: '（其餘資料同3-1-1）', person: '—', type: '—', module: null },
+          { name: '體育班課業輔導課表', person: '體育組', type: '需制式範本', module: null, driveUrl: null },
+          { name: '（其餘資料同3-1-1）', person: '—', type: '—', module: null, driveUrl: null },
         ]
       },
       {
         id: '3-2', name: '生活輔導情形',
         docs: [
-          { name: '5/6年級體育班輔導紀錄表', person: '體育班導師', type: '需制式範本', module: null },
-          { name: '性別平等/家庭教育宣導佐證資料', person: '體育班導師', type: '照片佐證', module: 'm1' },
-          { name: '春暉/反毒/反霸凌相關佐證照片', person: '體育班導師', type: '照片佐證', module: 'm1' },
+          { name: '5/6年級體育班輔導紀錄表', person: '體育班導師', type: '需制式範本', module: null, driveUrl: null },
+          { name: '性別平等/家庭教育宣導佐證資料', person: '體育班導師', type: '照片佐證', module: 'm1', driveUrl: null },
+          { name: '春暉/反毒/反霸凌相關佐證照片', person: '體育班導師', type: '照片佐證', module: 'm1', driveUrl: null },
         ]
       },
       {
         id: '3-3', name: '升學輔導情形',
         docs: [
-          { name: '體育班升學輔導實施計畫', person: '輔導室', type: '既有公文', module: null },
-          { name: '升學輔導講座佐證資料及照片', person: '輔導室', type: '照片佐證', module: 'm1' },
-          { name: '體育班銜續訓練情形一覽表', person: '導師及教練', type: '需制式範本', module: null },
+          { name: '體育班升學輔導實施計畫', person: '輔導室', type: '既有公文', module: null, driveUrl: null },
+          { name: '升學輔導講座佐證資料及照片', person: '輔導室', type: '照片佐證', module: 'm1', driveUrl: null },
+          { name: '體育班銜續訓練情形一覽表', person: '導師及教練', type: '需制式範本', module: null, driveUrl: null },
         ]
       },
       {
         id: '3-4', name: '生涯發展執行情形',
         docs: [
-          { name: '職業試探活動計畫', person: '輔導室', type: '既有公文', module: 'm4' },
-          { name: '生涯發展教育成果', person: '輔導室/導師', type: '需制式範本', module: 'm4' },
-          { name: '生涯發展講座佐證照片', person: '輔導室', type: '照片佐證', module: 'm1' },
+          { name: '職業試探活動計畫', person: '輔導室', type: '既有公文', module: 'm4', driveUrl: null },
+          { name: '生涯發展教育成果', person: '輔導室/導師', type: '需制式範本', module: 'm4', driveUrl: null },
+          { name: '生涯發展講座佐證照片', person: '輔導室', type: '照片佐證', module: 'm1', driveUrl: null },
         ]
       },
       {
         id: '4-1', name: '性別平等教育措施',
         docs: [
-          { name: '性別平等教育實施計畫', person: '生教組', type: '既有公文', module: null },
-          { name: '性別平等教育佐證照片', person: '生教組/導師', type: '照片佐證', module: 'm1' },
+          { name: '性別平等教育實施計畫', person: '生教組', type: '既有公文', module: null, driveUrl: null },
+          { name: '性別平等教育佐證照片', person: '生教組/導師', type: '照片佐證', module: 'm1', driveUrl: null },
         ]
       },
       {
         id: '4-2', name: '反霸凌教育措施',
         docs: [
-          { name: '校園霸凌防制規定', person: '生教組', type: '既有公文', module: null },
-          { name: '反霸凌/反毒宣導活動照片', person: '生教組/導師', type: '照片佐證', module: 'm1' },
+          { name: '校園霸凌防制規定', person: '生教組', type: '既有公文', module: null, driveUrl: null },
+          { name: '反霸凌/反毒宣導活動照片', person: '生教組/導師', type: '照片佐證', module: 'm1', driveUrl: null },
         ]
       },
     ]
@@ -333,32 +319,32 @@ const DATA = [
       {
         id: '4-1', name: '設班現況特色',
         docs: [
-          { name: '承接教育局相關活動佐證', person: '體育組', type: '照片佐證', module: 'm1' },
-          { name: '建置體育班交流平台說明', person: '體育組', type: '需制式範本', module: null },
-          { name: '聘任專任運動教練佐證', person: '人事室', type: '既有公文', module: null },
-          { name: '績優教學分享活動佐證', person: '體育組', type: '照片佐證', module: 'm1' },
+          { name: '承接教育局相關活動佐證', person: '體育組', type: '照片佐證', module: 'm1', driveUrl: null },
+          { name: '建置體育班交流平台說明', person: '體育組', type: '需制式範本', module: null, driveUrl: null },
+          { name: '聘任專任運動教練佐證', person: '人事室', type: '既有公文', module: null, driveUrl: null },
+          { name: '績優教學分享活動佐證', person: '體育組', type: '照片佐證', module: 'm1', driveUrl: null },
         ]
       },
       {
         id: '4-2', name: '運作情形特色',
         docs: [
-          { name: '師生校內外活動獎勵辦法', person: '體育組', type: '既有公文', module: null },
-          { name: '家長後援會組織辦法', person: '學務主任', type: '既有公文', module: null },
-          { name: '體育班體育專業課程計畫', person: '體育組', type: '需制式範本', module: 'm3b' },
-          { name: '家長後援會活動佐證照片', person: '體育組', type: '照片佐證', module: 'm1' },
+          { name: '師生校內外活動獎勵辦法', person: '體育組', type: '既有公文', module: null, driveUrl: null },
+          { name: '家長後援會組織辦法', person: '學務主任', type: '既有公文', module: null, driveUrl: null },
+          { name: '體育班體育專業課程計畫', person: '體育組', type: '需制式範本', module: 'm3b', driveUrl: null },
+          { name: '家長後援會活動佐證照片', person: '體育組', type: '照片佐證', module: 'm1', driveUrl: null },
         ]
       },
       {
         id: '4-3', name: '訓練績效特色',
         docs: [
-          { name: '訓練成績彙整', person: '體育組', type: '需制式範本', module: null },
-          { name: '歷年優秀校友資料彙整', person: '體育組', type: '需制式範本', module: null },
+          { name: '訓練成績彙整', person: '體育組', type: '需制式範本', module: null, driveUrl: null },
+          { name: '歷年優秀校友資料彙整', person: '體育組', type: '需制式範本', module: null, driveUrl: null },
         ]
       },
       {
         id: '4-4', name: '其他',
         docs: [
-          { name: '競賽成績檔案', person: '體育組', type: '需制式範本', module: null },
+          { name: '競賽成績檔案', person: '體育組', type: '需制式範本', module: null, driveUrl: null },
         ]
       },
     ]
@@ -388,20 +374,24 @@ persons.forEach(function(p){
   fb.appendChild(btn);
 });
 
-// ── Type badge ──
-function typeBadge(t){
-  if(t==='需制式範本') return '<span class="badge badge-template">需制式範本</span>';
-  if(t==='既有公文')   return '<span class="badge badge-doc">既有公文</span>';
-  if(t==='照片佐證')   return '<span class="badge badge-photo">照片佐證</span>';
-  return '<span class="badge badge-other">'+t+'</span>';
-}
-
 // ── Module button ──
 function modBtn(mid){
   if(!mid) return '';
   return '<a class="mod-btn" href="'+TOOL_URL+'#'+mid+'" target="_blank">'
     +'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1v-3M9 2h5v5M14 2L8 8"/></svg>'
-    +'點此使用工具</a>';
+    +'使用工具</a>';
+}
+
+// ── Upload button ──
+function uploadBtn(url){
+  if(url){
+    return '<a class="upload-btn" href="'+url+'" target="_blank">'
+      +'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 10V3M5 6l3-3 3 3M3 13h10"/></svg>'
+      +'上傳文件</a>';
+  }
+  return '<a class="upload-btn disabled">'
+    +'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 10V3M5 6l3-3 3 3M3 13h10"/></svg>'
+    +'上傳文件</a>';
 }
 
 // ── Person tags ──
@@ -414,7 +404,7 @@ function personTags(p){
 
 // ── Render ──
 var main = document.getElementById('mainContent');
-var totalDocs=0, totalTemplate=0, totalDoc=0, totalPhoto=0, totalModule=0;
+var totalDocs=0, totalModule=0, totalDrive=0;
 
 DATA.forEach(function(sec){
   var secEl = document.createElement('div');
@@ -425,10 +415,9 @@ DATA.forEach(function(sec){
     html += '<div class="sub-section">';
     html += '<div class="sub-header"><span class="sub-id">'+sub.id+'</span><span class="sub-name">'+sub.name+'</span></div>';
     html += '<table class="doc-table"><thead><tr>'
-          + '<th style="width:35%">文件名稱</th>'
-          + '<th style="width:28%">負責人員</th>'
-          + '<th style="width:14%">文件類型</th>'
-          + '<th>工具</th>'
+          + '<th style="width:38%">文件名稱</th>'
+          + '<th style="width:30%">負責人員</th>'
+          + '<th>工具 / 上傳</th>'
           + '</tr></thead><tbody>';
 
     sub.docs.forEach(function(doc){
@@ -438,16 +427,13 @@ DATA.forEach(function(sec){
       var dataAttr = persons.length ? ' data-persons="'+persons.join(',').toLowerCase()+'"' : '';
 
       totalDocs++;
-      if(doc.type==='需制式範本') totalTemplate++;
-      else if(doc.type==='既有公文') totalDoc++;
-      else if(doc.type==='照片佐證') totalPhoto++;
       if(doc.module) totalModule++;
+      if(doc.driveUrl) totalDrive++;
 
       html += '<tr'+dataAttr+'>'
             + '<td class="doc-name">'+doc.name+'</td>'
             + '<td>'+personTags(doc.person)+'</td>'
-            + '<td>'+typeBadge(doc.type)+'</td>'
-            + '<td>'+modBtn(doc.module)+'</td>'
+            + '<td><div class="btn-group">'+modBtn(doc.module)+uploadBtn(doc.driveUrl)+'</div></td>'
             + '</tr>';
     });
 
@@ -459,10 +445,8 @@ DATA.forEach(function(sec){
 });
 
 document.getElementById('statTotal').textContent = totalDocs;
-document.getElementById('statTemplate').textContent = totalTemplate;
-document.getElementById('statDoc').textContent = totalDoc;
-document.getElementById('statPhoto').textContent = totalPhoto;
 document.getElementById('statModule').textContent = totalModule;
+document.getElementById('statDrive').textContent = totalDrive;
 
 // ── Filter ──
 var currentFilter = 'all';
