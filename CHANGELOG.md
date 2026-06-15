@@ -4,7 +4,8 @@
 
 各模組為獨立 HTML 單一檔案，透過 `build.py` 合併成 `pe-class-tools.html`，部署於 GitHub Pages。
 
-- 線上網址：https://asics49.github.io/pe-tools/pe-class-tools.html
+- 評鑑總覽：https://asics49.github.io/pe-tools/
+- 工具頁面：https://asics49.github.io/pe-tools/pe-class-tools.html
 - GitHub Repo：https://github.com/asics49/pe-tools
 
 ---
@@ -22,6 +23,23 @@
 ---
 
 ## 版本紀錄
+
+### v1.3 — 2026-06-15
+- **新增：評鑑總覽頁面（index.html）**
+  - 依壹/貳/肆大指標分組，列出 89 筆評鑑文件
+  - 負責人員篩選列，點選人員只顯示該人負責的項目
+  - 頂部模組卡片列，快速開啟各工具分頁
+  - 每筆文件提供三個按鈕：金色「使用工具」、綠色「上傳文件」、藍色「參考資料」
+- **新增：Google Drive 資料夾整合**
+  - 在評鑑資料夾下各子標新建「文件上傳」與「參考資料」子資料夾（共 34 × 2 = 68 個）
+  - 使用 `_get_drive_ids.py` 從本機 Google Drive SQLite 資料庫自動讀取資料夾 ID
+  - 使用 `_patch_drive_urls.py` / `_patch_ref_urls.py` 批次填入 index.html
+  - 提供 `_set_drive_permissions.gs` / `_set_ref_permissions.gs`（Google Apps Script）
+    批次設定上傳資料夾（編輯）與參考資料夾（檢視）限學校網域帳號存取
+- **新增：工具頁面回首頁按鈕**
+  - pe-class-tools.html 左上角加入「← 回評鑑總覽」按鈕
+- **新增：URL hash 分頁導航**
+  - pe-class-tools.html 支援 `#m1`～`#m4` hash，從總覽頁點「使用工具」直接跳到對應分頁
 
 ### v1.1 — 2026-06-15
 - **修正：下載 Word 檔按鈕無效**
@@ -47,6 +65,17 @@
 
 ---
 
+## 換年度更新步驟
+
+每學年度開始時執行以下步驟更新所有 Drive 連結：
+
+1. 在新年度資料夾下依子標建立「文件上傳」與「參考資料」子資料夾
+2. 更新 `_patch_drive_urls.py` 與 `_patch_ref_urls.py` 的父資料夾路徑
+3. 執行 `python _get_drive_ids.py` 取得新資料夾 ID
+4. 執行 `python _patch_drive_urls.py` 與 `python _patch_ref_urls.py` 更新 index.html
+5. `git add → commit → push`
+6. 在 Google Apps Script 執行 `setFolderPermissions` 與 `setRefFolderPermissions` 設定權限
+
 ## 待辦 / 未來計畫
 
-- [ ] （待補充）
+- [ ] 撰寫一鍵換年度腳本（`new-year-setup.py`），整合建資料夾、讀 ID、更新 HTML、產出 .gs 全流程
