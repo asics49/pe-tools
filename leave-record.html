@@ -663,6 +663,7 @@ async function generateDocx(){
   var btn = document.getElementById('downloadBtn');
   btn.disabled = true;
   setStatus('產生中，請稍候…');
+  try{ // outer safety catch
 
   var mediaFiles = [];
   var headerRels = [];
@@ -791,6 +792,9 @@ async function generateDocx(){
     setStatus('✅ 下載成功！', 'ok');
   } catch(e){
     setStatus('產生失敗：'+e.message, 'error');
+  }
+  } catch(outerE){ // outer safety catch
+    setStatus('產生失敗（外層）：'+outerE.message, 'error');
   }
   btn.disabled = false;
   updatePreview();

@@ -4464,6 +4464,7 @@ async function m5_generateDocx(){
   var btn = document.getElementById('m5_downloadBtn');
   btn.disabled = true;
   m5_setStatus('產生中，請稍候…');
+  try{ // outer safety catch
 
   var mediaFiles = [];
   var headerRels = [];
@@ -4592,6 +4593,9 @@ async function m5_generateDocx(){
     m5_setStatus('✅ 下載成功！', 'ok');
   } catch(e){
     m5_setStatus('產生失敗：'+e.message, 'error');
+  }
+  } catch(outerE){ // outer safety catch
+    m5_setStatus('產生失敗（外層）：'+outerE.message, 'error');
   }
   btn.disabled = false;
   updatePreview();
