@@ -4536,6 +4536,16 @@ async function m5_generateDocx(){
     return hdrNS;
   }
 
+  function titlePara(grade){
+    var font = '<w:rFonts w:ascii="Times New Roman" w:eastAsia="標楷體" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>';
+    var sz = '<w:sz w:val="32"/><w:szCs w:val="32"/>';
+    var text = '學年度：'+yearNum+'學年度              '+sport+'類    年級：'+grade;
+    return '<w:p><w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:jc w:val="both"/><w:rPr>'+font+sz+'</w:rPr></w:pPr>'+
+      '<w:r><w:rPr>'+font+sz+'</w:rPr><w:t xml:space="preserve">'+m5_escXml(text)+'</w:t></w:r></w:p>';
+  }
+
+  function pageBreakPara(){ return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>'; }
+
   var bodyParts = [];
   gradeKeys.forEach(function(grade, i){
     if(i > 0) bodyParts.push(pageBreakPara());
