@@ -4477,6 +4477,13 @@ async function m5_generateDocx(){
       headRow + dataRows + '</w:tbl>';
   }
 
+  function mainTitlePara(){
+    var font = '<w:rFonts w:ascii="Times New Roman" w:eastAsia="標楷體" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>';
+    var sz = '<w:sz w:val="40"/><w:szCs w:val="40"/>'; // 20pt
+    return '<w:p><w:pPr><w:spacing w:line="400" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr>'+font+sz+'<w:b/></w:rPr></w:pPr>'+
+      '<w:r><w:rPr>'+font+sz+'<w:b/></w:rPr><w:t>高雄市右昌國小體育班學生公假統計表</w:t></w:r></w:p>';
+  }
+
   function titlePara(grade){
     var font = '<w:rFonts w:ascii="Times New Roman" w:eastAsia="標楷體" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>';
     var sz = '<w:sz w:val="32"/><w:szCs w:val="32"/>';
@@ -4490,6 +4497,7 @@ async function m5_generateDocx(){
   var bodyParts = [];
   gradeKeys.forEach(function(grade, i){
     if(i > 0) bodyParts.push(pageBreakPara());
+    bodyParts.push(mainTitlePara());
     bodyParts.push(titlePara(grade));
     bodyParts.push(makeTable(groups[grade]));
     bodyParts.push('<w:p/>');
