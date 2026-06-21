@@ -218,6 +218,7 @@ function togglePasteArea(){
   el.style.display = el.style.display==='none'?'block':'none';
 }
 
+// 解析單一日期字串，回傳 ISO 格式 (yyyy-mm-dd)
 function parseDate(s){
   if(!s) return '';
   s = s.trim();
@@ -234,6 +235,32 @@ function parseDate(s){
   return s;
 }
 
+// 解析日期區間字串，回傳 [startISO, endISO]
+// 支援：2025/10/7-10/9、113/10/7-10/9、2025/10/7~2025/10/9 等
+function parseDateRange(s){
+  if(!s) return ['',''];
+  s = s.trim();
+
+  // 先嘗試 "年份/月/日-月/日" 或 "年份/月/日~月/日"（結束日省略年份）
+  var m = s.match(/^(\d{2,4})\/(\d{1,2})\/(\d{1,2})\s*[-~]\s*(\d{1,2})\/(\d{1,2})$/);
+  if(m){
+    var y = parseInt(m[1]);
+    if(y < 1000) y += 1911;
+    var ys = String(y);
+    var start = ys+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+    var end   = ys+'-'+m[4].padStart(2,'0')+'-'+m[5].padStart(2,'0');
+    return [start, end];
+  }
+
+  // "年份/月/日-年份/月/日" 或 "年份-月-日~年份-月-日"（完整區間）
+  m = s.match(/^(\d{2,4}[\/\-]\d{1,2}[\/\-]\d{1,2})\s*[-~]\s*(\d{2,4}[\/\-]\d{1,2}[\/\-]\d{1,2})$/);
+  if(m) return [parseDate(m[1]), parseDate(m[2])];
+
+  // 只有單一日期
+  var single = parseDate(s);
+  return [single, single];
+}
+
 function importFromPaste(){
   var raw = document.getElementById('pasteInput').value.trim();
   if(!raw){ alert('請先貼入資料'); return; }
@@ -243,11 +270,19 @@ function importFromPaste(){
     var cols = line.split('\t');
     if(cols.length < 2) return;
     // 欄位：年級, 姓名, 比賽名稱, 開始日期, 結束日期
+    // 也支援 4 欄（日期區間在同一格，如 2025/10/7-10/9）
     var grade = (cols[0]||'').trim();
     var name  = (cols[1]||'').trim();
     var match = (cols[2]||'').trim();
-    var start = parseDate(cols[3]);
-    var end   = parseDate(cols[4]);
+    var start, end;
+    if(cols.length >= 5 && (cols[4]||'').trim()){
+      start = parseDate(cols[3]);
+      end   = parseDate(cols[4]);
+    } else {
+      var range = parseDateRange(cols[3]);
+      start = range[0];
+      end   = range[1];
+    }
     // 年級格式化
     if(grade && !grade.includes('年級')) grade = grade + '年級';
     if(!GRADES.includes(grade)) grade = GRADES[0];
