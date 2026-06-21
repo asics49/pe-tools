@@ -25,7 +25,7 @@ FILES = [
     ('m3a', '模組三A', '成果報告表頭',   'result-report-header.html'),
     ('m3b', '模組三B', '開課課程一覽',   'course-overview.html'),
     ('m4',  '模組四',  '職業試探活動',   'career-activity.html'),
-    # ('m5', '模組五', '新模組名稱', 'new-module.html'),  ← 新增模組在這裡
+    ('m5',  '模組五',  '公假統計表',     'leave-record.html'),
 ]
 
 OUTPUT = 'pe-class-tools.html'
@@ -46,6 +46,9 @@ CONFLICT_IDS = [
     'rosterUploaded', 'noInsurance', 'hostSchool', 'audience',
     'reportTypeGroup', 'eduStageGroup', 'hsCourseTypeGroup', 'hsCheckTypeGroup',
     'approvedTotal',
+    'leaveYear', 'leaveSport', 'leaveTableBody', 'rowCount',
+    'previewCard', 'previewContent', 'pasteArea', 'pasteInput',
+    'downloadBtn', 'statusMsg',
 ]
 
 # JS variable names that conflict between specific modules
@@ -60,8 +63,8 @@ CONFLICT_VARS = {
     'm4':  {'logo': 'logo_m4', 'state': 'state_m4',
             'PAGE_W': 'PAGE_W_m4', 'PAGE_H': 'PAGE_H_m4',
             'nextPicId': 'nextPicId_m4', 'nextActId': 'nextActId_m4'},
+    'm5':  {'rows': 'rows_m5', 'nextId': 'nextId_m5'},
     # 新增模組時，在這裡加上該模組的衝突變數：
-    # 'm5': {'logo': 'logo_m5', 'state': 'state_m5'},
 }
 
 # Shared constants — defined once (in first module), commented out in others
