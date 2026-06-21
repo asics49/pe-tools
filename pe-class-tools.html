@@ -731,7 +731,7 @@ body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans
 }
 *{box-sizing:border-box;}
 body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",-apple-system,sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;}
-.wrap{max-width:900px;margin:0 auto;padding:28px 18px 120px;}
+.wrap{max-width:960px;margin:0 auto;padding:28px 18px 120px;}
 .app-header{margin-bottom:22px;}
 .eyebrow{font-size:12px;letter-spacing:.18em;color:var(--maroon);font-weight:700;text-transform:uppercase;margin:0 0 6px;}
 .app-header h1{font-size:24px;margin:0 0 8px;color:var(--navy);border-bottom:3px solid var(--maroon);padding-bottom:10px;line-height:1.4;}
@@ -744,31 +744,48 @@ input[type="text"],input[type="date"],select,textarea{width:100%;border:1px soli
 input[type="text"]:focus,input[type="date"]:focus,select:focus,textarea:focus{outline:2px solid var(--navy-soft);outline-offset:1px;border-color:var(--navy-soft);}
 textarea{resize:vertical;min-height:80px;line-height:1.6;}
 .row-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.row-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
 
 /* import box */
 .import-box{background:#F5F2EC;border:1.5px dashed var(--line-strong);border-radius:8px;padding:14px;margin-bottom:12px;}
 .import-box p{margin:0 0 8px;font-size:13px;color:var(--ink-soft);}
 .import-box code{background:#E8E3D8;border-radius:4px;padding:2px 6px;font-size:12px;font-family:monospace;}
-.import-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.import-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .outline-btn{border:1px solid var(--navy-soft);background:#fff;color:var(--navy);border-radius:7px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
 .outline-btn:hover{background:#EEF2F6;}
 .outline-btn.danger{border-color:var(--maroon);color:var(--maroon);}
 .outline-btn.danger:hover{background:#FDF0F0;}
+.outline-btn.success{border-color:var(--green);color:var(--green);}
+.outline-btn.success:hover{background:#F0F8F0;}
 .paste-area{margin-top:10px;display:none;}
+.import-hint{font-size:12px;color:#999;margin:6px 0 0;}
+
+/* file upload zone */
+.file-drop-zone{border:2px dashed var(--line-strong);border-radius:8px;padding:18px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:10px;}
+.file-drop-zone:hover,.file-drop-zone.dragover{border-color:var(--navy-soft);background:#EEF2F6;}
+.file-drop-zone .icon{font-size:28px;margin-bottom:6px;}
+.file-drop-zone p{margin:0;font-size:13px;color:var(--ink-soft);}
+.file-drop-zone strong{color:var(--navy);}
+#fileInput{display:none;}
+
+/* sheet picker */
+.sheet-picker{display:none;margin-top:10px;}
+.sheet-picker label{font-size:13px;color:var(--ink-soft);font-weight:600;display:block;margin-bottom:4px;}
 
 /* data table */
+.table-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
 .data-table-wrap{overflow-x:auto;margin-bottom:12px;}
-.data-table{width:100%;border-collapse:collapse;font-size:13px;min-width:700px;}
-.data-table th{background:var(--navy);color:#fff;padding:8px 10px;text-align:center;font-weight:700;white-space:nowrap;}
-.data-table td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:middle;}
+.data-table{width:100%;border-collapse:collapse;font-size:13px;min-width:750px;}
+.data-table th{background:var(--navy);color:#fff;padding:8px 8px;text-align:center;font-weight:700;white-space:nowrap;}
+.data-table td{padding:5px 5px;border-bottom:1px solid var(--line);vertical-align:middle;}
 .data-table tr:hover td{background:#F5F2EC;}
-.data-table input[type="text"],.data-table input[type="date"],.data-table select{padding:5px 7px;font-size:13px;border-radius:6px;}
+.data-table tr.selected td{background:#EEF5FF;}
+.data-table input[type="text"],.data-table input[type="date"],.data-table select{padding:5px 6px;font-size:13px;border-radius:6px;}
 .data-table .del-btn{border:1px solid var(--maroon);background:none;color:var(--maroon);border-radius:5px;width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;margin:auto;}
 .data-table .del-btn:hover{background:var(--maroon);color:#fff;}
+.data-table input[type="checkbox"]{width:16px;height:16px;cursor:pointer;accent-color:var(--navy);}
 .add-row-btn{width:100%;border:1.5px dashed var(--navy-soft);color:var(--navy);background:#EEF2F6;border-radius:8px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;}
 .add-row-btn:hover{background:#E3E9EF;}
-.row-count{font-size:12px;color:var(--ink-soft);margin-bottom:8px;}
+.row-count{font-size:12px;color:var(--ink-soft);}
 
 /* preview */
 .preview-section{margin-top:8px;}
@@ -779,7 +796,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 
 /* bottom bar */
 .bottom-bar{position:fixed;left:0;right:0;bottom:0;background:rgba(246,244,238,.92);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:12px 18px;display:flex;justify-content:center;gap:10px;z-index:10;}
-.bottom-bar .inner{max-width:900px;width:100%;display:flex;gap:10px;align-items:center;}
+.bottom-bar .inner{max-width:960px;width:100%;display:flex;gap:10px;align-items:center;}
 .primary-btn{flex:1;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
 .primary-btn:hover{background:var(--navy-soft);}
 .primary-btn:disabled{background:#B9B6AD;cursor:not-allowed;}
@@ -1202,7 +1219,7 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
   <div class="app-header">
     <p class="eyebrow">體育班評鑑文件工具・模組五</p>
     <h1>學生公假統計表產生器</h1>
-    <p>輸入學年度與運動項目，逐筆填寫學生公假記錄，或從 Excel 貼上匯入。系統會依年級分組，產生與原始格式相符的 Word 檔。</p>
+    <p>輸入學年度與運動項目，逐筆填寫學生公假記錄，或從 Excel 檔案/貼上資料匯入。系統會依年級分組，產生與原始格式相符的 Word 檔。</p>
   </div>
 
   <!-- 基本資訊 -->
@@ -1229,17 +1246,38 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
   <!-- 匯入 -->
   <div class="card">
     <h2><span class="num">2</span>匯入資料（選用）</h2>
-    <div class="import-box">
-      <p>從 Excel 複製資料後貼入，欄位順序：<code>年級</code> <code>姓名</code> <code>比賽名稱</code> <code>公假開始日期</code> <code>公假結束日期</code></p>
-      <p style="font-size:12px;color:#888;margin:0">日期格式支援：113/09/30、2024/09/30、2024-09-30</p>
-      <div class="import-actions" style="margin-top:10px;">
-        <button class="outline-btn" onclick="togglePasteArea()">📋 貼上 Excel 資料</button>
-        <button class="outline-btn danger" onclick="clearAllRows()">✕ 清除全部</button>
-      </div>
-      <div class="paste-area" id="m5_pasteArea">
-        <label class="field-label" style="margin-top:10px;">貼入資料（Ctrl+V）：</label>
-        <textarea id="m5_pasteInput" rows_m5="6" placeholder="在此貼上從 Excel 複製的資料，每列一筆記錄"></textarea>
-        <button class="outline-btn" style="margin-top:6px;" onclick="importFromPaste()">✅ 匯入</button>
+
+    <!-- Excel 檔案上傳 -->
+    <div class="file-drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+      <div class="icon">📂</div>
+      <p><strong>點擊選擇 Excel 檔案</strong>，或將 .xlsx / .xls 拖曳到這裡</p>
+      <p style="margin-top:4px;font-size:12px;color:#aaa;">自動偵測欄位（年級、姓名、比賽名稱、日期等）</p>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="onFileChange(event)">
+
+    <!-- 工作表選擇（多工作表才顯示） -->
+    <div class="sheet-picker" id="sheetPicker">
+      <label>選擇工作表：</label>
+      <select id="sheetSelect" onchange="onSheetChange()"></select>
+    </div>
+
+    <!-- 欄位對應預覽 -->
+    <div id="colMapInfo" style="display:none;margin-top:8px;font-size:12px;color:var(--ink-soft);background:#F0EDE6;border-radius:6px;padding:8px 12px;"></div>
+
+    <div class="import-actions" style="margin-top:10px;">
+      <button class="outline-btn" onclick="togglePasteArea()">📋 貼上 Excel 資料</button>
+      <button class="outline-btn danger" onclick="clearAllRows()">✕ 清除全部</button>
+    </div>
+
+    <div class="paste-area" id="m5_pasteArea">
+      <div class="import-box" style="margin-top:10px;margin-bottom:0;">
+        <p>從 Excel 複製資料後貼入。<strong>第一列若有標題</strong>（年級、姓名、比賽名稱、日期）會自動辨識欄位；否則請依順序：<code>年級</code> <code>姓名</code> <code>比賽名稱</code> <code>開始日期</code> <code>結束日期</code></p>
+        <p class="import-hint">日期支援：113/09/30、2024/09/30、2025/10/7-10/9（區間）</p>
+        <textarea id="m5_pasteInput" rows_m5="6" style="margin-top:8px;" placeholder="在此貼上從 Excel 複製的資料，每列一筆記錄"></textarea>
+        <div class="import-actions" style="margin-top:6px;">
+          <button class="outline-btn success" onclick="importFromPaste()">✅ 匯入</button>
+          <button class="outline-btn" onclick="togglePasteArea()">取消</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1247,13 +1285,17 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
   <!-- 資料輸入 -->
   <div class="card">
     <h2><span class="num">3</span>公假記錄</h2>
-    <div class="row-count" id="m5_rowCount">目前 0 筆</div>
+    <div class="table-toolbar">
+      <span class="row-count" id="m5_rowCount">目前 0 筆</span>
+      <button class="outline-btn danger" id="deleteSelectedBtn" style="display:none" onclick="deleteSelected()">🗑 刪除選取（<span id="selCount">0</span> 筆）</button>
+    </div>
     <div class="data-table-wrap">
       <table class="data-table">
         <thead>
           <tr>
-            <th style="width:50px">項次</th>
-            <th style="width:80px">年級</th>
+            <th style="width:36px"><input type="checkbox" id="checkAll" onchange="toggleSelectAll(this.checked)" title="全選／取消全選"></th>
+            <th style="width:46px">項次</th>
+            <th style="width:90px">年級</th>
             <th style="width:120px">學生姓名</th>
             <th>比賽名稱</th>
             <th style="width:130px">公假開始日期</th>
@@ -3953,19 +3995,34 @@ async function m4_generateDocx(){
 
 var rows_m5 = [];
 var nextId_m5 = 0;
+var selectedIds = new Set();
+var workbookCache = null; // 快取已載入的 workbook
 
 var GRADES = ['1年級','2年級','3年級','4年級','5年級','6年級'];
 
-/* ── 列管理 ── */
+/* ══════════════════════════════
+   列管理
+══════════════════════════════ */
 function addRow(data){
   var id = nextId_m5++;
-  rows_m5.push({ id, grade: data&&data.grade||'', name: data&&data.name||'', match: data&&data.match||'', start: data&&data.start||'', end: data&&data.end||'' });
+  rows_m5.push({ id, grade: data&&data.grade||GRADES[0], name: data&&data.name||'', match: data&&data.match||'', start: data&&data.start||'', end: data&&data.end||'' });
   renderTable();
   if(!data) updatePreview();
 }
 
 function deleteRow(id){
   rows_m5 = rows_m5.filter(function(r){ return r.id !== id; });
+  selectedIds.delete(id);
+  renderTable();
+  updatePreview();
+}
+
+function deleteSelected(){
+  var ids = Array.from(selectedIds);
+  if(!ids.length) return;
+  if(!confirm('確定刪除選取的 '+ids.length+' 筆資料？')) return;
+  rows_m5 = rows_m5.filter(function(r){ return !selectedIds.has(r.id); });
+  selectedIds.clear();
   renderTable();
   updatePreview();
 }
@@ -3973,8 +4030,36 @@ function deleteRow(id){
 function clearAllRows(){
   if(rows_m5.length && !confirm('確定清除全部 '+rows_m5.length+' 筆資料？')) return;
   rows_m5 = [];
+  selectedIds.clear();
   renderTable();
   updatePreview();
+}
+
+function toggleSelectAll(checked){
+  rows_m5.forEach(function(r){
+    if(checked) selectedIds.add(r.id);
+    else selectedIds.delete(r.id);
+  });
+  renderTable();
+}
+
+function onCheckRow(id, checked){
+  if(checked) selectedIds.add(id);
+  else selectedIds.delete(id);
+  updateSelUI();
+}
+
+function updateSelUI(){
+  var selCount = selectedIds.size;
+  var btn = document.getElementById('deleteSelectedBtn');
+  btn.style.display = selCount > 0 ? '' : 'none';
+  var sp = document.getElementById('selCount');
+  if(sp) sp.textContent = selCount;
+  var ca = document.getElementById('checkAll');
+  if(ca){
+    ca.checked = rows_m5.length > 0 && selCount === rows_m5.length;
+    ca.indeterminate = selCount > 0 && selCount < rows_m5.length;
+  }
 }
 
 function getRowData(id){
@@ -3997,33 +4082,39 @@ function renderTable(){
   tbody.innerHTML = '';
   rows_m5.forEach(function(r, idx){
     var tr = document.createElement('tr');
+    if(selectedIds.has(r.id)) tr.className = 'selected';
     var gradeOpts = GRADES.map(function(g){ return '<option'+(r.grade===g?' selected':'')+'>'+g+'</option>'; }).join('');
+    var checked = selectedIds.has(r.id) ? ' checked' : '';
     tr.innerHTML =
+      '<td style="text-align:center;"><input type="checkbox" onchange="onCheckRow('+r.id+',this.checked)"'+checked+'></td>'+
       '<td style="text-align:center;color:var(--ink-soft);">'+(idx+1)+'</td>'+
       '<td><select id="grade_'+r.id+'" onchange="onFieldChange('+r.id+')">'+gradeOpts+'</select></td>'+
       '<td><input type="text" id="name_'+r.id+'" value="'+escHtml(r.name)+'" placeholder="姓名" onchange="onFieldChange('+r.id+')"></td>'+
       '<td><input type="text" id="match_'+r.id+'" value="'+escHtml(r.match)+'" placeholder="比賽名稱" onchange="onFieldChange('+r.id+')"></td>'+
       '<td><input type="date" id="start_'+r.id+'" value="'+r.start+'" onchange="onFieldChange('+r.id+')"></td>'+
       '<td><input type="date" id="end_'+r.id+'" value="'+r.end+'" onchange="onFieldChange('+r.id+')"></td>'+
-      '<td><button class="del-btn" onclick="deleteRow('+r.id+')">✕</button></td>';
+      '<td><button class="del-btn" onclick="deleteRow('+r.id+')" title="刪除此列">✕</button></td>';
     tbody.appendChild(tr);
   });
   document.getElementById('m5_rowCount').textContent = '目前 '+rows_m5.length+' 筆';
+  updateSelUI();
 }
 
 function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-/* ── 匯入 ── */
-function togglePasteArea(){
-  var el = document.getElementById('m5_pasteArea');
-  el.style.display = el.style.display==='none'?'block':'none';
-}
-
-// 解析單一日期字串，回傳 ISO 格式 (yyyy-mm-dd)
+/* ══════════════════════════════
+   日期解析
+══════════════════════════════ */
 function parseDate(s){
+  if(s===null||s===undefined) return '';
+  // 若已是 JS Date（SheetJS 回傳數值）
+  if(typeof s === 'number'){
+    var d = XLSX.SSF.parse_date_code(s);
+    if(d) return d.y+'-'+String(d.m).padStart(2,'0')+'-'+String(d.d).padStart(2,'0');
+  }
+  s = String(s).trim();
   if(!s) return '';
-  s = s.trim();
-  // 113/09/30 → 民國，轉西元
+  // 113/09/30 → 民國
   var m = s.match(/^(\d{2,3})\/(\d{1,2})\/(\d{1,2})$/);
   if(m){
     var y = parseInt(m[1]);
@@ -4036,30 +4127,182 @@ function parseDate(s){
   return s;
 }
 
-// 解析日期區間字串，回傳 [startISO, endISO]
-// 支援：2025/10/7-10/9、113/10/7-10/9、2025/10/7~2025/10/9 等
 function parseDateRange(s){
   if(!s) return ['',''];
-  s = s.trim();
-
-  // 先嘗試 "年份/月/日-月/日" 或 "年份/月/日~月/日"（結束日省略年份）
+  s = String(s).trim();
+  // 2025/10/7-10/9 or 113/10/7-10/9（結束日省略年份）
   var m = s.match(/^(\d{2,4})\/(\d{1,2})\/(\d{1,2})\s*[-~]\s*(\d{1,2})\/(\d{1,2})$/);
   if(m){
     var y = parseInt(m[1]);
     if(y < 1000) y += 1911;
     var ys = String(y);
-    var start = ys+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
-    var end   = ys+'-'+m[4].padStart(2,'0')+'-'+m[5].padStart(2,'0');
-    return [start, end];
+    return [ys+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0'),
+            ys+'-'+m[4].padStart(2,'0')+'-'+m[5].padStart(2,'0')];
   }
-
-  // "年份/月/日-年份/月/日" 或 "年份-月-日~年份-月-日"（完整區間）
+  // 完整區間：2025/10/7-2025/10/9
   m = s.match(/^(\d{2,4}[\/\-]\d{1,2}[\/\-]\d{1,2})\s*[-~]\s*(\d{2,4}[\/\-]\d{1,2}[\/\-]\d{1,2})$/);
   if(m) return [parseDate(m[1]), parseDate(m[2])];
-
-  // 只有單一日期
+  // 單一日期
   var single = parseDate(s);
   return [single, single];
+}
+
+/* ══════════════════════════════
+   欄位自動辨識
+══════════════════════════════ */
+var COL_PATTERNS = {
+  grade: /年級|grade/i,
+  name:  /姓名|學生|name/i,
+  match: /比賽|賽事|活動|競賽|match|event/i,
+  start: /開始|起始|起|from|start/i,
+  end:   /結束|終止|至|to|end/i,
+  range: /日期|期間|區間|date|period/i,
+};
+
+// 從標題列偵測欄位對應，回傳 {grade,name,match,start,end,range} 各為欄索引或 -1
+function detectColumns(headers){
+  var map = { grade:-1, name:-1, match:-1, start:-1, end:-1, range:-1 };
+  headers.forEach(function(h, i){
+    var s = String(h||'').trim();
+    Object.keys(COL_PATTERNS).forEach(function(key){
+      if(map[key]===-1 && COL_PATTERNS[key].test(s)) map[key] = i;
+    });
+  });
+  return map;
+}
+
+// 判斷第一列是否是標題（若含中文欄位名稱就算是）
+function isHeaderRow(row){
+  var headerKeywords = /年級|姓名|比賽|日期|開始|結束|學生|活動|項目/;
+  return row.some(function(c){ return headerKeywords.test(String(c||'')); });
+}
+
+function formatColumnMap(map, headers){
+  var parts = [];
+  var labels = { grade:'年級', name:'姓名', match:'比賽名稱', start:'開始日期', end:'結束日期', range:'日期區間' };
+  Object.keys(labels).forEach(function(k){
+    if(map[k]>=0) parts.push(labels[k]+'→「'+String(headers[map[k]]||'').trim()+'」欄');
+  });
+  return parts.length ? '自動辨識：'+parts.join('、') : '';
+}
+
+/* ══════════════════════════════
+   Excel 檔案匯入
+══════════════════════════════ */
+function onDragOver(e){ e.preventDefault(); document.getElementById('dropZone').classList.add('dragover'); }
+function onDragLeave(e){ document.getElementById('dropZone').classList.remove('dragover'); }
+function onDrop(e){
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('dragover');
+  var file = e.dataTransfer.files[0];
+  if(file) processFile(file);
+}
+function onFileChange(e){ var f = e.target.files[0]; if(f) processFile(f); e.target.value=''; }
+
+function processFile(file){
+  m5_setStatus('讀取檔案中…');
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var wb = XLSX.read(e.target.result, { type:'array', cellDates:false });
+      workbookCache = wb;
+      var sheets = wb.SheetNames;
+      var picker = document.getElementById('sheetPicker');
+      var sel = document.getElementById('sheetSelect');
+      sel.innerHTML = sheets.map(function(s,i){ return '<option value="'+i+'">'+s+'</option>'; }).join('');
+      picker.style.display = sheets.length > 1 ? 'block' : 'none';
+      importSheet(wb, sheets[0]);
+    } catch(err){
+      m5_setStatus('讀取失敗：'+err.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function onSheetChange(){
+  if(!workbookCache) return;
+  var idx = parseInt(document.getElementById('sheetSelect').value);
+  importSheet(workbookCache, workbookCache.SheetNames[idx]);
+}
+
+function importSheet(wb, sheetName){
+  var ws = wb.Sheets[sheetName];
+  var data = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+  if(!data || data.length === 0){ m5_setStatus('工作表無資料', 'error'); return; }
+
+  var startRow = 0;
+  var map = null;
+  var headers = [];
+
+  // 找標題列（掃描前 5 列）
+  for(var i=0; i<Math.min(5,data.length); i++){
+    if(isHeaderRow(data[i])){
+      headers = data[i];
+      map = detectColumns(headers);
+      startRow = i + 1;
+      break;
+    }
+  }
+
+  // 沒找到標題，用預設順序
+  if(!map){
+    // 預設：年級, 姓名, 比賽名稱, 開始日期, 結束日期
+    map = { grade:0, name:1, match:2, start:3, end:4, range:-1 };
+    headers = ['年級','姓名','比賽名稱','開始日期','結束日期'];
+    startRow = 0;
+  }
+
+  // 顯示欄位對應說明
+  var mapInfo = document.getElementById('colMapInfo');
+  var infoText = formatColumnMap(map, headers);
+  if(infoText){ mapInfo.textContent = infoText; mapInfo.style.display='block'; }
+  else { mapInfo.style.display='none'; }
+
+  var count = 0;
+  for(var r=startRow; r<data.length; r++){
+    var row = data[r];
+    if(row.every(function(c){ return !String(c||'').trim(); })) continue; // 空列跳過
+
+    var grade = map.grade>=0 ? String(row[map.grade]||'').trim() : '';
+    var name  = map.name>=0  ? String(row[map.name]||'').trim()  : '';
+    var match = map.match>=0 ? String(row[map.match]||'').trim() : '';
+
+    var start='', end='';
+    if(map.range>=0 && (map.start<0||map.end<0)){
+      // 日期在同一欄（區間）
+      var rangeVal = row[map.range];
+      var rng = parseDateRange(String(rangeVal||''));
+      start = rng[0]; end = rng[1];
+    } else {
+      if(map.start>=0){
+        var sv = row[map.start];
+        // SheetJS 有時回傳日期序號（數字）
+        if(typeof sv==='number') start = parseDate(sv);
+        else {
+          var rng2 = parseDateRange(String(sv||''));
+          if(rng2[1]&&!row[map.end]) { start=rng2[0]; end=rng2[1]; }
+          else start = parseDate(String(sv||''));
+        }
+      }
+      if(map.end>=0 && !end) end = parseDate(typeof row[map.end]==='number'?row[map.end]:String(row[map.end]||''));
+    }
+
+    if(grade && !grade.includes('年級') && /^\d+$/.test(grade)) grade = grade + '年級';
+    if(!GRADES.includes(grade)) grade = GRADES[0];
+    if(!name) continue;
+    addRow({ grade, name, match, start, end });
+    count++;
+  }
+  updatePreview();
+  m5_setStatus('已從 Excel 匯入 '+count+' 筆', 'ok');
+}
+
+/* ══════════════════════════════
+   貼上匯入
+══════════════════════════════ */
+function togglePasteArea(){
+  var el = document.getElementById('m5_pasteArea');
+  el.style.display = el.style.display==='none'?'block':'none';
 }
 
 function importFromPaste(){
@@ -4067,39 +4310,55 @@ function importFromPaste(){
   if(!raw){ alert('請先貼入資料'); return; }
   var lines = raw.split('\n');
   var count = 0;
-  lines.forEach(function(line){
+  var map = null;
+  var startIdx = 0;
+
+  // 偵測第一列是否為標題
+  var firstCols = lines[0].split('\t');
+  if(isHeaderRow(firstCols)){
+    map = detectColumns(firstCols);
+    startIdx = 1;
+  } else {
+    map = { grade:0, name:1, match:2, start:3, end:4, range:-1 };
+  }
+
+  lines.slice(startIdx).forEach(function(line){
     var cols = line.split('\t');
     if(cols.length < 2) return;
-    // 欄位：年級, 姓名, 比賽名稱, 開始日期, 結束日期
-    // 也支援 4 欄（日期區間在同一格，如 2025/10/7-10/9）
-    var grade = (cols[0]||'').trim();
-    var name  = (cols[1]||'').trim();
-    var match = (cols[2]||'').trim();
-    var start, end;
-    if(cols.length >= 5 && (cols[4]||'').trim()){
-      start = parseDate(cols[3]);
-      end   = parseDate(cols[4]);
-    } else {
-      var range = parseDateRange(cols[3]);
-      start = range[0];
-      end   = range[1];
+    var grade = map.grade>=0 ? (cols[map.grade]||'').trim() : '';
+    var name  = map.name>=0  ? (cols[map.name]||'').trim()  : '';
+    var match = map.match>=0 ? (cols[map.match]||'').trim() : '';
+    var start='', end='';
+
+    if(map.start>=0){
+      var sv = (cols[map.start]||'').trim();
+      var endRaw = map.end>=0 ? (cols[map.end]||'').trim() : '';
+      if(endRaw){
+        start = parseDate(sv);
+        end   = parseDate(endRaw);
+      } else {
+        var rng = parseDateRange(sv);
+        start = rng[0]; end = rng[1];
+      }
     }
-    // 年級格式化
-    if(grade && !grade.includes('年級')) grade = grade + '年級';
+
+    if(grade && !grade.includes('年級') && /^\d+$/.test(grade)) grade = grade + '年級';
     if(!GRADES.includes(grade)) grade = GRADES[0];
     if(!name) return;
     addRow({ grade, name, match, start, end });
     count++;
   });
+
   document.getElementById('m5_pasteInput').value = '';
   document.getElementById('m5_pasteArea').style.display = 'none';
   updatePreview();
   m5_setStatus('已匯入 '+count+' 筆', 'ok');
 }
 
-/* ── 預覽 ── */
+/* ══════════════════════════════
+   預覽
+══════════════════════════════ */
 function getGrouped(){
-  // 先同步所有欄位值
   rows_m5.forEach(function(r){ getRowData(r.id); });
   var groups = {};
   rows_m5.forEach(function(r){
@@ -4140,14 +4399,18 @@ function formatDateROC(s){
   return (parseInt(m[1])-1911)+'/'+m[2]+'/'+m[3];
 }
 
-/* ── 狀態 ── */
+/* ══════════════════════════════
+   狀態
+══════════════════════════════ */
 function m5_setStatus(msg, type){
   var el = document.getElementById('m5_statusMsg');
   el.textContent = msg;
   el.className = 'status-msg'+(type?' '+type:'');
 }
 
-/* ── Word 產生 ── */
+/* ══════════════════════════════
+   Word 產生
+══════════════════════════════ */
 function m5_escXml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;'); }
 
 function m5_cellXml(content, w, opts){
@@ -4183,27 +4446,20 @@ async function m5_generateDocx(){
   btn.disabled = true;
   m5_setStatus('產生中，請稍候…');
 
-  // Page: A4, margin top/bottom 1134, left/right 1134 (2cm)
   var PAGE_W = 11906, PAGE_H = 16838;
   var MARGIN = 1134;
-  var CONTENT_W = PAGE_W - MARGIN*2; // 9638
+  var CONTENT_W = PAGE_W - MARGIN*2;
 
-  // Column widths (sum = CONTENT_W = 9638)
   var COL = [560, 1400, 1400, 4278, 1000, 1000];
-  // 項次, 姓名, 運動項目, 比賽名稱, 開始日期, 結束日期
-
   var BDR_H = '<w:top w:val="single" w:sz="12" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="12" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="12" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="12" w:space="0" w:color="000000"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="000000"/>';
-
   var gridCols = COL.map(function(w){ return '<w:gridCol w:w="'+w+'"/>'; }).join('');
 
   function makeTable(list){
-    // 標頭
     var headers = ['項次','學生姓名','運動項目','比賽名稱','開始日期','結束日期'];
     var hCells = headers.map(function(h,i){
       return m5_cellXml(paraXml(h,{bold:true,sz:24}), COL[i], {shading:'D9D9D9', vAlign:'center'});
     }).join('');
     var headRow = '<w:tr><w:trPr><w:jc w:val="center"/></w:trPr>'+hCells+'</w:tr>';
-
     var dataRows = list.map(function(r, idx){
       var cells = [
         m5_cellXml(paraXml(String(idx+1)), COL[0]),
@@ -4215,19 +4471,12 @@ async function m5_generateDocx(){
       ].join('');
       return '<w:tr><w:trPr><w:jc w:val="center"/></w:trPr>'+cells+'</w:tr>';
     }).join('');
-
     return '<w:tbl>'+
-      '<w:tblPr>'+
-        '<w:tblW w:w="'+CONTENT_W+'" w:type="dxa"/>'+
-        '<w:jc w:val="center"/>'+
-        '<w:tblBorders>'+BDR_H+'</w:tblBorders>'+
-      '</w:tblPr>'+
+      '<w:tblPr><w:tblW w:w="'+CONTENT_W+'" w:type="dxa"/><w:jc w:val="center"/><w:tblBorders>'+BDR_H+'</w:tblBorders></w:tblPr>'+
       '<w:tblGrid>'+gridCols+'</w:tblGrid>'+
-      headRow + dataRows +
-      '</w:tbl>';
+      headRow + dataRows + '</w:tbl>';
   }
 
-  // 段落：標題行
   function titlePara(grade){
     var font = '<w:rFonts w:ascii="Times New Roman" w:eastAsia="標楷體" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>';
     var sz = '<w:sz w:val="32"/><w:szCs w:val="32"/>';
@@ -4236,9 +4485,7 @@ async function m5_generateDocx(){
       '<w:r><w:rPr>'+font+sz+'</w:rPr><w:t xml:space="preserve">'+m5_escXml(text)+'</w:t></w:r></w:p>';
   }
 
-  function pageBreakPara(){
-    return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
-  }
+  function pageBreakPara(){ return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>'; }
 
   var bodyParts = [];
   gradeKeys.forEach(function(grade, i){
@@ -4254,42 +4501,14 @@ async function m5_generateDocx(){
     '</w:sectPr>';
 
   var documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-    '<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas"'+
-    ' xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"'+
-    ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'+
-    ' xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"'+
-    ' xmlns:v="urn:schemas-microsoft-com:vml"'+
-    ' xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"'+
-    ' xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'+
-    ' xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"'+
-    ' xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml"'+
-    ' mc:Ignorable="w14 w15">'+
+    '<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'+
+    ' xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+
     '<w:body>'+bodyXml+'</w:body></w:document>';
 
-  var relsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
-    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'+
-    '</Relationships>';
-
-  var stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-    '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+
-    '<w:docDefaults><w:rPrDefault><w:rPr>'+
-    '<w:rFonts w:ascii="Times New Roman" w:eastAsia="標楷體" w:hAnsi="Times New Roman" w:cs="Times New Roman"/>'+
-    '<w:sz w:val="24"/><w:szCs w:val="24"/>'+
-    '</w:rPr></w:rPrDefault></w:docDefaults></w:styles>';
-
-  var contentTypesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
-    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
-    '<Default Extension="xml" ContentType="application/xml"/>'+
-    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'+
-    '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'+
-    '</Types>';
-
-  var rootRelsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
-    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'+
-    '</Relationships>';
+  var relsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+  var stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="標楷體" w:hAnsi="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr></w:rPrDefault></w:docDefaults></w:styles>';
+  var contentTypesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>';
+  var rootRelsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
 
   try{
     var zip = new JSZip();
@@ -4299,8 +4518,7 @@ async function m5_generateDocx(){
     zip.file('word/_rels/document.xml.rels', relsXml);
     zip.file('word/styles.xml', stylesXml);
     var blob = await zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
-    var fileName = yearNum+'學年度_'+sport+'_公假統計表.docx';
-    saveAs(blob, fileName);
+    saveAs(blob, yearNum+'學年度_'+sport+'_公假統計表.docx');
     m5_setStatus('✅ 下載成功！', 'ok');
   } catch(e){
     m5_setStatus('產生失敗：'+e.message, 'error');
