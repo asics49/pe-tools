@@ -26,6 +26,7 @@ FILES = [
     ('m3b', '模組三B', '開課課程一覽',   'course-overview.html'),
     ('m4',  '模組四',  '職業試探活動',   'career-activity.html'),
     ('m5',  '模組五',  '公假統計表',     'leave-record.html'),
+    ('m6',  '模組六',  '成績登錄',       'grade-record.html'),
 ]
 
 OUTPUT = 'pe-class-tools.html'
@@ -49,6 +50,9 @@ CONFLICT_IDS = [
     'leaveYear', 'leaveSport', 'leaveTableBody', 'rowCount',
     'previewCard', 'previewContent', 'pasteArea', 'pasteInput',
     'downloadBtn', 'statusMsg',
+    'importHint', 'importFile', 'previewArea', 'planYear',
+    'checkAll', 'deleteSel', 'selCount', 'addForm', 'newName', 'newGrade',
+    'studentList', 'countHint', 'customYear', 'customYearWrap', 'pdfFiles',
 ]
 
 # JS variable names that conflict between specific modules
@@ -64,6 +68,7 @@ CONFLICT_VARS = {
             'PAGE_W': 'PAGE_W_m4', 'PAGE_H': 'PAGE_H_m4',
             'nextPicId': 'nextPicId_m4', 'nextActId': 'nextActId_m4'},
     'm5':  {'rows': 'rows_m5', 'nextId': 'nextId_m5'},
+    'm6':  {'students': 'students_m6', 'nextId': 'nextId_m6', 'FIELDS': 'FIELDS_m6', 'EVALS': 'EVALS_m6'},
     # 新增模組時，在這裡加上該模組的衝突變數：
 }
 
@@ -210,6 +215,7 @@ def build():
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
 *{{box-sizing:border-box;}}
 body{{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;background:#F0EDE6;}}

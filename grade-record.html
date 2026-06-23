@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>成績登錄</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{
+  --paper:#F6F4EE;--card:#FFF;--ink:#2B2B28;--ink-soft:#6B675F;
+  --navy:#223A52;--navy-s:#3E5872;--maroon:#8B2E2E;--line:#E1DCCF;--line-s:#C8C2B2;
+  --e1:#3E5872;--e2:#4A6830;--e3:#7A4F2A;--e4:#5B4580;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",-apple-system,sans-serif;background:var(--paper);color:var(--ink);}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 16px 120px;}
+.app-header{margin-bottom:20px;}
+.eyebrow{font-size:12px;letter-spacing:.18em;color:var(--maroon);font-weight:700;margin:0 0 6px;}
+.app-header h1{font-size:21px;margin:0;color:var(--navy);border-bottom:3px solid var(--maroon);padding-bottom:9px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px;}
+.card h2{font-size:14px;margin:0 0 12px;color:var(--navy);display:flex;align-items:center;gap:8px;}
+.card h2 .num{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;}
+label.fl{display:block;font-size:12px;color:var(--ink-soft);margin-bottom:3px;font-weight:600;}
+input,select{border:1px solid var(--line-s);border-radius:7px;padding:6px 10px;font-size:13px;font-family:inherit;background:#FCFBF8;color:var(--ink);}
+input:focus,select:focus{outline:2px solid var(--navy-s);border-color:var(--navy-s);}
+
+/* import box */
+.import-box{background:#F5F2EC;border:1.5px dashed var(--line-s);border-radius:8px;padding:12px;margin-bottom:12px;}
+.import-box p{margin:0 0 9px;font-size:13px;color:var(--ink-soft);}
+.import-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;}
+.import-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;}
+.import-hint{font-size:12px;color:var(--ink-soft);min-height:18px;}
+
+/* pdf drop zone */
+.pdf-drop{border:2px dashed var(--line-s);border-radius:8px;padding:16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;background:#FCFBF8;}
+.pdf-drop:hover,.pdf-drop.drag{border-color:var(--navy-s);background:#EEF2F6;}
+.pdf-drop-icon{font-size:22px;margin-bottom:4px;}
+.pdf-drop-text{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:5px;}
+.pdf-drop-sub{font-size:11px;color:var(--ink-soft);line-height:2;}
+.tag{display:inline-block;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;color:#fff;margin:0 2px;}
+.tag.e1{background:var(--e1);}.tag.e2{background:var(--e2);}.tag.e3{background:var(--e3);}.tag.e4{background:var(--e4);}
+.ibtn{border-radius:7px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;border:1.5px solid;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.ibtn.e1{border-color:var(--e1);color:var(--e1);background:#EEF2F6;}
+.ibtn.e2{border-color:var(--e2);color:var(--e2);background:#EEF5EE;}
+.ibtn.e3{border-color:var(--e3);color:var(--e3);background:#F5EFE8;}
+.ibtn.e4{border-color:var(--e4);color:var(--e4);background:#F0EEF5;}
+.ibtn.outline{border-color:var(--navy-s);color:var(--navy);background:#fff;}
+.ibtn:hover{opacity:.85;}
+
+/* bulk bar */
+.bulk-bar{display:flex;align-items:center;gap:10px;padding:7px 10px;background:#F5F2EC;border-radius:8px;margin-bottom:8px;}
+.bulk-bar label{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;user-select:none;}
+.bulk-bar input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--navy);}
+.bulk-sep{flex:1;}
+.danger-btn{border:1.5px solid var(--maroon);color:var(--maroon);background:#FDF0F0;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;}
+.danger-btn:hover{background:#FADDDD;}
+
+/* student cards */
+.student-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px;}
+.s-card{border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+.s-head{display:flex;align-items:center;gap:7px;padding:9px 12px;background:#F5F2EC;cursor:pointer;user-select:none;}
+.s-head:hover{background:#ECE8DF;}
+.s-chk{cursor:pointer;width:15px;height:15px;accent-color:var(--navy);flex-shrink:0;}
+.s-idx{font-size:12px;color:var(--ink-soft);min-width:18px;}
+.s-name{font-weight:700;font-size:14px;color:var(--navy);flex:1;}
+.s-grade{font-size:12px;color:var(--ink-soft);margin-right:4px;}
+.s-toggle{font-size:11px;color:var(--ink-soft);transition:transform .18s;}
+.s-toggle.open{transform:rotate(180deg);}
+.s-del{border:none;background:none;color:var(--maroon);font-size:15px;cursor:pointer;padding:2px 5px;border-radius:4px;}
+.s-del:hover{background:#FDF0F0;}
+
+/* score area */
+.s-body{display:none;padding:12px;}
+.s-body.open{display:block;}
+
+/* eval tabs within student */
+.eval-tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap;}
+.eval-tab{border:1.5px solid;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;background:transparent;opacity:.5;}
+.eval-tab.active{opacity:1;color:#fff;}
+.eval-tab.e1{border-color:var(--e1);color:var(--e1);}
+.eval-tab.e2{border-color:var(--e2);color:var(--e2);}
+.eval-tab.e3{border-color:var(--e3);color:var(--e3);}
+.eval-tab.e4{border-color:var(--e4);color:var(--e4);}
+.eval-tab.active.e1{background:var(--e1);}
+.eval-tab.active.e2{background:var(--e2);}
+.eval-tab.active.e3{background:var(--e3);}
+.eval-tab.active.e4{background:var(--e4);}
+
+.score-panel{display:none;}
+.score-panel.active{display:block;}
+.score-fields{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+.sf-label{font-size:11px;color:var(--ink-soft);text-align:center;margin-bottom:3px;font-weight:600;}
+.sf-input{text-align:center;padding:6px 2px;font-size:14px;width:100%;}
+
+/* add form */
+.add-btn{width:100%;border:1.5px dashed var(--navy-s);color:var(--navy);background:#EEF2F6;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;}
+.add-btn:hover{background:#E3E9EF;}
+.add-form{display:none;border:1px solid var(--line);border-radius:8px;padding:12px;margin-top:8px;background:#FCFBF8;}
+.add-form.show{display:block;}
+.add-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;}
+.confirm-btn{background:var(--navy);color:#fff;border:none;border-radius:7px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+
+/* preview */
+.preview-wrap{overflow-x:auto;}
+table.prev{border-collapse:collapse;font-size:11px;white-space:nowrap;}
+table.prev th,table.prev td{border:1px solid #C8C2B2;padding:4px 7px;text-align:center;}
+table.prev th{background:var(--navy);color:#fff;font-weight:700;}
+table.prev th.e1{background:var(--e1);}
+table.prev th.e2{background:var(--e2);}
+table.prev th.e3{background:var(--e3);}
+table.prev th.e4{background:var(--e4);}
+table.prev td.nm{text-align:left;font-weight:600;}
+table.prev td.mt{color:#ccc;}
+
+/* bottom bar */
+.bottom-bar{position:fixed;left:0;right:0;bottom:0;background:rgba(246,244,238,.95);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:10px 16px;z-index:10;}
+.bottom-bar .inner{max-width:1100px;margin:0 auto;display:flex;gap:10px;align-items:center;}
+.primary-btn{flex:1;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
+.primary-btn:hover{background:var(--navy-s);}
+.hint{font-size:12px;color:var(--ink-soft);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="app-header">
+  <div class="eyebrow">學習輔導補助</div>
+  <h1>學生成績登錄</h1>
+</div>
+
+<!-- 1. 設定 -->
+<div class="card">
+  <h2><span class="num">1</span>基本設定</h2>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <div>
+      <label class="fl">補助計畫學年度</label>
+      <select id="planYear" style="max-width:140px" onchange="onYearChange(this)">
+        <option value="114" selected>114學年度</option>
+        <option value="115">115學年度</option>
+        <option value="116">116學年度</option>
+        <option value="__other__">其他（自行填入）</option>
+      </select>
+    </div>
+    <div id="customYearWrap" style="display:none">
+      <label class="fl">自填學年度</label>
+      <input type="text" id="customYear" placeholder="例：113" style="max-width:100px" oninput="renderPreview()">
+    </div>
+  </div>
+  <div style="margin-top:10px;font-size:12px;color:var(--ink-soft);line-height:2;">
+    匯出欄位：
+    <span style="color:var(--e1);font-weight:700;">上學期期中</span>
+    <span style="color:var(--e2);font-weight:700;">上學期期末</span>
+    <span style="color:var(--e3);font-weight:700;">下學期期中</span>
+    <span style="color:var(--e4);font-weight:700;">下學期期末</span>
+    （各含：國文、英文、數學、社會、自然、班名次、年名次）
+  </div>
+</div>
+
+<!-- 2. 學生成績 -->
+<div class="card">
+  <h2><span class="num">2</span>學生成績</h2>
+
+  <div class="import-box">
+    <p>拖放或選擇多個 PDF，系統依檔名自動判斷期別；也可匯入 Excel 名單。</p>
+    <div id="pdfDrop" class="pdf-drop" onclick="document.getElementById('pdfFiles').click()"
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="event.preventDefault();this.classList.remove('drag');importPdfFiles(event.dataTransfer.files)">
+      <div class="pdf-drop-icon">📂</div>
+      <div class="pdf-drop-text">點擊選擇 PDF 或拖放到此處</div>
+      <div class="pdf-drop-sub">可同時選取多個 PDF，依檔名判別：<br>
+        <span class="tag e1">上+期中</span>→上學期期中
+        <span class="tag e2">上+期末</span>→上學期期末
+        <span class="tag e3">下+期中</span>→下學期期中
+        <span class="tag e4">下+期末</span>→下學期期末
+      </div>
+    </div>
+    <input type="file" id="pdfFiles" accept=".pdf" multiple style="display:none" onchange="importPdfFiles(this.files);this.value=''">
+    <div class="import-row" style="margin-top:8px">
+      <button class="ibtn outline" onclick="document.getElementById('importFile').click()">📂 Excel 匯入名單</button>
+      <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
+      <button class="ibtn outline" onclick="downloadTemplate()">⬇ 下載名單範本</button>
+    </div>
+    <div class="import-hint" id="importHint"></div>
+  </div>
+
+  <div class="bulk-bar">
+    <label><input type="checkbox" id="checkAll" onchange="toggleSelectAll(this.checked)"> 全選</label>
+    <span class="bulk-sep"></span>
+    <button class="danger-btn" id="deleteSel" style="display:none" onclick="deleteSelected()">
+      🗑 刪除選取（<span id="selCount">0</span> 筆）
+    </button>
+  </div>
+
+  <div id="studentList" class="student-list"></div>
+
+  <button class="add-btn" onclick="toggleAddForm()">＋ 手動新增學生</button>
+  <div class="add-form" id="addForm">
+    <div class="add-row">
+      <div>
+        <label class="fl">學生姓名</label>
+        <input type="text" id="newName" placeholder="姓名" onkeydown="if(event.key==='Enter')addStudent()">
+      </div>
+      <div>
+        <label class="fl">年級</label>
+        <select id="newGrade">
+          <option value="5">五年級</option>
+          <option value="6">六年級</option>
+        </select>
+      </div>
+      <button class="confirm-btn" onclick="addStudent()">新增</button>
+    </div>
+  </div>
+</div>
+
+<!-- 3. 預覽 -->
+<div class="card">
+  <h2><span class="num">3</span>預覽</h2>
+  <div class="preview-wrap">
+    <div id="previewArea"><p style="color:var(--ink-soft);font-size:13px;">尚無資料</p></div>
+  </div>
+</div>
+
+</div>
+
+<div class="bottom-bar">
+  <div class="inner">
+    <span class="hint" id="countHint">共 0 位學生</span>
+    <button class="primary-btn" onclick="downloadExcel()">⬇ 下載 Excel</button>
+  </div>
+</div>
+
+<script>
+const FIELDS = [
+  {f:'ch',   label:'國文'},
+  {f:'en',   label:'英文'},
+  {f:'math', label:'數學'},
+  {f:'soc',  label:'社會'},
+  {f:'sci',  label:'自然'},
+  {f:'cr',   label:'班名次'},
+  {f:'gr',   label:'年名次'},
+];
+const EVALS = [
+  {key:'s1m', label:'上學期期中評量', cls:'e1'},
+  {key:'s1f', label:'上學期期末評量', cls:'e2'},
+  {key:'s2m', label:'下學期期中評量', cls:'e3'},
+  {key:'s2f', label:'下學期期末評量', cls:'e4'},
+];
+
+let students = [];
+let nextId = 1;
+
+function emptyScores(){ return {ch:'',en:'',math:'',soc:'',sci:'',cr:'',gr:''}; }
+function newStudent(name, grade){
+  return {id:nextId++, name, grade, _open:false, _checked:false,
+    s1m:emptyScores(), s1f:emptyScores(), s2m:emptyScores(), s2f:emptyScores()};
+}
+
+/* ── year helpers ── */
+function onYearChange(sel){
+  document.getElementById('customYearWrap').style.display = sel.value==='__other__' ? '' : 'none';
+  renderPreview();
+}
+function getYear(){
+  const v = document.getElementById('planYear').value;
+  if(v==='__other__') return document.getElementById('customYear').value.trim() || '???';
+  return v;
+}
+
+/* ── PDF filename → evalKey ── */
+function detectEvalKey(filename){
+  const n = filename;
+  const isUp = /上/.test(n), isDown = /下/.test(n);
+  const isMid = /期中/.test(n), isFinal = /期末/.test(n);
+  if(isUp && isMid)   return 's1m';
+  if(isUp && isFinal) return 's1f';
+  if(isDown && isMid) return 's2m';
+  if(isDown && isFinal) return 's2f';
+  return null;
+}
+
+/* ── bulk select ── */
+function toggleSelectAll(v){ students.forEach(s=>s._checked=v); renderList(); updateBulk(); }
+function onCheck(id, v){
+  students.find(x=>x.id===id)._checked=v;
+  updateBulk();
+  document.getElementById('checkAll').checked = students.length>0 && students.every(s=>s._checked);
+}
+function updateBulk(){
+  const n=students.filter(s=>s._checked).length;
+  document.getElementById('deleteSel').style.display=n>0?'':'none';
+  document.getElementById('selCount').textContent=n;
+  document.getElementById('checkAll').checked=students.length>0 && n===students.length;
+}
+function deleteSelected(){ students=students.filter(s=>!s._checked); updateBulk(); renderList(); renderPreview(); }
+
+/* ── add / delete ── */
+function toggleAddForm(){
+  const f=document.getElementById('addForm'); f.classList.toggle('show');
+  if(f.classList.contains('show')) document.getElementById('newName').focus();
+}
+function addStudent(){
+  const name=document.getElementById('newName').value.trim();
+  if(!name){alert('請輸入姓名');return;}
+  students.push(newStudent(name, document.getElementById('newGrade').value));
+  document.getElementById('newName').value='';
+  document.getElementById('newName').focus();
+  renderList(); renderPreview();
+}
+function deleteStudent(id){ students=students.filter(s=>s.id!==id); updateBulk(); renderList(); renderPreview(); }
+function toggleBody(id){
+  const s=students.find(x=>x.id===id); if(!s) return;
+  s._open=!s._open;
+  document.getElementById('sb-'+id).classList.toggle('open');
+  document.getElementById('ti-'+id).classList.toggle('open');
+}
+function switchEvalTab(sid, key){
+  EVALS.forEach(e=>{
+    document.getElementById('sp-'+sid+'-'+e.key).classList.toggle('active', e.key===key);
+    document.getElementById('st-'+sid+'-'+e.key).classList.toggle('active', e.key===key);
+  });
+}
+function setScore(id, key, f, val){ students.find(x=>x.id===id)[key][f]=val; renderPreview(); }
+
+/* ── render ── */
+function renderList(){
+  const el=document.getElementById('studentList');
+  document.getElementById('countHint').textContent='共 '+students.length+' 位學生';
+  if(!students.length){el.innerHTML='';return;}
+  el.innerHTML=students.map((s,i)=>{
+    const tabs=EVALS.map(e=>`<button id="st-${s.id}-${e.key}" class="eval-tab ${e.cls}${e.key==='s1m'?' active':''}" onclick="event.stopPropagation();switchEvalTab(${s.id},'${e.key}')">${e.label}</button>`).join('');
+    const panels=EVALS.map(e=>`<div id="sp-${s.id}-${e.key}" class="score-panel${e.key==='s1m'?' active':''}"><div class="score-fields">${FIELDS.map(({f,label})=>`<div><div class="sf-label">${label}</div><input class="sf-input" type="text" inputmode="numeric" value="${s[e.key][f]}" oninput="setScore(${s.id},'${e.key}','${f}',this.value)"></div>`).join('')}</div></div>`).join('');
+    return `<div class="s-card"><div class="s-head" onclick="toggleBody(${s.id})"><input type="checkbox" class="s-chk" ${s._checked?'checked':''} onclick="event.stopPropagation();onCheck(${s.id},this.checked)"><span class="s-idx">${i+1}.</span><span class="s-name">${s.name}</span><span class="s-grade">${s.grade}年級</span><span class="s-toggle ${s._open?'open':''}" id="ti-${s.id}">▼</span><button class="s-del" onclick="event.stopPropagation();deleteStudent(${s.id})">✕</button></div><div class="s-body ${s._open?'open':''}" id="sb-${s.id}"><div class="eval-tabs">${tabs}</div>${panels}</div></div>`;
+  }).join('');
+}
+
+function renderPreview(){
+  const el=document.getElementById('previewArea');
+  if(!students.length){el.innerHTML='<p style="color:var(--ink-soft);font-size:13px;">尚無資料</p>';return;}
+  const y=getYear();
+  let html=`<table class="prev"><thead><tr><th rowspan="2">學生姓名</th><th rowspan="2">年級</th>${EVALS.map(e=>`<th colspan="7" class="${e.cls}">${y}學年度${e.label}</th>`).join('')}</tr><tr>${EVALS.map(e=>FIELDS.map(({label})=>`<th class="${e.cls}">${label}</th>`).join('')).join('')}</tr></thead><tbody>`;
+  students.forEach(s=>{
+    html+=`<tr><td class="nm">${s.name}</td><td>${s.grade}年</td>`;
+    EVALS.forEach(e=>FIELDS.forEach(({f})=>{ const v=s[e.key][f]; html+=v!==''?`<td>${v}</td>`:`<td class="mt">-</td>`; }));
+    html+='</tr>';
+  });
+  el.innerHTML=html+'</tbody></table>';
+}
+
+/* ── PDF import ── */
+async function parsePdfFile(file){
+  pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const ab=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:new Uint8Array(ab)}).promise;
+  const parsed=[];
+  for(let pn=1;pn<=pdf.numPages;pn++){
+    const page=await pdf.getPage(pn);
+    const content=await page.getTextContent();
+    const rowMap=new Map();
+    content.items.forEach(item=>{
+      const text=item.str.trim(); if(!text) return;
+      const y=Math.round(item.transform[5]/3)*3;
+      if(!rowMap.has(y)) rowMap.set(y,[]);
+      rowMap.get(y).push({text,x:item.transform[4]});
+    });
+    [...rowMap.entries()].sort((a,b)=>b[0]-a[0]).forEach(([,items])=>{
+      const texts=items.sort((a,b)=>a.x-b.x).map(i=>i.text);
+      if(texts.length>=8&&/^\d{3}$/.test(texts[0])&&/^\d{2}$/.test(texts[1])&&/^\d+\.\d+$/.test(texts[3])){
+        parsed.push({name:texts[2],grade:texts[0].charAt(0),ch:texts[3],soc:texts[4],sci:texts[5],math:texts[6],cr:texts[texts.length-2]});
+      }
+    });
+  }
+  return parsed;
+}
+
+async function importPdfFiles(fileList){
+  if(!fileList||!fileList.length) return;
+  const hint=document.getElementById('importHint');
+  const files=Array.from(fileList).filter(f=>f.name.toLowerCase().endsWith('.pdf'));
+  if(!files.length){hint.textContent='請選擇 PDF 檔案';return;}
+  hint.textContent='解析中（0/'+files.length+'）…';
+  const results=[];
+  for(let i=0;i<files.length;i++){
+    const file=files[i];
+    const evalKey=detectEvalKey(file.name);
+    hint.textContent='解析中（'+(i+1)+'/'+files.length+'）：'+file.name;
+    try{
+      const parsed=await parsePdfFile(file);
+      results.push({file:file.name,evalKey,parsed,ok:true});
+    }catch(e){
+      results.push({file:file.name,evalKey,parsed:[],ok:false,err:e.message});
+    }
+  }
+  let totalAdded=0,totalUpdated=0;
+  const lines=[];
+  results.forEach(r=>{
+    if(!r.ok){lines.push('❌ '+r.file+'：'+r.err);return;}
+    if(!r.evalKey){lines.push('⚠️ '+r.file+'：無法判斷期別（檔名需含上/下+期中/期末）');return;}
+    if(!r.parsed.length){lines.push('⚠️ '+r.file+'：未找到成績資料');return;}
+    let added=0,updated=0;
+    r.parsed.forEach(p=>{
+      let s=students.find(x=>x.name===p.name);
+      if(!s){s=newStudent(p.name,p.grade);students.push(s);added++;}
+      else updated++;
+      Object.assign(s[r.evalKey],{ch:p.ch,soc:p.soc,sci:p.sci,math:p.math,cr:p.cr});
+    });
+    const eLabel=EVALS.find(e=>e.key===r.evalKey).label;
+    lines.push('✅ '+eLabel+'：新增 '+added+'、更新 '+updated+' 人（'+r.file+'）');
+    totalAdded+=added; totalUpdated+=updated;
+  });
+  hint.innerHTML=lines.join('<br>');
+  renderList(); renderPreview();
+}
+
+/* ── Excel import ── */
+function importExcel(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const wb=XLSX.read(e.target.result,{type:'array'});
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
+    let added=0;
+    rows.forEach(row=>{
+      const name=String(row[0]||'').trim();
+      if(!name||name==='姓名'||name==='學生姓名') return;
+      const g=String(row[1]||'').replace(/[^0-9]/g,'')||'5';
+      students.push(newStudent(name,g)); added++;
+    });
+    document.getElementById('importHint').textContent='已匯入 '+added+' 位學生';
+    input.value=''; renderList(); renderPreview();
+  };
+  reader.readAsArrayBuffer(file);
+}
+function downloadTemplate(){
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([['姓名','年級（數字）'],['王小明',5],['李小華',6]]);
+  ws['!cols']=[{wch:12},{wch:10}];
+  XLSX.utils.book_append_sheet(wb,ws,'學生名單');
+  XLSX.writeFile(wb,'學生名單範本.xlsx');
+}
+
+/* ── Excel export ── */
+function downloadExcel(){
+  if(!students.length){alert('請先新增學生');return;}
+  const y=getYear();
+  const toNum=v=>v===''||v===undefined?'':(isNaN(+v)?v:+v);
+  const ECOLS=EVALS.length*FIELDS.length; // 28
+
+  const r1=['','',y+'學年度',...Array(ECOLS-1).fill('')];
+  const r2=['學生姓名','年級',...EVALS.flatMap(e=>[e.label,...Array(FIELDS.length-1).fill('')])];
+  const r3=['','', ...EVALS.flatMap(()=>FIELDS.map(({label})=>label))];
+  const dataRows=students.map(s=>[
+    s.name, s.grade+'年級',
+    ...EVALS.flatMap(e=>FIELDS.map(({f})=>toNum(s[e.key][f])))
+  ]);
+
+  const aoa=[r1,r2,r3,...dataRows];
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!merges']=[
+    {s:{r:0,c:2},e:{r:0,c:2+ECOLS-1}},
+    ...EVALS.map((e,i)=>({s:{r:1,c:2+i*7},e:{r:1,c:2+i*7+6}}))
+  ];
+  ws['!cols']=[{wch:12},{wch:7},...Array(ECOLS).fill({wch:7})];
+
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'成績列冊');
+  XLSX.writeFile(wb,'學習輔導補助成績登錄_'+y+'學年度.xlsx');
+}
+</script>
+</body>
+</html>
