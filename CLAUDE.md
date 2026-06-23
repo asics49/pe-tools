@@ -1,6 +1,6 @@
 # 體育班評鑑模組開發 — 專案脈絡總覽
 
-> 最後更新：2026-06-21
+> 最後更新：2026-06-24
 
 ---
 
@@ -61,6 +61,7 @@ Google Sheets（上傳記錄）
 | `pe-class-tools.html` | 6 模組合併頁，由 build.py 產生 |
 | `guide.html` | 工具使用說明網頁，含左側導覽列、折疊 Q&A、手機響應式 |
 | `leave-record.html` | m5 學生公假統計表模組原始檔 |
+| `grade-record.html` | m6 學習輔導補助成績登錄模組（已整合進 pe-class-tools.html）|
 | `build.py` | 合併腳本，偵測衝突函式並加前綴 |
 | `CHANGELOG.md` | 版本紀錄 |
 | `CLAUDE.md` | 本文件（專案脈絡） |
@@ -91,7 +92,7 @@ Google Sheets（上傳記錄）
 - `apply_renames()`：對整個模組原始碼做字串取代（含 HTML onclick 屬性）
 - 外部 CDN 腳本需加在 build.py 殼層 HTML 的 `<head>` 裡（模組的 `<script src>` 會被忽略）
 
-已加入殼層的 CDN：JSZip、FileSaver.js、SheetJS (xlsx.full.min.js)
+已加入殼層的 CDN：JSZip、FileSaver.js、SheetJS (xlsx.full.min.js)、PDF.js (3.11.174)
 
 ---
 
@@ -105,6 +106,7 @@ Google Sheets（上傳記錄）
 | m3b | 訓練計畫 | training-plan.html | 術科訓練 |
 | m4 | 學習護照 | learning-passport.html | 學生紀錄 |
 | m5 | 公假統計表 | leave-record.html | 2-1-3 田徑/足球團隊公假統計表 |
+| m6 | 成績登錄 | grade-record.html | 學習輔導補助學生成績登錄 |
 
 ---
 
@@ -132,6 +134,36 @@ FILES: ('m5', '模組五', '公假統計表', 'leave-record.html')
 CONFLICT_VARS m5: {'rows': 'rows_m5', 'nextId': 'nextId_m5'}
 SHARED_CONSTS: DEFAULT_LOGO_DATAURL, DEFAULT_LOGO_WIDTH, DEFAULT_LOGO_HEIGHT
 ```
+
+---
+
+## m6 grade-record.html 學習輔導補助成績登錄（2026-06-24 整合為 m6）
+
+### 功能
+- **基本設定**：補助計畫學年度（114 起下拉，含「其他」自行填入）
+- **4 個評量期別**：上學期期中（s1m）、上學期期末（s1f）、下學期期中（s2m）、下學期期末（s2f）
+- **PDF 批次匯入**（PDF.js）：拖放多個 PDF，依檔名自動判斷期別（上/下 + 期中/期末）
+- **Excel 匯入名單**（SheetJS）：A 欄姓名、B 欄年級；可下載名單範本
+- **手動新增**：輸入姓名 + 年級，Enter 快速新增
+- **成績輸入**：每位學生 4 組各 7 欄（國文、英文、數學、社會、自然、班名次、年名次）
+- **即時預覽**：輸入後表格即時更新
+- **Excel 輸出**（SheetJS）：3 列標題（學年度合併、4 期別分組、科目）+ 資料列
+
+### 設計決策
+- 所有學生統一顯示 4 期別欄位（不區分前後測新舊生）
+- `detectEvalKey(filename)` 依「上+期中/上+期末/下+期中/下+期末」判斷 s1m/s1f/s2m/s2f
+- SheetJS 免費版，合併儲存格可用但無法設定儲存格樣式（顏色、框線）
+
+### build.py 設定
+```python
+FILES: ('m6', '模組六', '成績登錄', 'grade-record.html')
+CONFLICT_VARS m6: {'students': 'students_m6', 'nextId': 'nextId_m6', 'FIELDS': 'FIELDS_m6', 'EVALS': 'EVALS_m6'}
+CDN 殼層：PDF.js (cdnjs 3.11.174)
+```
+
+### 已知 bug 修復記錄
+- leave-record.html 缺少 1 個 `</div>`（`.wrap` 未閉合）→ panel_m5 未正確關閉 → panel_m6 嵌套在 panel_m5 內 → m6 分頁空白
+  - **修復**：在 `</div>` (line 198) 後補一個 `</div>` 閉合 `.wrap`
 
 ---
 
@@ -191,12 +223,15 @@ SHARED_CONSTS: DEFAULT_LOGO_DATAURL, DEFAULT_LOGO_WIDTH, DEFAULT_LOGO_HEIGHT
 - [x] Drive 掃描腳本（每日自動掃描 30 個資料夾）
 - [x] guide.html 工具使用說明網頁
 - [x] m5 學生公假統計表（Excel 匯入、日期解析、全選刪除、Word 頁首 LOGO）
+- [x] **m6 grade-record.html** 學習輔導補助成績登錄（2026-06-24，4 期別、PDF 批次匯入、已整合進 pe-class-tools.html）
+- [x] pe-class-tools.html 切換分頁時同步更新 URL hash（`history.replaceState`）
 
 ### 待辦
 - [ ] **Drive 掃描權限**：需用學校帳號執行 `grantAccessToGmail`（目前掃描結果全為「無法存取資料夾」）
 - [ ] **參考資料夾權限**：`setRefFolderPermissions` 尚未執行
 - [ ] **測試版確認**：1-1 子標兩筆文件的上傳系統流程，確認後全面套用至 87 筆
 - [ ] **新年度更新腳本**：撰寫 `new-year-setup.py`
+- [ ] **m6 後續**：對照原始 Excel 範本確認輸出格式是否符合評鑑要求
 
 ---
 
@@ -210,6 +245,8 @@ SHARED_CONSTS: DEFAULT_LOGO_DATAURL, DEFAULT_LOGO_WIDTH, DEFAULT_LOGO_HEIGHT
 | Word 下載按鈕失效 | async function 未被衝突偵測抓到 | build.py 正則改為 `^(?:async\s+)?function\s+` |
 | 模組外部 CDN 不生效 | build.py 只取內聯 `<script>`，忽略 `<script src>` | CDN 加到 build.py 殼層 HTML 的 `<head>` |
 | Word 頁首圖片不顯示 | EMU→DXA 算錯（/914.4 應為 /635）；缺 jpeg content type | 修正換算；補 `[Content_Types].xml` |
+| m6 分頁空白 | leave-record.html `.wrap` 少一個 `</div>`，panel_m5 未閉合，panel_m6 被嵌套在 panel_m5 內 | 補上 `</div>` 閉合 `.wrap`（leave-record.html line 198 後）|
+| build.py `get_body` 抓到 `</head><body>` | grade-record.html `<style>` 在 `<head>` 內，`</style>` 後緊接 `</head><body>` | `get_body` 加 regex 濾除 `</head>`、`<body>`、`</body>`、`</html>` |
 
 ---
 
