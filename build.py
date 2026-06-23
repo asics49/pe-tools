@@ -93,7 +93,13 @@ def get_css(src):
 
 def get_body(src):
     m = re.search(r'</style>(.*?)<script', src, re.S)
-    return m.group(1).strip() if m else ''
+    if not m: return ''
+    body = m.group(1)
+    body = re.sub(r'</head>', '', body, flags=re.I)
+    body = re.sub(r'<body[^>]*>', '', body, flags=re.I)
+    body = re.sub(r'</body>', '', body, flags=re.I)
+    body = re.sub(r'</html>', '', body, flags=re.I)
+    return body.strip()
 
 def prefix_ids(src, mid):
     for iid in CONFLICT_IDS:
