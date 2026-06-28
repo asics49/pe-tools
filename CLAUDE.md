@@ -1,6 +1,6 @@
 # 體育班評鑑模組開發 — 專案脈絡總覽
 
-> 最後更新：2026-06-24
+> 最後更新：2026-06-28
 
 ---
 
@@ -92,7 +92,7 @@ Google Sheets（上傳記錄）
 - `apply_renames()`：對整個模組原始碼做字串取代（含 HTML onclick 屬性）
 - 外部 CDN 腳本需加在 build.py 殼層 HTML 的 `<head>` 裡（模組的 `<script src>` 會被忽略）
 
-已加入殼層的 CDN：JSZip、FileSaver.js、SheetJS (xlsx.full.min.js)、PDF.js (3.11.174)
+已加入殼層的 CDN：JSZip、FileSaver.js、SheetJS (xlsx.full.min.js)、PDF.js (3.11.174)、Chart.js (4.4.1)
 
 ---
 
@@ -107,6 +107,7 @@ Google Sheets（上傳記錄）
 | m4 | 學習護照 | learning-passport.html | 學生紀錄 |
 | m5 | 公假統計表 | leave-record.html | 2-1-3 田徑/足球團隊公假統計表 |
 | m6 | 成績登錄 | grade-record.html | 學習輔導補助學生成績登錄 |
+| m7 | 年度訓練計畫 | 年度訓練計畫表.html | 運動代表隊年度訓練計畫表 |
 
 ---
 
@@ -167,6 +168,49 @@ CDN 殼層：PDF.js (cdnjs 3.11.174)
 
 ---
 
+## m7 年度訓練計畫表（2026-06-28 整合為 m7）
+
+### 功能
+- **工具列**：縣市/學校、運動、學年度、第一週週一輸入；自動生成 52 週日期
+- **計畫主表**（55 欄）：3 個標籤欄 + 52 個週次欄（各佔 1.731%），全表 `contenteditable`
+- **Chart.js 混合圖**（4 柱狀堆疊 + 3 折線）：
+  - 柱狀：體能/技術/戰術/心理（y 軸，堆疊）
+  - 折線：訓練量/訓練強度/競技狀態（y2 軸，獨立）
+- **互動編輯**：點擊柱狀或折線圓點開啟統一輸入 Modal；拖拉圓點即時調整折線值（`dragMoved` 旗標防止拖後誤觸 click）
+- **批次套用**：柱狀/折線各自可套用至「僅此週 / 指定範圍 / 全部 52 週」
+- **訓練內容**：4 列可編輯表格（體能/技術/戰術/心理）
+- **列印**：B4 橫式（364mm × 257mm）`@page` 設定
+- **Word 匯出**：`.doc`（HTML 格式），含計畫主表 + 離屏 Canvas 1200×320px PNG 圖表 + 訓練內容
+
+### 頁面版面
+```
+toolbar（工具列）
+main-area（flex column，三等分）
+  card 1：計畫主表（可橫向捲動，55 欄）
+  card 2：Chart.js 混合圖（.chart-box flex:1）
+  card 3：訓練內容與手段（4 列 contenteditable）
+```
+
+### build.py 設定
+```python
+FILES: ('m7', '模組七', '年度訓練計畫', '年度訓練計畫表.html')
+CONFLICT_VARS m7: {'chart': 'chart_m7', 'D': 'D_m7', 'BD': 'BD_m7', 'BIG': 'BIG_m7',
+                   'HT': 'HT_m7', 'WEEKS': 'WEEKS_m7', 'MONTHS': 'MONTHS_m7',
+                   'INIT_VAL': 'INIT_VAL_m7', '_editModalWeek': '_editModalWeek_m7'}
+CONFLICT_IDS: editModal, editModalTitle, mainTitle, planTable, mainChart, contentTable,
+              inSchool, inSport, inYear, inStartDate, em_ty/js/zs/xl/sum/vol/int/perf,
+              em_bar_from/to, em_line_from/to
+CDN 殼層：Chart.js 4.4.1
+```
+
+### 技術重點
+- `generateMonths(startDateStr)` → 從起始週一每次 +7 天，依年月分組，共 52 週
+- 圖表 PNG 改用離屏 Canvas 2D（固定 1200×320px）解決 Word 匯出因 devicePixelRatio 造成尺寸錯誤
+- 計畫主表欄寬：3% + 3% + 4% + 52×1.731% ≈ 100%
+- `// init` 標記讓 `buildTable()` + `buildChart()` 在分頁第一次啟動時才執行（避免 Canvas 尺寸為 0）
+
+---
+
 ## Apps Script Code.gs 主要函式
 
 | 函式 | 說明 |
@@ -195,7 +239,7 @@ CDN 殼層：PDF.js (cdnjs 3.11.174)
 
 目前 `uploadSystemUrl` 只有 1-1 子標的 2 筆文件有設定（測試用），其餘 87 筆仍連到 Drive 資料夾。
 
-模組卡片列（頁面頂部）目前共 8 張：m1～m5（6 張）、體育組資料上傳（綠色）、工具使用說明（紫色）。
+模組卡片列（頁面頂部）目前共 9 張：m1～m7（7 張）、體育組資料上傳（綠色）、工具使用說明（紫色）。
 
 ---
 
@@ -225,6 +269,7 @@ CDN 殼層：PDF.js (cdnjs 3.11.174)
 - [x] m5 學生公假統計表（Excel 匯入、日期解析、全選刪除、Word 頁首 LOGO）
 - [x] **m6 grade-record.html** 學習輔導補助成績登錄（2026-06-24，4 期別、PDF 批次匯入、已整合進 pe-class-tools.html）
 - [x] pe-class-tools.html 切換分頁時同步更新 URL hash（`history.replaceState`）
+- [x] **m7 年度訓練計畫表.html** 互動式年度訓練計畫（2026-06-28，Chart.js 混合圖、拖拉折線、Word 匯出、已整合進 pe-class-tools.html）
 
 ### 待辦
 - [ ] **Drive 掃描權限**：需用學校帳號執行 `grantAccessToGmail`（目前掃描結果全為「無法存取資料夾」）
