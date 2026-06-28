@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>運動代表隊年度訓練計畫表</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ══════════════════════════════════════════════════
+   全螢幕三等分佈局
+   html/body = 100vh，三張 card 各 flex:1 = 各佔 1/3 高度
+   計畫表用百分比欄寬 → 全寬，無右側空白
+   ══════════════════════════════════════════════════ */
+html, body {
+  height: 100%;
+  overflow: hidden;
+  margin: 0; padding: 0;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  font-family: '微軟正黑體','Microsoft JhengHei',Arial,sans-serif;
+  font-size: 12px;
+  background: #e8eaf0;
+}
+
+/* ── 工具列 ── */
+.toolbar {
+  flex: 0 0 auto;
+  background: #1a237e; color: #fff;
+  padding: 5px 12px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+  z-index: 100;
+}
+.toolbar label { font-size: 11px; opacity: .8; }
+.toolbar input {
+  padding: 2px 6px; border: none; border-radius: 3px;
+  font-size: 12px; font-family: inherit;
+  background: rgba(255,255,255,.2); color: #fff;
+}
+.toolbar input:focus { outline: none; background: rgba(255,255,255,.3); }
+.sep { flex: 1; }
+.btn { padding: 4px 12px; border: none; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; font-family: inherit; }
+.btn-green { background: #43a047; color: #fff; }
+.btn-blue  { background: #1565c0; color: #fff; }
+.btn-gray  { background: #546e7a; color: #fff; }
+
+/* ── 三等分主區域 ── */
+.main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 3px;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── 共用 card ── */
+.card {
+  flex: 1;                    /* ← 每張各佔 1/3 */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 5px rgba(0,0,0,.12);
+}
+.card-title {
+  flex: 0 0 auto;
+  background: #1a237e; color: #fff;
+  font-size: 11px; font-weight: bold;
+  padding: 4px 12px; text-align: center;
+}
+
+/* ══════════════════════════════════════════════════
+   計畫表 (card 1)
+   ── 百分比欄寬讓表格與圖表等寬 ──
+   欄位: col[0]=3%  col[1]=3%  col[2]=4%
+         col[3..54]=1.731% × 52 = ~90%
+   合計 ≈ 100%，全寬，消除右側空白
+   ══════════════════════════════════════════════════ */
+.table-scroll {
+  flex: 1;
+  overflow: auto;
+}
+#planTable {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+#planTable td {
+  border: 1px solid #666;
+  padding: 1px 2px;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 9px;
+  overflow: hidden;
+  height: 16px;
+}
+/* 可編輯內容格：淡黃、允許換行、游標提示 */
+.e {
+  background: #fffde7 !important;
+  white-space: normal !important;
+  text-align: left !important;
+  vertical-align: top !important;
+  padding: 3px 5px !important;
+  font-size: 10px !important;
+  min-height: 28px !important;
+  height: auto !important;
+  cursor: text;
+  line-height: 1.4;
+}
+.e:hover   { background: #fff9c4 !important; }
+.e:focus   { outline: 2px solid #1565c0 !important; background: #e8eaf6 !important; }
+[contenteditable]:not(.e):focus { outline: 2px solid #1565c0; background: #e8eaf6; }
+
+.hdr  { background: #cfd8dc !important; font-weight: bold; }
+.hdr2 { background: #eceff1 !important; }
+.cal  { font-size: 8px; padding: 1px; height: 15px; }
+.vert { writing-mode: vertical-rl; text-orientation: mixed; }
+
+/* ══════════════════════════════════════════════════
+   圖表 (card 2)
+   chart-box flex:1 → 自動填滿 1/3 高度
+   maintainAspectRatio:false → 不因寬度等比放大
+   ══════════════════════════════════════════════════ */
+.chart-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 4px 10px 5px;
+  overflow: hidden;
+  min-height: 0;
+}
+.legend {
+  flex: 0 0 auto;
+  display: flex; gap: 12px; margin-bottom: 3px;
+  flex-wrap: wrap; align-items: center; font-size: 10px;
+}
+.leg-line { display: inline-block; width: 20px; height: 3px; vertical-align: middle; margin-right: 2px; border-radius: 2px; }
+.leg-box  { display: inline-block; width: 10px; height: 10px; vertical-align: middle; margin-right: 2px; }
+.chart-note { flex: 0 0 auto; font-size: 9px; color: #888; margin-bottom: 3px; }
+.chart-box {
+  flex: 1;                 /* ← 填滿剩餘高度 */
+  min-height: 0;
+  position: relative;
+}
+
+/* ══════════════════════════════════════════════════
+   訓練內容 (card 3)
+   table flex:1 填滿，4 row 各佔 25%
+   ══════════════════════════════════════════════════ */
+.content-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 3px 8px 5px;
+  overflow: hidden;
+  min-height: 0;
+}
+#contentTable {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+#contentTable tr { height: 25%; }
+#contentTable td { border: 1px solid #888; padding: 3px 8px; vertical-align: middle; }
+.ct-lv    { background: #cfd8dc; font-weight: bold; writing-mode: vertical-rl; width: 16px; text-align: center; }
+.ct-label { background: #eceff1; font-weight: bold; white-space: nowrap; width: 64px; }
+
+/* ── 列印 (B4 橫式) ── */
+@page { size: 364mm 257mm; margin: 0.6cm; }
+@media print {
+  html, body { height: auto; overflow: visible; }
+  .toolbar  { display: none; }
+  body, .main-area { display: block; }
+  .card { box-shadow: none; margin: 0; border-radius: 0; page-break-inside: avoid; break-inside: avoid; }
+  .table-scroll, .chart-inner, .content-inner { overflow: visible; }
+  .chart-box { height: 100mm; }
+  .chart-note { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ 工具列 ══ -->
+<div class="toolbar">
+  <label>縣市/學校</label>
+  <input type="text" id="inSchool" value="高雄縣/市 右昌學校" style="width:142px" oninput="refreshTitle()">
+  <label>運動</label>
+  <input type="text" id="inSport"  value="足球代表隊" style="width:72px" oninput="refreshTitle()">
+  <label>學年度</label>
+  <input type="text" id="inYear"   value="115" style="width:30px" oninput="refreshTitle()">
+  <label>第一週週一</label>
+  <input type="date" id="inStartDate" value="2026-08-03" style="width:136px;color:#fff;background:rgba(255,255,255,.2);border:none;border-radius:3px;padding:2px 6px;font-size:12px;font-family:inherit" onchange="autoFillDates()">
+  <button class="btn btn-gray" onclick="autoFillDates()">🗓 自動生成日期</button>
+  <div class="sep"></div>
+  <button class="btn btn-gray"  onclick="resetCurves()">↺ 重設曲線</button>
+  <button class="btn btn-blue"  onclick="window.print()">🖨 列印 B4橫</button>
+  <button class="btn btn-green" onclick="exportWord()">📄 匯出 Word</button>
+</div>
+
+<!-- ══ 統一輸入對話框（柱狀 + 折線） ══ -->
+<div id="editModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:8px;padding:18px 22px;width:360px;box-shadow:0 6px 30px rgba(0,0,0,.35);font-family:'微軟正黑體',Arial,sans-serif;">
+    <div id="editModalTitle" style="font-size:13px;font-weight:bold;margin-bottom:12px;color:#1a237e;border-bottom:2px solid #1a237e;padding-bottom:6px;">第 N 週　資料設定</div>
+
+    <!-- 訓練要素比例 -->
+    <div style="font-size:11px;font-weight:bold;color:#444;margin-bottom:6px;">▌ 訓練要素比例（柱狀）</div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:4px;">
+      <tr><td style="padding:3px 0;font-size:12px;"><span style="display:inline-block;width:11px;height:11px;background:#424242;margin-right:5px;vertical-align:middle;"></span>體能</td>
+          <td><input type="number" id="em_ty" min="0" max="100" style="width:58px;padding:2px 5px;border:1px solid #ccc;border-radius:3px;font-size:12px;"> %</td>
+          <td style="padding:3px 0 3px 10px;font-size:12px;"><span style="display:inline-block;width:11px;height:11px;background:#fdd835;margin-right:5px;vertical-align:middle;border:1px solid #bbb;"></span>技術</td>
+          <td><input type="number" id="em_js" min="0" max="100" style="width:58px;padding:2px 5px;border:1px solid #ccc;border-radius:3px;font-size:12px;"> %</td></tr>
+      <tr><td style="padding:3px 0;font-size:12px;"><span style="display:inline-block;width:11px;height:11px;background:#1565c0;margin-right:5px;vertical-align:middle;"></span>戰術</td>
+          <td><input type="number" id="em_zs" min="0" max="100" style="width:58px;padding:2px 5px;border:1px solid #ccc;border-radius:3px;font-size:12px;"> %</td>
+          <td style="padding:3px 0 3px 10px;font-size:12px;"><span style="display:inline-block;width:11px;height:11px;background:#9e9e9e;margin-right:5px;vertical-align:middle;"></span>心理</td>
+          <td><input type="number" id="em_xl" min="0" max="100" style="width:58px;padding:2px 5px;border:1px solid #ccc;border-radius:3px;font-size:12px;"> %</td></tr>
+    </table>
+    <div style="font-size:11px;color:#777;margin-bottom:12px;">合計：<b id="em_sum" style="color:#c62828;">100</b>%（超過100自動按比例換算）</div>
+
+    <!-- 負荷曲線 -->
+    <div style="font-size:11px;font-weight:bold;color:#444;margin-bottom:6px;">▌ 負荷曲線（折線）</div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:12px;">
+      <tr><td style="padding:3px 0;font-size:12px;"><span style="display:inline-block;width:20px;height:3px;background:#111;margin-right:5px;vertical-align:middle;border-radius:2px;"></span>訓練量</td>
+          <td><input type="number" id="em_vol" min="0" max="100" style="width:58px;padding:2px 5px;border:1px solid #ccc;border-radius:3px;font-size:12px;"> %</td>
+          <td style="padding:3px 0 3px 10px;font-size:12px;"><span style="display:inline-block;width:20px;height:3px;background:#c62828;margin-right:5px;vertical-align:middle;border-radius:2px;"></span>訓練強度</td>
+          <td><input type="number" id="em_int" min="0" max="100" style="width:58px;padding:2px 5px;border:1px solid #ccc;border-radius:3px;font-size:12px;"> %</td></tr>
+      <tr><td style="padding:3px 0;font-size:12px;"><span style="display:inline-block;width:20px;height:3px;background:#1b5e20;margin-right:5px;vertical-align:middle;border-radius:2px;"></span>競技狀態</td>
+          <td><input type="number" id="em_perf" min="0" max="100" style="width:58px;padding:2px 5px;border:1px solid #ccc;border-radius:3px;font-size:12px;"> %</td>
+          <td colspan="2" style="font-size:10px;color:#999;padding-left:10px;">0 ~ 100</td></tr>
+    </table>
+
+    <!-- 套用範圍：柱狀 -->
+    <div style="font-size:11px;font-weight:bold;color:#444;margin-bottom:4px;">▌ 套用範圍（柱狀）</div>
+    <div style="font-size:11px;display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;background:#f5f5f5;padding:5px 7px;border-radius:4px;">
+      <label><input type="radio" name="emBarRange" value="one" checked> 僅此週</label>
+      <label><input type="radio" name="emBarRange" value="range">
+        第 <input type="number" id="em_bar_from" min="1" max="52" value="1" style="width:36px;padding:2px 4px;border:1px solid #ccc;border-radius:3px;">
+        ～第 <input type="number" id="em_bar_to" min="1" max="52" value="52" style="width:36px;padding:2px 4px;border:1px solid #ccc;border-radius:3px;"> 週
+      </label>
+      <label><input type="radio" name="emBarRange" value="all"> 全部52週</label>
+    </div>
+    <!-- 套用範圍：折線 -->
+    <div style="font-size:11px;font-weight:bold;color:#444;margin-bottom:4px;">▌ 套用範圍（折線）</div>
+    <div style="font-size:11px;display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;background:#f5f5f5;padding:5px 7px;border-radius:4px;">
+      <label><input type="radio" name="emLineRange" value="one" checked> 僅此週</label>
+      <label><input type="radio" name="emLineRange" value="range">
+        第 <input type="number" id="em_line_from" min="1" max="52" value="1" style="width:36px;padding:2px 4px;border:1px solid #ccc;border-radius:3px;">
+        ～第 <input type="number" id="em_line_to" min="1" max="52" value="52" style="width:36px;padding:2px 4px;border:1px solid #ccc;border-radius:3px;"> 週
+      </label>
+      <label><input type="radio" name="emLineRange" value="all"> 全部52週</label>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;">
+      <button onclick="applyEditModal()" style="background:#1a237e;color:#fff;border:none;padding:7px 20px;border-radius:4px;cursor:pointer;font-size:12px;font-family:inherit;">確定</button>
+      <button onclick="closeEditModal()" style="background:#90a4ae;color:#fff;border:none;padding:7px 16px;border-radius:4px;cursor:pointer;font-size:12px;font-family:inherit;">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 主區域（三等分）══ -->
+<div class="main-area">
+
+  <!-- ── 1/3：計畫主表 ── -->
+  <div class="card">
+    <div class="card-title" id="mainTitle">高雄縣/市 右昌學校 足球代表隊 115 學年度訓練計畫表</div>
+    <div class="table-scroll">
+      <!-- 55欄: 3%+3%+4%+52×1.731% ≈ 100%，與圖表等寬 -->
+      <table id="planTable">
+        <colgroup>
+          <col style="width:3%">
+          <col style="width:3%">
+          <col style="width:4%">
+          <col span="52" style="width:1.731%">
+        </colgroup>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── 1/3：折線 + 柱狀圖 ── -->
+  <div class="card">
+    <div class="card-title">訓練要素與負荷曲線（點擊任一柱狀或折線圓點 → 統一輸入框；或直接拖拉折線圓點）</div>
+    <div class="chart-inner">
+      <div class="legend">
+        <span><span class="leg-line" style="background:#111"></span>訓練量</span>
+        <span><span class="leg-line" style="background:#c62828"></span>訓練強度</span>
+        <span><span class="leg-line" style="background:#1b5e20"></span>競技狀態</span>
+        <span><span class="leg-box" style="background:#424242"></span>體能</span>
+        <span><span class="leg-box" style="background:#fdd835"></span>技術</span>
+        <span><span class="leg-box" style="background:#1565c0"></span>戰術</span>
+        <span><span class="leg-box" style="background:#9e9e9e"></span>心理</span>
+        <span class="chart-note">※ 點擊任一圓點或柱狀開啟輸入框；游標移到圓點（手形）可直接拖拉</span>
+      </div>
+      <!-- chart-box flex:1 → 自動填滿 1/3 區塊，不因螢幕寬度等比放大 -->
+      <div class="chart-box">
+        <canvas id="mainChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 1/3：訓練內容與手段 ── -->
+  <div class="card">
+    <div class="card-title">訓練內容與手段</div>
+    <div class="content-inner">
+      <table id="contentTable">
+        <colgroup>
+          <col style="width:16px">
+          <col style="width:64px">
+          <col>
+        </colgroup>
+        <tr>
+          <td class="ct-lv" rowspan="4">訓練內容與手段</td>
+          <td class="ct-label">體能訓練</td>
+          <td contenteditable>重量訓練、循環訓練、間歇訓練、反覆訓練、斜坡訓練</td>
+        </tr>
+        <tr>
+          <td class="ct-label">技術訓練</td>
+          <td contenteditable>攻擊部分（傳接球、步法、各種射門、快攻）、防守部分（步法、壓制、攔截、封球）</td>
+        </tr>
+        <tr>
+          <td class="ct-label">戰術訓練</td>
+          <td contenteditable>攻擊部分（2/3/4人組合、團隊中線攻擊/邊線攻擊/特殊戰況）、防守部分（2/3/4人聯防、團隊區域防守/盯人防守/混合防守/特殊戰況）</td>
+        </tr>
+        <tr>
+          <td class="ct-label">心理訓練</td>
+          <td contenteditable>目標設定、意象訓練、專注訓練、意志力訓練</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /main-area -->
+
+<script>
+// ══════════════════════════════════════════════
+//  常數與資料
+// ══════════════════════════════════════════════
+const WEEKS = 52;
+const INIT_VAL = 15;
+
+// ── 日期自動生成 ──
+// 輸入第一週的週一，往後推 52 個週一（每次 +7 天）
+// 依年.月分組，格式同原始 MONTHS 陣列
+function generateMonths(startDateStr) {
+  const d = new Date(startDateStr + 'T00:00:00');
+  const result = [];
+  let curGroup = null;
+  for (let i = 0; i < WEEKS; i++) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth()+1).padStart(2,'0');
+    const day = String(d.getDate());
+    const label = `${y}.${m}`;
+    if (!curGroup || curGroup.label !== label) {
+      curGroup = {label, dates:[]};
+      result.push(curGroup);
+    }
+    curGroup.dates.push(day);
+    d.setDate(d.getDate()+7);
+  }
+  return result;
+}
+
+function autoFillDates() {
+  const v = document.getElementById('inStartDate').value;
+  if (!v) return;
+  MONTHS.length = 0;
+  generateMonths(v).forEach(m => MONTHS.push(m));
+  buildTable();
+}
+
+let MONTHS = generateMonths('2026-08-03'); // 合計 52 欄
+
+const D   = MONTHS.reduce((s,m) => s+m.dates.length, 0); // 52
+const BIG = [4,4,5,4,4,4,4,5,4,5,4,5]; // 大週期分組，合計 52
+
+// Header 日期欄分配: 14+13+12+13=52
+const HT=14, HW=13, HP=12, HR=13;
+
+// 柱狀資料（四類訓練成分）
+function makeBarData() {
+  const ty=[],js=[],zs=[],xl=[];
+  for (let i=0;i<WEEKS;i++) {
+    const x=i/WEEKS;
+    let a,b,c,d;
+    if      (x<.27){const t=x/.27; a=42-t*10;b=28+t*4;c=20+t*8;d=10;}
+    else if (x<.38){a=30;b=30;c=30;d=10;}
+    else if (x<.44){a=35;b=29;c=26;d=10;}
+    else if (x<.65){const t=(x-.44)/.21; a=40-t*12;b=29+t*3;c=21+t*9;d=10;}
+    else if (x<.77){a=30;b=30;c=30;d=10;}
+    else           {a=35;b=28;c=25;d=12;}
+    const s=a+b+c+d;
+    ty.push(Math.round(a/s*100));
+    js.push(Math.round(b/s*100));
+    zs.push(Math.round(c/s*100));
+    xl.push(100-Math.round(a/s*100)-Math.round(b/s*100)-Math.round(c/s*100));
+  }
+  return {ty,js,zs,xl};
+}
+const BD = makeBarData();
+
+// ══════════════════════════════════════════════
+//  建構計畫主表（55欄，百分比欄寬）
+//
+//  欄位設計:
+//   col[0]  3%  段落標籤（狀況分析/比賽安排/週期/訓練地點）
+//   col[1]  3%  子標籤（主要比賽/大週期/學校…）
+//   col[2]  4%  副標/值
+//   col[3..54] 1.731% × 52 ≈ 90%  日期欄
+//
+//  Header rowspan/colspan 驗證（每row合計55欄）:
+//   Row 1: 1+2+HT+HW+HP+HR = 1+2+14+13+12+13 = 55 ✓
+//   Row 5: 2+1+52 = 55 ✓
+//   Comp:  1+2+52 = 55 ✓
+//   Phase: 3+52   = 55 ✓
+//   Week:  1+2+52 = 55 ✓
+// ══════════════════════════════════════════════
+function calCells(n) {
+  return Array.from({length:n}, () => '<td class="cal" contenteditable></td>').join('');
+}
+
+function buildTable() {
+  let h = '';
+
+  // ── Row 1 ──
+  // ── Row 0：頂部標題列（訓練目標跨技術/戰術/心理/表現成績）──
+  h += '<tr>';
+  h += `<td class="hdr" style="font-size:9px">狀況分析</td>`;
+  h += `<td class="hdr" colspan="2" style="font-size:9px">測驗項目</td>`;
+  h += `<td class="hdr" colspan="${HT+HW+HP+HR}" style="font-size:9px">訓　練　目　標</td>`;
+  h += '</tr>';
+
+  // ── Row 1：子標題（技術/戰術/心理/表現成績）──
+  h += '<tr>';
+  h += `<td class="hdr2" style="font-size:9px">預測表現成績</td>`;
+  h += `<td class="hdr2" style="font-size:9px">專長項目</td>`;
+  h += `<td class="hdr2" style="font-size:9px">體　能</td>`;
+  h += `<td class="hdr2" colspan="${HT}" style="font-size:9px">技　　術</td>`;
+  h += `<td class="hdr2" colspan="${HW}" style="font-size:9px">戰　　術</td>`;
+  h += `<td class="hdr2" colspan="${HP}" style="font-size:9px">心　　理</td>`;
+  h += `<td class="hdr2" colspan="${HR}" style="font-size:9px">表現成績</td>`;
+  h += '</tr>';
+
+  // ── Row 2：內容（可編輯）──
+  h += '<tr>';
+  h += `<td class="e" contenteditable>115年體促盃前三名<br>115年小運會前三名</td>`;
+  h += `<td class="e" contenteditable>10公尺S型蛇球<br>傳球射門準確度</td>`;
+  h += `<td class="e" contenteditable>800公尺<br>60公尺<br>10公尺折返</td>`;
+  h += `<td class="e" colspan="${HT}" contenteditable>1. 個人動作穩定度<br>2. 射門準確度<br>3. 個人攻擊與防守能力</td>`;
+  h += `<td class="e" colspan="${HW}" contenteditable>1. 小組攻擊能力<br>2. 小組防守能力<br>3. 熟練各種隊形之變化</td>`;
+  h += `<td class="e" colspan="${HP}" contenteditable>1. 培養團隊合作精神<br>2. 增加選手自信心<br>3. 培養選手抗壓能力</td>`;
+  h += `<td class="e" colspan="${HR}" contenteditable>114年體促盃男組第二名<br>女生組第一名<br>114年國小運動會<br>男組第五名女生組第二名</td>`;
+  h += '</tr>';
+
+  // ── Row 5：月份（可直接點擊編輯）──
+  h += '<tr>';
+  h += `<td class="hdr" colspan="2" rowspan="2" style="font-size:9px">日　期</td>`;
+  h += `<td class="hdr" style="font-size:8px">月</td>`;
+  for (const m of MONTHS)
+    h += `<td colspan="${m.dates.length}" class="hdr" contenteditable style="font-size:7px;cursor:text;">${m.label}</td>`;
+  h += '</tr>';
+
+  // ── Row 6：日期（可直接點擊編輯）──
+  h += '<tr>';
+  h += `<td class="hdr2" style="font-size:7px">日</td>`;
+  for (const m of MONTHS) for (const d of m.dates)
+    h += `<td class="cal hdr2" contenteditable style="cursor:text;">${d}</td>`;
+  h += '</tr>';
+
+  // ── 比賽安排 ──
+  const comps = ['主要比賽','次要比賽','練習比賽','地　　點'];
+  h += '<tr>';
+  h += `<td class="hdr vert" rowspan="${comps.length}" style="font-size:9px">比賽安排</td>`;
+  h += `<td colspan="2" class="hdr2" style="font-size:9px">${comps[0]}</td>${calCells(D)}`;
+  h += '</tr>';
+  for (let i=1;i<comps.length;i++)
+    h += `<tr><td colspan="2" class="hdr2" style="font-size:9px">${comps[i]}</td>${calCells(D)}</tr>`;
+
+  // ── 階段劃分（8+7+6+9+12+10=52）──
+  h += '<tr>';
+  h += `<td colspan="3" class="hdr" style="font-size:9px">階段劃分</td>`;
+  h += `<td colspan="8"  class="hdr2" contenteditable style="font-size:8px">鍛練期－專項準備</td>`;
+  h += `<td colspan="7"  class="hdr2" contenteditable style="font-size:8px">比賽期－比賽</td>`;
+  h += `<td colspan="6"  class="hdr2" contenteditable style="font-size:8px">調整期－一般</td>`;
+  h += `<td colspan="9"  class="hdr2" contenteditable style="font-size:8px">鍛練期－專項準備</td>`;
+  h += `<td colspan="12" class="hdr2" contenteditable style="font-size:8px">比賽期－比賽</td>`;
+  h += `<td colspan="10" class="hdr2" contenteditable style="font-size:8px">調整期</td>`;
+  h += '</tr>';
+
+  // ── 週期（大+小）──
+  h += '<tr>';
+  h += `<td class="hdr vert" rowspan="2" style="font-size:9px">週期</td>`;
+  h += `<td colspan="2" class="hdr2" style="font-size:9px">大週期</td>`;
+  for (let i=0;i<BIG.length;i++)
+    h += `<td colspan="${BIG[i]}" class="hdr2" contenteditable style="font-weight:bold;font-size:10px">${i+1}</td>`;
+  h += '</tr>';
+  h += '<tr>';
+  h += `<td colspan="2" class="hdr2" style="font-size:8px">小週期</td>`;
+  for (let i=1;i<=D;i++) h += `<td class="cal hdr2" style="font-size:7px">${i}</td>`;
+  h += '</tr>';
+
+  // ── 檢測 / 健康 ──
+  h += `<tr><td colspan="3" class="hdr2" style="font-size:9px;font-weight:bold">檢　測　日　期</td>${calCells(D)}</tr>`;
+  h += `<tr><td colspan="3" class="hdr2" style="font-size:9px;font-weight:bold">健康檢查日期</td>${calCells(D)}</tr>`;
+
+  // ── 訓練地點 ──
+  h += `<tr><td class="hdr vert" rowspan="2" style="font-size:9px">訓練地點</td><td colspan="2" class="hdr2" style="font-size:9px">學　　校</td>${calCells(D)}</tr>`;
+  h += `<tr><td colspan="2" class="hdr2" style="font-size:9px">移地訓練</td>${calCells(D)}</tr>`;
+
+  document.getElementById('planTable').innerHTML = h;
+}
+
+// ══════════════════════════════════════════════
+//  Chart.js 混合圖
+//
+//  關鍵設定：
+//  1. maintainAspectRatio: false → 高度由 .chart-box flex:1 決定，
+//     不隨 3440px 寬度等比放大
+//  2. 折線用獨立 y2 軸（非堆疊）→ 三條線皆可見
+//  3. 初始值 15%，供教練由下往上拖拉
+// ══════════════════════════════════════════════
+let chart, drag = null, dragMoved = false;
+
+function buildChart() {
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Array.from({length:WEEKS}, (_,i) => i+1),
+      datasets: [
+        // 柱狀 → y 軸（堆疊）
+        {label:'體能', type:'bar', data:[...BD.ty], backgroundColor:'rgba(66,66,66,.72)',   stack:'s', order:2, yAxisID:'y'},
+        {label:'技術', type:'bar', data:[...BD.js], backgroundColor:'rgba(253,216,53,.88)', stack:'s', order:2, yAxisID:'y'},
+        {label:'戰術', type:'bar', data:[...BD.zs], backgroundColor:'rgba(21,101,192,.88)', stack:'s', order:2, yAxisID:'y'},
+        {label:'心理', type:'bar', data:[...BD.xl], backgroundColor:'rgba(158,158,158,.72)',stack:'s', order:2, yAxisID:'y'},
+        // 折線 → y2 軸（非堆疊，確保不受柱狀堆疊影響）
+        {
+          label:'訓練量', type:'line',
+          data: Array(WEEKS).fill(INIT_VAL),
+          borderColor:'#111', borderWidth:3,
+          pointRadius:5, pointHoverRadius:9,
+          pointBackgroundColor:'#111', pointBorderColor:'#fff', pointBorderWidth:1.5,
+          fill:false, tension:0.4, order:1, yAxisID:'y2'
+        },
+        {
+          label:'訓練強度', type:'line',
+          data: Array(WEEKS).fill(INIT_VAL),
+          borderColor:'#c62828', borderWidth:3,
+          pointRadius:5, pointHoverRadius:9,
+          pointBackgroundColor:'#c62828', pointBorderColor:'#fff', pointBorderWidth:1.5,
+          fill:false, tension:0.4, order:1, yAxisID:'y2'
+        },
+        {
+          label:'競技狀態', type:'line',
+          data: Array(WEEKS).fill(INIT_VAL),
+          borderColor:'#1b5e20', borderWidth:3,
+          pointRadius:5, pointHoverRadius:9,
+          pointBackgroundColor:'#1b5e20', pointBorderColor:'#fff', pointBorderWidth:1.5,
+          fill:false, tension:0.4, order:1, yAxisID:'y2'
+        },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,   // ← 固定高度，不等比縮放
+      animation: false,
+      interaction: { mode:'nearest', intersect:true },
+      plugins: {
+        legend: { display:false },
+        tooltip: {
+          filter: i => i.datasetIndex >= 4,
+          callbacks: { label: c => `${c.dataset.label}: ${c.raw}%` }
+        }
+      },
+      scales: {
+        x: {
+          stacked: true,
+          ticks: { font:{size:9}, maxRotation:0 },
+          title: { display:true, text:'小週期', font:{size:10} }
+        },
+        y: {   // 堆疊柱狀軸
+          stacked: true, min:0, max:100, position:'left',
+          ticks: { callback: v => v+'%', stepSize:20, font:{size:9} },
+          title: { display:true, text:'%', font:{size:9} }
+        },
+        y2: {  // 折線獨立軸（不堆疊，隱藏刻度）
+          type:'linear', stacked:false,
+          min:0, max:100, position:'left',
+          display: false,
+          grid: { drawOnChartArea:false }
+        }
+      }
+    }
+  });
+
+  // ── 拖拉邏輯 ──
+  const cv = document.getElementById('mainChart');
+
+  function hitTest(x, y, r=18) {
+    for (let d=4; d<=6; d++) {
+      const m = chart.getDatasetMeta(d);
+      for (let p=0; p<m.data.length; p++) {
+        const pt = m.data[p];
+        if (Math.hypot(pt.x-x, pt.y-y) < r) return {d, p};
+      }
+    }
+    return null;
+  }
+
+  cv.addEventListener('mousedown', e => {
+    const r = cv.getBoundingClientRect();
+    const hit = hitTest(e.clientX-r.left, e.clientY-r.top);
+    if (hit) { drag=hit; dragMoved=false; e.preventDefault(); }
+  });
+
+  window.addEventListener('mousemove', e => {
+    const r = cv.getBoundingClientRect();
+    if (!drag) {
+      cv.style.cursor = hitTest(e.clientX-r.left, e.clientY-r.top, 14) ? 'grab' : 'default';
+      return;
+    }
+    dragMoved = true;
+    let v = Math.round(chart.scales.y2.getValueForPixel(e.clientY-r.top));
+    v = Math.max(0, Math.min(100, v));
+    chart.data.datasets[drag.d].data[drag.p] = v;
+    chart.update('none');
+    e.preventDefault();
+  });
+
+  window.addEventListener('mouseup', () => { drag=null; });
+
+  cv.addEventListener('touchstart', e => {
+    const t=e.touches[0], r=cv.getBoundingClientRect();
+    const hit = hitTest(t.clientX-r.left, t.clientY-r.top, 24);
+    if (hit) { drag=hit; dragMoved=false; e.preventDefault(); }
+  }, {passive:false});
+
+  cv.addEventListener('touchmove', e => {
+    if (!drag) return;
+    dragMoved = true;
+    const t=e.touches[0], r=cv.getBoundingClientRect();
+    let v = Math.round(chart.scales.y2.getValueForPixel(t.clientY-r.top));
+    v = Math.max(0, Math.min(100, v));
+    chart.data.datasets[drag.d].data[drag.p] = v;
+    chart.update('none');
+    e.preventDefault();
+  }, {passive:false});
+
+  cv.addEventListener('touchend', e => {
+    // 觸控短點（未移動）→ 開啟統一輸入框
+    if (drag && !dragMoved) {
+      const t = e.changedTouches[0];
+      const pts = chart.getElementsAtEventForMode(
+        {clientX: t.clientX, clientY: t.clientY, target: cv},
+        'nearest', {intersect:true}, false
+      );
+      if (pts.length) openEditModal(pts[0].index);
+    }
+    drag=null; dragMoved=false;
+  });
+
+  cv.addEventListener('click', e => {
+    if (dragMoved) { dragMoved=false; return; }
+    const pts = chart.getElementsAtEventForMode(e,'nearest',{intersect:true},false);
+    if (!pts.length) return;
+    const {index:pi} = pts[0];
+    openEditModal(pi);  // 統一對話框
+  });
+}
+
+// ══ 統一輸入 Modal（柱狀 + 折線） ══
+let _editModalWeek = 0;
+
+function openEditModal(weekIdx) {
+  _editModalWeek = weekIdx;
+  document.getElementById('editModalTitle').textContent = `第 ${weekIdx+1} 週　資料設定`;
+  // 柱狀
+  document.getElementById('em_ty').value  = chart.data.datasets[0].data[weekIdx];
+  document.getElementById('em_js').value  = chart.data.datasets[1].data[weekIdx];
+  document.getElementById('em_zs').value  = chart.data.datasets[2].data[weekIdx];
+  document.getElementById('em_xl').value  = chart.data.datasets[3].data[weekIdx];
+  // 折線
+  document.getElementById('em_vol').value  = chart.data.datasets[4].data[weekIdx];
+  document.getElementById('em_int').value  = chart.data.datasets[5].data[weekIdx];
+  document.getElementById('em_perf').value = chart.data.datasets[6].data[weekIdx];
+  // 範圍（柱狀/折線分開）
+  document.getElementById('em_bar_from').value  = weekIdx+1;
+  document.getElementById('em_bar_to').value    = weekIdx+1;
+  document.getElementById('em_line_from').value = weekIdx+1;
+  document.getElementById('em_line_to').value   = weekIdx+1;
+  document.querySelector('input[name="emBarRange"][value="one"]').checked = true;
+  document.querySelector('input[name="emLineRange"][value="one"]').checked = true;
+  updateEditSum();
+  document.getElementById('editModal').style.display = 'flex';
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').style.display = 'none';
+}
+
+function updateEditSum() {
+  const s = ['em_ty','em_js','em_zs','em_xl']
+    .reduce((a,id) => a + (parseInt(document.getElementById(id).value)||0), 0);
+  const el = document.getElementById('em_sum');
+  el.textContent = s;
+  el.style.color = (s===100) ? '#388e3c' : '#c62828';
+}
+
+function applyEditModal() {
+  // 柱狀（按比例換算到100%）
+  let ty = parseInt(document.getElementById('em_ty').value)||0;
+  let js = parseInt(document.getElementById('em_js').value)||0;
+  let zs = parseInt(document.getElementById('em_zs').value)||0;
+  let xl = parseInt(document.getElementById('em_xl').value)||0;
+  const barSum = ty+js+zs+xl;
+  if (barSum > 0 && barSum !== 100) {
+    ty = Math.round(ty/barSum*100);
+    js = Math.round(js/barSum*100);
+    zs = Math.round(zs/barSum*100);
+    xl = 100 - ty - js - zs;
+  }
+  // 折線（限 0~100）
+  const vol  = Math.max(0, Math.min(100, parseInt(document.getElementById('em_vol').value)||0));
+  const intv = Math.max(0, Math.min(100, parseInt(document.getElementById('em_int').value)||0));
+  const perf = Math.max(0, Math.min(100, parseInt(document.getElementById('em_perf').value)||0));
+
+  // 柱狀套用範圍
+  const barRange = document.querySelector('input[name="emBarRange"]:checked').value;
+  let bFrom = 0, bTo = WEEKS-1;
+  if (barRange === 'one') { bFrom = bTo = _editModalWeek; }
+  else if (barRange === 'range') {
+    bFrom = Math.max(0, (parseInt(document.getElementById('em_bar_from').value)||1) - 1);
+    bTo   = Math.min(WEEKS-1, (parseInt(document.getElementById('em_bar_to').value)||WEEKS) - 1);
+  }
+  for (let i=bFrom; i<=bTo; i++) {
+    chart.data.datasets[0].data[i] = ty;
+    chart.data.datasets[1].data[i] = js;
+    chart.data.datasets[2].data[i] = zs;
+    chart.data.datasets[3].data[i] = xl;
+  }
+  // 折線套用範圍
+  const lineRange = document.querySelector('input[name="emLineRange"]:checked').value;
+  let lFrom = 0, lTo = WEEKS-1;
+  if (lineRange === 'one') { lFrom = lTo = _editModalWeek; }
+  else if (lineRange === 'range') {
+    lFrom = Math.max(0, (parseInt(document.getElementById('em_line_from').value)||1) - 1);
+    lTo   = Math.min(WEEKS-1, (parseInt(document.getElementById('em_line_to').value)||WEEKS) - 1);
+  }
+  for (let i=lFrom; i<=lTo; i++) {
+    chart.data.datasets[4].data[i] = vol;
+    chart.data.datasets[5].data[i] = intv;
+    chart.data.datasets[6].data[i] = perf;
+  }
+  chart.update();
+  closeEditModal();
+}
+
+// 背景點擊關閉
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+// 柱狀輸入即時更新合計
+['em_ty','em_js','em_zs','em_xl'].forEach(id =>
+  document.getElementById(id).addEventListener('input', updateEditSum)
+);
+
+function resetCurves() {
+  chart.data.datasets[4].data = Array(WEEKS).fill(INIT_VAL);
+  chart.data.datasets[5].data = Array(WEEKS).fill(INIT_VAL);
+  chart.data.datasets[6].data = Array(WEEKS).fill(INIT_VAL);
+  chart.update();
+}
+
+// ══════════════════════════════════════════════
+//  標題更新
+// ══════════════════════════════════════════════
+function refreshTitle() {
+  const t = `${document.getElementById('inSchool').value} ${document.getElementById('inSport').value} ${document.getElementById('inYear').value} 學年度訓練計畫表`;
+  document.getElementById('mainTitle').textContent = t;
+  document.title = t;
+}
+
+// ══════════════════════════════════════════════
+//  產生 PNG（1200×320，適合 Word B4 橫式欄位寬度）
+//  B4 頁=364mm，去邊距約 350mm，右欄 90% ≈ 315mm
+//  96dpi 下 315mm≈1190px → 用 1200px canvas 剛好填滿
+// ══════════════════════════════════════════════
+function generateChartPNG() {
+  const W = 1200, H = 320;
+  const ML = 36, MR = 8, MT = 8, MB = 32;
+  const CW = W - ML - MR;
+  const CH = H - MT - MB;
+  const bw = CW / WEEKS;
+
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const c = cv.getContext('2d');
+
+  const barClr = ['rgba(66,66,66,.80)','rgba(253,216,53,.88)','rgba(21,101,192,.88)','rgba(158,158,158,.72)'];
+  const lineClr = ['#111111','#c62828','#1b5e20'];
+
+  // 背景
+  c.fillStyle = '#fff';
+  c.fillRect(0, 0, W, H);
+
+  // 格線 + y 軸
+  c.font = '11px Arial';
+  for (let v = 0; v <= 100; v += 20) {
+    const y = MT + CH * (1 - v/100);
+    c.strokeStyle = '#e0e0e0'; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(ML, y); c.lineTo(W-MR, y); c.stroke();
+    c.fillStyle = '#666'; c.textAlign = 'right';
+    c.fillText(v+'%', ML-3, y+4);
+  }
+
+  // 堆疊柱狀
+  for (let i = 0; i < WEEKS; i++) {
+    const x = ML + i * bw;
+    let cumH = 0;
+    for (let d = 0; d < 4; d++) {
+      const h = (chart.data.datasets[d].data[i] / 100) * CH;
+      c.fillStyle = barClr[d];
+      c.fillRect(x+0.5, MT+CH-cumH-h, bw-1, h);
+      cumH += h;
+    }
+  }
+
+  // 三條折線
+  for (let ld = 0; ld < 3; ld++) {
+    const data = chart.data.datasets[4+ld].data;
+    c.strokeStyle = lineClr[ld]; c.lineWidth = 3.5; c.lineJoin = 'round';
+    c.beginPath();
+    for (let i = 0; i < WEEKS; i++) {
+      const px = ML + (i+0.5)*bw, py = MT + CH*(1-data[i]/100);
+      i===0 ? c.moveTo(px,py) : c.lineTo(px,py);
+    }
+    c.stroke();
+    // 圓點
+    for (let i = 0; i < WEEKS; i++) {
+      const px = ML + (i+0.5)*bw, py = MT + CH*(1-data[i]/100);
+      c.beginPath(); c.arc(px, py, 5.5, 0, Math.PI*2);
+      c.fillStyle = lineClr[ld]; c.fill();
+      c.strokeStyle = '#fff'; c.lineWidth = 2; c.stroke();
+    }
+  }
+
+  // x 軸週次（每4週標一次）
+  c.fillStyle = '#555'; c.textAlign = 'center'; c.font = '10px Arial';
+  for (let i = 0; i < WEEKS; i += 4)
+    c.fillText(i+1, ML+(i+0.5)*bw, H-8);
+  c.fillText('小週期', ML+CW/2, H-1);
+
+  // 框線
+  c.strokeStyle = '#aaa'; c.lineWidth = 1;
+  c.strokeRect(ML, MT, CW, CH);
+
+  return cv.toDataURL('image/png', 1.0);
+}
+
+// ══════════════════════════════════════════════
+//  匯出 Word（B4 橫式）
+//  佈局說明：
+//  • 計畫主表 — 全寬（10%標籤欄 + 90%日期欄）
+//  • 圖表段  — 同欄寬 2 欄表格：10%左欄（垂直標題+圖例）+ 90%右欄（圖片）
+//  • 訓練內容— 同欄寬 2 欄：10%左欄（垂直標題）+ 90%右欄（4類×2欄）
+//  三段的 10%/90% 分界線對齊，使週次欄與圖表柱子對齊
+// ══════════════════════════════════════════════
+function exportWord() {
+  const imgData = generateChartPNG(); // 高解析 PNG（2600×420，Canvas 2D 繪製）
+  const year    = document.getElementById('inYear').value;
+  const school  = document.getElementById('inSchool').value;
+  const sport   = document.getElementById('inSport').value;
+  const title   = `${school} ${sport} ${year} 學年度訓練計畫表`;
+  const planHTML = document.getElementById('planTable').outerHTML;
+
+  // 取得訓練內容與手段各列文字
+  const ctRows = Array.from(document.querySelectorAll('#contentTable tr')).map((tr,i) => {
+    const tds = tr.querySelectorAll('td');
+    // i=0: rowspan垂直欄(skip) + label + content；i>0: label + content
+    const label   = i===0 ? (tds[1]?.innerText||'') : (tds[0]?.innerText||'');
+    const content = i===0 ? (tds[2]?.innerHTML||'') : (tds[1]?.innerHTML||'');
+    const rowspan = i===0 ? 'rowspan="4"' : '';
+    const firstCell = i===0 ? `<td ${rowspan} style="width:10%;border:1px solid #666;writing-mode:vertical-rl;text-align:center;vertical-align:middle;font-weight:bold;font-size:7pt;background:#cfd8dc;padding:2px;">訓練內容與手段</td>` : '';
+    return `<tr>
+      ${firstCell}
+      <td style="border:1px solid #666;background:#eceff1;font-weight:bold;font-size:7pt;white-space:nowrap;padding:2px 4px;width:8%;vertical-align:middle;">${label}</td>
+      <td style="border:1px solid #666;font-size:6.5pt;text-align:left;padding:2px 5px;vertical-align:middle;">${content}</td>
+    </tr>`;
+  }).join('');
+
+  // 圖例 HTML（與網頁版相同）
+  const legendHTML = `
+    <span style="margin-right:8pt;">
+      <span style="display:inline-block;width:18pt;height:2.5pt;background:#111;vertical-align:middle;"></span>
+      <span style="font-size:6pt;"> 訓練量</span>
+    </span>
+    <span style="margin-right:8pt;">
+      <span style="display:inline-block;width:18pt;height:2.5pt;background:#c62828;vertical-align:middle;"></span>
+      <span style="font-size:6pt;"> 訓練強度</span>
+    </span>
+    <span style="margin-right:12pt;">
+      <span style="display:inline-block;width:18pt;height:2.5pt;background:#1b5e20;vertical-align:middle;"></span>
+      <span style="font-size:6pt;"> 競技狀態</span>
+    </span>
+    <span style="margin-right:8pt;">
+      <span style="display:inline-block;width:9pt;height:9pt;background:#424242;vertical-align:middle;"></span>
+      <span style="font-size:6pt;"> 體能</span>
+    </span>
+    <span style="margin-right:8pt;">
+      <span style="display:inline-block;width:9pt;height:9pt;background:#fdd835;border:1px solid #bbb;vertical-align:middle;"></span>
+      <span style="font-size:6pt;"> 技術</span>
+    </span>
+    <span style="margin-right:8pt;">
+      <span style="display:inline-block;width:9pt;height:9pt;background:#1565c0;vertical-align:middle;"></span>
+      <span style="font-size:6pt;"> 戰術</span>
+    </span>
+    <span style="margin-right:4pt;">
+      <span style="display:inline-block;width:9pt;height:9pt;background:#9e9e9e;vertical-align:middle;"></span>
+      <span style="font-size:6pt;"> 心理</span>
+    </span>`;
+
+  const wordDoc = `<html xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:w="urn:schemas-microsoft-com:office:word"
+ xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="UTF-8">
+<xml><w:WordDocument><w:View>Print</w:View><w:DoNotOptimizeForBrowser/></w:WordDocument></xml>
+<style>
+@page WordSection1 { size:364mm 257mm; mso-page-orientation:landscape; margin:0.5cm 0.7cm; }
+div.WordSection1 { page:WordSection1; }
+body { font-family:'微軟正黑體',Arial,sans-serif; font-size:7pt; margin:0; padding:0; }
+h2  { text-align:center; font-size:11pt; margin:0 0 3pt; }
+table { border-collapse:collapse; width:100% !important; table-layout:auto !important; font-size:6pt; margin:0; }
+td  { border:1px solid #555; padding:1px 2px; text-align:center; vertical-align:middle; overflow:hidden; }
+.hdr  { background:#cfd8dc !important; font-weight:bold; }
+.hdr2 { background:#eceff1 !important; }
+.e    { background:#fffde7 !important; text-align:left; padding:1px 3px; white-space:normal; }
+.vert { writing-mode:vertical-rl; }
+.cal  { font-size:5pt; }
+</style>
+</head>
+<body><div class="WordSection1">
+<h2>${title}</h2>
+
+<!-- ① 計畫主表（10%標籤欄 + 90%日期欄，與下方圖表對齊） -->
+${planHTML}
+
+<!-- ② 訓練要素與負荷曲線（左欄10%：垂直標題+圖例；右欄90%：圖片） -->
+<table style="margin-top:-1px;">
+  <colgroup><col style="width:10%"><col style="width:90%"></colgroup>
+  <tr>
+    <td style="border:1px solid #555;vertical-align:top;padding:2px;">
+      <div style="writing-mode:vertical-rl;text-align:center;font-weight:bold;font-size:7pt;white-space:nowrap;margin-bottom:4pt;">訓練要素與負荷曲線</div>
+      <div style="font-size:5.5pt;line-height:1.8;writing-mode:vertical-rl;text-align:left;">
+        <div>─ 訓練量</div>
+        <div>─ 訓練強度</div>
+        <div>─ 競技狀態</div>
+        <div>■ 體能</div>
+        <div>■ 技術</div>
+        <div>■ 戰術</div>
+        <div>■ 心理</div>
+      </div>
+    </td>
+    <td style="border:1px solid #555;padding:1px 2px;vertical-align:top;">
+      <div style="font-size:0;line-height:0;margin-bottom:1pt;">${legendHTML}</div>
+      <img src="${imgData}" style="width:100%;height:auto;display:block;">
+    </td>
+  </tr>
+</table>
+
+<!-- ③ 訓練內容與手段（左欄10%：垂直標題；右兩欄：分類+內容） -->
+<table style="margin-top:-1px;">
+  <colgroup><col style="width:10%"><col style="width:12%"><col style="width:78%"></colgroup>
+  ${ctRows}
+</table>
+
+</div></body></html>`;
+
+  const blob = new Blob(['﻿'+wordDoc], {type:'application/msword'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${year}學年度訓練計畫表.doc`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+// ══════════════════════════════════════════════
+// init
+// ══════════════════════════════════════════════
+buildTable();
+buildChart();
+</script>
+</body>
+</html>

@@ -27,6 +27,7 @@ FILES = [
     ('m4',  '模組四',  '職業試探活動',   'career-activity.html'),
     ('m5',  '模組五',  '公假統計表',     'leave-record.html'),
     ('m6',  '模組六',  '成績登錄',       'grade-record.html'),
+    ('m7',  '模組七',  '年度訓練計畫',   '年度訓練計畫表.html'),
 ]
 
 OUTPUT = 'pe-class-tools.html'
@@ -53,6 +54,10 @@ CONFLICT_IDS = [
     'importHint', 'importFile', 'previewArea', 'planYear',
     'checkAll', 'deleteSel', 'selCount', 'addForm', 'newName', 'newGrade',
     'studentList', 'countHint', 'customYear', 'customYearWrap', 'pdfFiles',
+    'editModal', 'editModalTitle', 'mainTitle', 'planTable', 'mainChart', 'contentTable',
+    'inSchool', 'inSport', 'inYear', 'inStartDate',
+    'em_ty', 'em_js', 'em_zs', 'em_xl', 'em_sum', 'em_vol', 'em_int', 'em_perf',
+    'em_bar_from', 'em_bar_to', 'em_line_from', 'em_line_to',
 ]
 
 # JS variable names that conflict between specific modules
@@ -69,6 +74,9 @@ CONFLICT_VARS = {
             'nextPicId': 'nextPicId_m4', 'nextActId': 'nextActId_m4'},
     'm5':  {'rows': 'rows_m5', 'nextId': 'nextId_m5'},
     'm6':  {'students': 'students_m6', 'nextId': 'nextId_m6', 'FIELDS': 'FIELDS_m6', 'EVALS': 'EVALS_m6'},
+    'm7':  {'chart': 'chart_m7', 'D': 'D_m7', 'BD': 'BD_m7', 'BIG': 'BIG_m7',
+            'HT': 'HT_m7', 'WEEKS': 'WEEKS_m7', 'MONTHS': 'MONTHS_m7',
+            'INIT_VAL': 'INIT_VAL_m7', '_editModalWeek': '_editModalWeek_m7'},
     # 新增模組時，在這裡加上該模組的衝突變數：
 }
 
@@ -222,6 +230,7 @@ def build():
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *{{box-sizing:border-box;}}
 body{{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;background:#F0EDE6;}}
