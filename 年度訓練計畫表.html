@@ -665,7 +665,7 @@ function buildChart() {
 
   cv.addEventListener('click', e => {
     if (dragMoved) { dragMoved=false; return; }
-    const pts = chart.getElementsAtEventForMode(e,'nearest',{intersect:true},false);
+    const pts = chart.getElementsAtEventForMode(e,'index',{intersect:false},false);
     if (!pts.length) return;
     const {index:pi} = pts[0];
     openEditModal(pi);  // 統一對話框
