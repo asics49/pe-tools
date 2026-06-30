@@ -489,10 +489,11 @@ function buildTable() {
   h += `<tr><td class="m7-hdr m7-vert" rowspan="2" style="font-size:9px">訓練地點</td><td colspan="2" class="m7-hdr2" style="font-size:9px">學　　校</td>${calCells(D)}</tr>`;
   h += `<tr><td colspan="2" class="m7-hdr2" style="font-size:9px">移地訓練</td>${calCells(D)}</tr>`;
 
-  document.getElementById('planTable').innerHTML = h;
+  var tbl = document.getElementById('planTable');
+  tbl.innerHTML = h;
   // 強制所有列高度一致（避免空 contenteditable 格子被瀏覽器撐高）
-  document.querySelectorAll('#planTable tr').forEach(function(tr, i) {
-    if (i >= 3) tr.style.height = '20px'; // 跳過前3列（內容可編輯的大格子）
+  tbl.querySelectorAll('tr').forEach(function(tr, i) {
+    if (i >= 3) tr.style.height = '20px';
   });
 }
 
