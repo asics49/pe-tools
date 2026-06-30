@@ -97,7 +97,12 @@ def get_js(src):
 
 def get_css(src):
     blocks = re.findall(r'<style>(.*?)</style>', src, re.S)
-    return '\n'.join(blocks)
+    css = '\n'.join(blocks)
+    # 過濾 html / body 全域選擇器，但不能誤刪 .s-body / #foo-body 等 class/id
+    # 負向回望：確保 body 前面不是 . # 或英數字
+    css = re.sub(r'(?<![.#\w-])body\s*\{[^}]*\}', '', css)
+    css = re.sub(r'(?<![.#\w-])html\s*(?:,\s*body\s*)?\{[^}]*\}', '', css)
+    return css
 
 def get_body(src):
     m = re.search(r'</style>(.*?)<script', src, re.S)

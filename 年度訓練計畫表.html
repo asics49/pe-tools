@@ -11,52 +11,41 @@
    html/body = 100vh，三張 card 各 flex:1 = 各佔 1/3 高度
    計畫表用百分比欄寬 → 全寬，無右側空白
    ══════════════════════════════════════════════════ */
-html, body {
-  height: 100%;
-  overflow: hidden;
-  margin: 0; padding: 0;
-}
-body {
-  display: flex;
-  flex-direction: column;
-  font-family: '微軟正黑體','Microsoft JhengHei',Arial,sans-serif;
-  font-size: 12px;
-  background: #e8eaf0;
-}
-
 /* ── 工具列 ── */
-.toolbar {
+.m7-toolbar {
   flex: 0 0 auto;
   background: #1a237e; color: #fff;
   padding: 5px 12px; display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
   z-index: 100;
 }
-.toolbar label { font-size: 11px; opacity: .8; }
-.toolbar input {
+.m7-toolbar label { font-size: 11px; opacity: .8; }
+.m7-toolbar input {
   padding: 2px 6px; border: none; border-radius: 3px;
   font-size: 12px; font-family: inherit;
   background: rgba(255,255,255,.2); color: #fff;
 }
-.toolbar input:focus { outline: none; background: rgba(255,255,255,.3); }
-.sep { flex: 1; }
-.btn { padding: 4px 12px; border: none; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; font-family: inherit; }
-.btn-green { background: #43a047; color: #fff; }
-.btn-blue  { background: #1565c0; color: #fff; }
-.btn-gray  { background: #546e7a; color: #fff; }
+.m7-toolbar input:focus { outline: none; background: rgba(255,255,255,.3); }
+.m7-sep { flex: 1; }
+.m7-btn { padding: 4px 12px; border: none; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; font-family: inherit; }
+.m7-btn-green { background: #43a047; color: #fff; }
+.m7-btn-blue  { background: #1565c0; color: #fff; }
+.m7-btn-gray  { background: #546e7a; color: #fff; }
 
 /* ── 三等分主區域 ── */
-.main-area {
-  flex: 1;
+.m7-main-area {
   display: flex;
   flex-direction: column;
   gap: 3px;
   padding: 3px;
   overflow: hidden;
-  min-height: 0;
+  height: calc(100vh - 56px);
+  font-family: '微軟正黑體','Microsoft JhengHei',Arial,sans-serif;
+  font-size: 12px;
+  background: #e8eaf0;
 }
 
 /* ── 共用 card ── */
-.card {
+.m7-card {
   flex: 1;                    /* ← 每張各佔 1/3 */
   display: flex;
   flex-direction: column;
@@ -66,7 +55,7 @@ body {
   border-radius: 4px;
   box-shadow: 0 1px 5px rgba(0,0,0,.12);
 }
-.card-title {
+.m7-card-title {
   flex: 0 0 auto;
   background: #1a237e; color: #fff;
   font-size: 11px; font-weight: bold;
@@ -80,7 +69,7 @@ body {
          col[3..54]=1.731% × 52 = ~90%
    合計 ≈ 100%，全寬，消除右側空白
    ══════════════════════════════════════════════════ */
-.table-scroll {
+.m7-table-scroll {
   flex: 1;
   overflow: auto;
 }
@@ -116,17 +105,17 @@ body {
 .e:focus   { outline: 2px solid #1565c0 !important; background: #e8eaf6 !important; }
 [contenteditable]:not(.e):focus { outline: 2px solid #1565c0; background: #e8eaf6; }
 
-.hdr  { background: #cfd8dc !important; font-weight: bold; }
-.hdr2 { background: #eceff1 !important; }
-.cal  { font-size: 8px; padding: 1px; height: 15px; }
-.vert { writing-mode: vertical-rl; text-orientation: mixed; }
+.m7-hdr  { background: #cfd8dc !important; font-weight: bold; }
+.m7-hdr2 { background: #eceff1 !important; }
+.m7-cal  { font-size: 8px; padding: 1px; height: 15px; }
+.m7-vert { writing-mode: vertical-rl; text-orientation: mixed; }
 
 /* ══════════════════════════════════════════════════
    圖表 (card 2)
    chart-box flex:1 → 自動填滿 1/3 高度
    maintainAspectRatio:false → 不因寬度等比放大
    ══════════════════════════════════════════════════ */
-.chart-inner {
+.m7-chart-inner {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -134,15 +123,15 @@ body {
   overflow: hidden;
   min-height: 0;
 }
-.legend {
+.m7-legend {
   flex: 0 0 auto;
   display: flex; gap: 12px; margin-bottom: 3px;
   flex-wrap: wrap; align-items: center; font-size: 10px;
 }
-.leg-line { display: inline-block; width: 20px; height: 3px; vertical-align: middle; margin-right: 2px; border-radius: 2px; }
-.leg-box  { display: inline-block; width: 10px; height: 10px; vertical-align: middle; margin-right: 2px; }
-.chart-note { flex: 0 0 auto; font-size: 9px; color: #888; margin-bottom: 3px; }
-.chart-box {
+.m7-leg-line { display: inline-block; width: 20px; height: 3px; vertical-align: middle; margin-right: 2px; border-radius: 2px; }
+.m7-leg-box  { display: inline-block; width: 10px; height: 10px; vertical-align: middle; margin-right: 2px; }
+.m7-chart-note { flex: 0 0 auto; font-size: 9px; color: #888; margin-bottom: 3px; }
+.m7-chart-box {
   flex: 1;                 /* ← 填滿剩餘高度 */
   min-height: 0;
   position: relative;
@@ -152,7 +141,7 @@ body {
    訓練內容 (card 3)
    table flex:1 填滿，4 row 各佔 25%
    ══════════════════════════════════════════════════ */
-.content-inner {
+.m7-content-inner {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -169,26 +158,25 @@ body {
 }
 #contentTable tr { height: 25%; }
 #contentTable td { border: 1px solid #888; padding: 3px 8px; vertical-align: middle; }
-.ct-lv    { background: #cfd8dc; font-weight: bold; writing-mode: vertical-rl; width: 16px; text-align: center; }
-.ct-label { background: #eceff1; font-weight: bold; white-space: nowrap; width: 64px; }
+.m7-ct-lv    { background: #cfd8dc; font-weight: bold; writing-mode: vertical-rl; width: 16px; text-align: center; }
+.m7-ct-label { background: #eceff1; font-weight: bold; white-space: nowrap; width: 64px; }
 
 /* ── 列印 (B4 橫式) ── */
 @page { size: 364mm 257mm; margin: 0.6cm; }
 @media print {
-  html, body { height: auto; overflow: visible; }
-  .toolbar  { display: none; }
-  body, .main-area { display: block; }
-  .card { box-shadow: none; margin: 0; border-radius: 0; page-break-inside: avoid; break-inside: avoid; }
-  .table-scroll, .chart-inner, .content-inner { overflow: visible; }
-  .chart-box { height: 100mm; }
-  .chart-note { display: none; }
+  .m7-toolbar  { display: none; }
+  .m7-main-area { display: block; height: auto; overflow: visible; }
+  .m7-card { box-shadow: none; margin: 0; border-radius: 0; page-break-inside: avoid; break-inside: avoid; }
+  .m7-table-scroll, .m7-chart-inner, .m7-content-inner { overflow: visible; }
+  .m7-chart-box { height: 100mm; }
+  .m7-chart-note { display: none; }
 }
 </style>
 </head>
 <body>
 
 <!-- ══ 工具列 ══ -->
-<div class="toolbar">
+<div class="m7-toolbar">
   <label>縣市/學校</label>
   <input type="text" id="inSchool" value="高雄縣/市 右昌學校" style="width:142px" oninput="refreshTitle()">
   <label>運動</label>
@@ -197,11 +185,11 @@ body {
   <input type="text" id="inYear"   value="115" style="width:30px" oninput="refreshTitle()">
   <label>第一週週一</label>
   <input type="date" id="inStartDate" value="2026-08-03" style="width:136px;color:#fff;background:rgba(255,255,255,.2);border:none;border-radius:3px;padding:2px 6px;font-size:12px;font-family:inherit" onchange="autoFillDates()">
-  <button class="btn btn-gray" onclick="autoFillDates()">🗓 自動生成日期</button>
-  <div class="sep"></div>
-  <button class="btn btn-gray"  onclick="resetCurves()">↺ 重設曲線</button>
-  <button class="btn btn-blue"  onclick="window.print()">🖨 列印 B4橫</button>
-  <button class="btn btn-green" onclick="exportWord()">📄 匯出 Word</button>
+  <button class="m7-btn m7-btn-gray" onclick="autoFillDates()">🗓 自動生成日期</button>
+  <div class="m7-sep"></div>
+  <button class="m7-btn m7-btn-gray"  onclick="resetCurves()">↺ 重設曲線</button>
+  <button class="m7-btn m7-btn-blue"  onclick="window.print()">🖨 列印 B4橫</button>
+  <button class="m7-btn m7-btn-green" onclick="exportWord()">📄 匯出 Word</button>
 </div>
 
 <!-- ══ 統一輸入對話框（柱狀 + 折線） ══ -->
@@ -264,12 +252,12 @@ body {
 </div>
 
 <!-- ══ 主區域（三等分）══ -->
-<div class="main-area">
+<div class="m7-main-area">
 
   <!-- ── 1/3：計畫主表 ── -->
-  <div class="card">
-    <div class="card-title" id="mainTitle">高雄縣/市 右昌學校 足球代表隊 115 學年度訓練計畫表</div>
-    <div class="table-scroll">
+  <div class="m7-card">
+    <div class="m7-card-title" id="mainTitle">高雄縣/市 右昌學校 足球代表隊 115 學年度訓練計畫表</div>
+    <div class="m7-table-scroll">
       <!-- 55欄: 3%+3%+4%+52×1.731% ≈ 100%，與圖表等寬 -->
       <table id="planTable">
         <colgroup>
@@ -283,30 +271,30 @@ body {
   </div>
 
   <!-- ── 1/3：折線 + 柱狀圖 ── -->
-  <div class="card">
-    <div class="card-title">訓練要素與負荷曲線（點擊任一柱狀或折線圓點 → 統一輸入框；或直接拖拉折線圓點）</div>
-    <div class="chart-inner">
-      <div class="legend">
-        <span><span class="leg-line" style="background:#111"></span>訓練量</span>
-        <span><span class="leg-line" style="background:#c62828"></span>訓練強度</span>
-        <span><span class="leg-line" style="background:#1b5e20"></span>競技狀態</span>
-        <span><span class="leg-box" style="background:#424242"></span>體能</span>
-        <span><span class="leg-box" style="background:#fdd835"></span>技術</span>
-        <span><span class="leg-box" style="background:#1565c0"></span>戰術</span>
-        <span><span class="leg-box" style="background:#9e9e9e"></span>心理</span>
-        <span class="chart-note">※ 點擊任一圓點或柱狀開啟輸入框；游標移到圓點（手形）可直接拖拉</span>
+  <div class="m7-card">
+    <div class="m7-card-title">訓練要素與負荷曲線（點擊任一柱狀或折線圓點 → 統一輸入框；或直接拖拉折線圓點）</div>
+    <div class="m7-chart-inner">
+      <div class="m7-legend">
+        <span><span class="m7-leg-line" style="background:#111"></span>訓練量</span>
+        <span><span class="m7-leg-line" style="background:#c62828"></span>訓練強度</span>
+        <span><span class="m7-leg-line" style="background:#1b5e20"></span>競技狀態</span>
+        <span><span class="m7-leg-box" style="background:#424242"></span>體能</span>
+        <span><span class="m7-leg-box" style="background:#fdd835"></span>技術</span>
+        <span><span class="m7-leg-box" style="background:#1565c0"></span>戰術</span>
+        <span><span class="m7-leg-box" style="background:#9e9e9e"></span>心理</span>
+        <span class="m7-chart-note">※ 點擊任一圓點或柱狀開啟輸入框；游標移到圓點（手形）可直接拖拉</span>
       </div>
       <!-- chart-box flex:1 → 自動填滿 1/3 區塊，不因螢幕寬度等比放大 -->
-      <div class="chart-box">
+      <div class="m7-chart-box">
         <canvas id="mainChart"></canvas>
       </div>
     </div>
   </div>
 
   <!-- ── 1/3：訓練內容與手段 ── -->
-  <div class="card">
-    <div class="card-title">訓練內容與手段</div>
-    <div class="content-inner">
+  <div class="m7-card">
+    <div class="m7-card-title">訓練內容與手段</div>
+    <div class="m7-content-inner">
       <table id="contentTable">
         <colgroup>
           <col style="width:16px">
@@ -314,20 +302,20 @@ body {
           <col>
         </colgroup>
         <tr>
-          <td class="ct-lv" rowspan="4">訓練內容與手段</td>
-          <td class="ct-label">體能訓練</td>
+          <td class="m7-ct-lv" rowspan="4">訓練內容與手段</td>
+          <td class="m7-ct-label">體能訓練</td>
           <td contenteditable>重量訓練、循環訓練、間歇訓練、反覆訓練、斜坡訓練</td>
         </tr>
         <tr>
-          <td class="ct-label">技術訓練</td>
+          <td class="m7-ct-label">技術訓練</td>
           <td contenteditable>攻擊部分（傳接球、步法、各種射門、快攻）、防守部分（步法、壓制、攔截、封球）</td>
         </tr>
         <tr>
-          <td class="ct-label">戰術訓練</td>
+          <td class="m7-ct-label">戰術訓練</td>
           <td contenteditable>攻擊部分（2/3/4人組合、團隊中線攻擊/邊線攻擊/特殊戰況）、防守部分（2/3/4人聯防、團隊區域防守/盯人防守/混合防守/特殊戰況）</td>
         </tr>
         <tr>
-          <td class="ct-label">心理訓練</td>
+          <td class="m7-ct-label">心理訓練</td>
           <td contenteditable>目標設定、意象訓練、專注訓練、意志力訓練</td>
         </tr>
       </table>
@@ -420,7 +408,7 @@ const BD = makeBarData();
 //   Week:  1+2+52 = 55 ✓
 // ══════════════════════════════════════════════
 function calCells(n) {
-  return Array.from({length:n}, () => '<td class="cal" contenteditable></td>').join('');
+  return Array.from({length:n}, () => '<td class="m7-cal" contenteditable></td>').join('');
 }
 
 function buildTable() {
@@ -429,20 +417,20 @@ function buildTable() {
   // ── Row 1 ──
   // ── Row 0：頂部標題列（訓練目標跨技術/戰術/心理/表現成績）──
   h += '<tr>';
-  h += `<td class="hdr" style="font-size:9px">狀況分析</td>`;
-  h += `<td class="hdr" colspan="2" style="font-size:9px">測驗項目</td>`;
-  h += `<td class="hdr" colspan="${HT+HW+HP+HR}" style="font-size:9px">訓　練　目　標</td>`;
+  h += `<td class="m7-hdr" style="font-size:9px">狀況分析</td>`;
+  h += `<td class="m7-hdr" colspan="2" style="font-size:9px">測驗項目</td>`;
+  h += `<td class="m7-hdr" colspan="${HT+HW+HP+HR}" style="font-size:9px">訓　練　目　標</td>`;
   h += '</tr>';
 
   // ── Row 1：子標題（技術/戰術/心理/表現成績）──
   h += '<tr>';
-  h += `<td class="hdr2" style="font-size:9px">預測表現成績</td>`;
-  h += `<td class="hdr2" style="font-size:9px">專長項目</td>`;
-  h += `<td class="hdr2" style="font-size:9px">體　能</td>`;
-  h += `<td class="hdr2" colspan="${HT}" style="font-size:9px">技　　術</td>`;
-  h += `<td class="hdr2" colspan="${HW}" style="font-size:9px">戰　　術</td>`;
-  h += `<td class="hdr2" colspan="${HP}" style="font-size:9px">心　　理</td>`;
-  h += `<td class="hdr2" colspan="${HR}" style="font-size:9px">表現成績</td>`;
+  h += `<td class="m7-hdr2" style="font-size:9px">預測表現成績</td>`;
+  h += `<td class="m7-hdr2" style="font-size:9px">專長項目</td>`;
+  h += `<td class="m7-hdr2" style="font-size:9px">體　能</td>`;
+  h += `<td class="m7-hdr2" colspan="${HT}" style="font-size:9px">技　　術</td>`;
+  h += `<td class="m7-hdr2" colspan="${HW}" style="font-size:9px">戰　　術</td>`;
+  h += `<td class="m7-hdr2" colspan="${HP}" style="font-size:9px">心　　理</td>`;
+  h += `<td class="m7-hdr2" colspan="${HR}" style="font-size:9px">表現成績</td>`;
   h += '</tr>';
 
   // ── Row 2：內容（可編輯）──
@@ -458,58 +446,58 @@ function buildTable() {
 
   // ── Row 5：月份（可直接點擊編輯）──
   h += '<tr>';
-  h += `<td class="hdr" colspan="2" rowspan="2" style="font-size:9px">日　期</td>`;
-  h += `<td class="hdr" style="font-size:8px">月</td>`;
+  h += `<td class="m7-hdr" colspan="2" rowspan="2" style="font-size:9px">日　期</td>`;
+  h += `<td class="m7-hdr" style="font-size:8px">月</td>`;
   for (const m of MONTHS)
-    h += `<td colspan="${m.dates.length}" class="hdr" contenteditable style="font-size:7px;cursor:text;">${m.label}</td>`;
+    h += `<td colspan="${m.dates.length}" class="m7-hdr" contenteditable style="font-size:7px;cursor:text;">${m.label}</td>`;
   h += '</tr>';
 
   // ── Row 6：日期（可直接點擊編輯）──
   h += '<tr>';
-  h += `<td class="hdr2" style="font-size:7px">日</td>`;
+  h += `<td class="m7-hdr2" style="font-size:7px">日</td>`;
   for (const m of MONTHS) for (const d of m.dates)
-    h += `<td class="cal hdr2" contenteditable style="cursor:text;">${d}</td>`;
+    h += `<td class="m7-cal m7-hdr2" contenteditable style="cursor:text;">${d}</td>`;
   h += '</tr>';
 
   // ── 比賽安排 ──
   const comps = ['主要比賽','次要比賽','練習比賽','地　　點'];
   h += '<tr>';
-  h += `<td class="hdr vert" rowspan="${comps.length}" style="font-size:9px">比賽安排</td>`;
-  h += `<td colspan="2" class="hdr2" style="font-size:9px">${comps[0]}</td>${calCells(D)}`;
+  h += `<td class="m7-hdr m7-vert" rowspan="${comps.length}" style="font-size:9px">比賽安排</td>`;
+  h += `<td colspan="2" class="m7-hdr2" style="font-size:9px">${comps[0]}</td>${calCells(D)}`;
   h += '</tr>';
   for (let i=1;i<comps.length;i++)
-    h += `<tr><td colspan="2" class="hdr2" style="font-size:9px">${comps[i]}</td>${calCells(D)}</tr>`;
+    h += `<tr><td colspan="2" class="m7-hdr2" style="font-size:9px">${comps[i]}</td>${calCells(D)}</tr>`;
 
   // ── 階段劃分（8+7+6+9+12+10=52）──
   h += '<tr>';
-  h += `<td colspan="3" class="hdr" style="font-size:9px">階段劃分</td>`;
-  h += `<td colspan="8"  class="hdr2" contenteditable style="font-size:8px">鍛練期－專項準備</td>`;
-  h += `<td colspan="7"  class="hdr2" contenteditable style="font-size:8px">比賽期－比賽</td>`;
-  h += `<td colspan="6"  class="hdr2" contenteditable style="font-size:8px">調整期－一般</td>`;
-  h += `<td colspan="9"  class="hdr2" contenteditable style="font-size:8px">鍛練期－專項準備</td>`;
-  h += `<td colspan="12" class="hdr2" contenteditable style="font-size:8px">比賽期－比賽</td>`;
-  h += `<td colspan="10" class="hdr2" contenteditable style="font-size:8px">調整期</td>`;
+  h += `<td colspan="3" class="m7-hdr" style="font-size:9px">階段劃分</td>`;
+  h += `<td colspan="8"  class="m7-hdr2" contenteditable style="font-size:8px">鍛練期－專項準備</td>`;
+  h += `<td colspan="7"  class="m7-hdr2" contenteditable style="font-size:8px">比賽期－比賽</td>`;
+  h += `<td colspan="6"  class="m7-hdr2" contenteditable style="font-size:8px">調整期－一般</td>`;
+  h += `<td colspan="9"  class="m7-hdr2" contenteditable style="font-size:8px">鍛練期－專項準備</td>`;
+  h += `<td colspan="12" class="m7-hdr2" contenteditable style="font-size:8px">比賽期－比賽</td>`;
+  h += `<td colspan="10" class="m7-hdr2" contenteditable style="font-size:8px">調整期</td>`;
   h += '</tr>';
 
   // ── 週期（大+小）──
   h += '<tr>';
-  h += `<td class="hdr vert" rowspan="2" style="font-size:9px">週期</td>`;
-  h += `<td colspan="2" class="hdr2" style="font-size:9px">大週期</td>`;
+  h += `<td class="m7-hdr m7-vert" rowspan="2" style="font-size:9px">週期</td>`;
+  h += `<td colspan="2" class="m7-hdr2" style="font-size:9px">大週期</td>`;
   for (let i=0;i<BIG.length;i++)
-    h += `<td colspan="${BIG[i]}" class="hdr2" contenteditable style="font-weight:bold;font-size:10px">${i+1}</td>`;
+    h += `<td colspan="${BIG[i]}" class="m7-hdr2" contenteditable style="font-weight:bold;font-size:10px">${i+1}</td>`;
   h += '</tr>';
   h += '<tr>';
-  h += `<td colspan="2" class="hdr2" style="font-size:8px">小週期</td>`;
-  for (let i=1;i<=D;i++) h += `<td class="cal hdr2" style="font-size:7px">${i}</td>`;
+  h += `<td colspan="2" class="m7-hdr2" style="font-size:8px">小週期</td>`;
+  for (let i=1;i<=D;i++) h += `<td class="m7-cal m7-hdr2" style="font-size:7px">${i}</td>`;
   h += '</tr>';
 
   // ── 檢測 / 健康 ──
-  h += `<tr><td colspan="3" class="hdr2" style="font-size:9px;font-weight:bold">檢　測　日　期</td>${calCells(D)}</tr>`;
-  h += `<tr><td colspan="3" class="hdr2" style="font-size:9px;font-weight:bold">健康檢查日期</td>${calCells(D)}</tr>`;
+  h += `<tr><td colspan="3" class="m7-hdr2" style="font-size:9px;font-weight:bold">檢　測　日　期</td>${calCells(D)}</tr>`;
+  h += `<tr><td colspan="3" class="m7-hdr2" style="font-size:9px;font-weight:bold">健康檢查日期</td>${calCells(D)}</tr>`;
 
   // ── 訓練地點 ──
-  h += `<tr><td class="hdr vert" rowspan="2" style="font-size:9px">訓練地點</td><td colspan="2" class="hdr2" style="font-size:9px">學　　校</td>${calCells(D)}</tr>`;
-  h += `<tr><td colspan="2" class="hdr2" style="font-size:9px">移地訓練</td>${calCells(D)}</tr>`;
+  h += `<tr><td class="m7-hdr m7-vert" rowspan="2" style="font-size:9px">訓練地點</td><td colspan="2" class="m7-hdr2" style="font-size:9px">學　　校</td>${calCells(D)}</tr>`;
+  h += `<tr><td colspan="2" class="m7-hdr2" style="font-size:9px">移地訓練</td>${calCells(D)}</tr>`;
 
   document.getElementById('planTable').innerHTML = h;
 }
@@ -518,7 +506,7 @@ function buildTable() {
 //  Chart.js 混合圖
 //
 //  關鍵設定：
-//  1. maintainAspectRatio: false → 高度由 .chart-box flex:1 決定，
+//  1. maintainAspectRatio: false → 高度由 .m7-chart-box flex:1 決定，
 //     不隨 3440px 寬度等比放大
 //  2. 折線用獨立 y2 軸（非堆疊）→ 三條線皆可見
 //  3. 初始值 15%，供教練由下往上拖拉
@@ -935,11 +923,11 @@ body { font-family:'微軟正黑體',Arial,sans-serif; font-size:7pt; margin:0; 
 h2  { text-align:center; font-size:11pt; margin:0 0 3pt; }
 table { border-collapse:collapse; width:100% !important; table-layout:auto !important; font-size:6pt; margin:0; }
 td  { border:1px solid #555; padding:1px 2px; text-align:center; vertical-align:middle; overflow:hidden; }
-.hdr  { background:#cfd8dc !important; font-weight:bold; }
-.hdr2 { background:#eceff1 !important; }
+.m7-hdr  { background:#cfd8dc !important; font-weight:bold; }
+.m7-hdr2 { background:#eceff1 !important; }
 .e    { background:#fffde7 !important; text-align:left; padding:1px 3px; white-space:normal; }
-.vert { writing-mode:vertical-rl; }
-.cal  { font-size:5pt; }
+.m7-vert { writing-mode:vertical-rl; }
+.m7-cal  { font-size:5pt; }
 </style>
 </head>
 <body><div class="WordSection1">
