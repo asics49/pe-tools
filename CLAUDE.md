@@ -208,6 +208,7 @@ CDN 殼層：Chart.js 4.4.1
 - 圖表 PNG 改用離屏 Canvas 2D（固定 1200×320px）解決 Word 匯出因 devicePixelRatio 造成尺寸錯誤
 - 計畫主表欄寬：3% + 3% + 4% + 52×1.731% ≈ 100%
 - `// init` 標記讓 `buildTable()` + `buildChart()` 在分頁第一次啟動時才執行（避免 Canvas 尺寸為 0）
+- 圖表 click 事件用 `'index' + intersect:false`，點擊任意 x 位置即可找到週次（`'nearest'+intersect:true` 需精確命中圖元，在合併版面下容易失效）
 
 ---
 
@@ -292,6 +293,7 @@ CDN 殼層：Chart.js 4.4.1
 | Word 頁首圖片不顯示 | EMU→DXA 算錯（/914.4 應為 /635）；缺 jpeg content type | 修正換算；補 `[Content_Types].xml` |
 | m6 分頁空白 | leave-record.html `.wrap` 少一個 `</div>`，panel_m5 未閉合，panel_m6 被嵌套在 panel_m5 內 | 補上 `</div>` 閉合 `.wrap`（leave-record.html line 198 後）|
 | build.py `get_body` 抓到 `</head><body>` | grade-record.html `<style>` 在 `<head>` 內，`</style>` 後緊接 `</head><body>` | `get_body` 加 regex 濾除 `</head>`、`<body>`、`</body>`、`</html>` |
+| m7 點擊柱狀圖無反應 | `'nearest'+intersect:true` 在合併版面需精確命中圖元 | click handler 改用 `'index'+intersect:false` |
 
 ---
 
