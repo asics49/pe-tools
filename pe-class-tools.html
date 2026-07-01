@@ -1137,11 +1137,13 @@ tr.sub-start td{border-top:1px solid #bbb;}
 .note{font-size:11px;color:#666;margin-top:8px;line-height:1.6;}
 
 
+@page WordSection1 { size:21cm 29.7cm; margin:1.8cm; }
+div.WordSection1 { page:WordSection1; }
 
 h1{font-size:14pt;text-align:center;margin-bottom:8pt;}
 .daterow{font-size:11pt;margin-bottom:8pt;}
-table{border-collapse:collapse;width:100%;}
-th,td{border:1pt solid #999;padding:3pt 5pt;font-size:10pt;}
+table{border-collapse:collapse;width:100%;table-layout:fixed;}
+th,td{border:1pt solid #999;padding:3pt 5pt;font-size:10pt;word-break:break-all;}
 .sigrow{margin-top:12pt;font-size:11pt;}
 
 </style>
@@ -6494,20 +6496,22 @@ function m8_exportWord() {
   const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
 <head><meta charset='UTF-8'>
 <style>
-body{font-family:'微軟正黑體',Arial,sans-serif;font-size:11pt;margin:2cm;}
+@page WordSection1 { size:21cm 29.7cm; margin:1.8cm; }
+div.WordSection1 { page:WordSection1; }
+body{font-family:'微軟正黑體',Arial,sans-serif;font-size:11pt;margin:0;}
 h1{font-size:14pt;text-align:center;margin-bottom:8pt;}
 .daterow{font-size:11pt;margin-bottom:8pt;}
-table{border-collapse:collapse;width:100%;}
-th,td{border:1pt solid #999;padding:3pt 5pt;font-size:10pt;}
+table{border-collapse:collapse;width:100%;table-layout:fixed;}
+th,td{border:1pt solid #999;padding:3pt 5pt;font-size:10pt;word-break:break-all;}
 .sigrow{margin-top:12pt;font-size:11pt;}
 </style>
 </head>
-<body>
+<body><div class="WordSection1">
 <h1>${title}</h1>
 <p class="daterow">${dateStr}</p>
 ${tableHtml}
 <p class="sigrow">${sigs}</p>
-</body></html>`;
+</div></body></html>`;
   const blob = new Blob(['﻿'+html], {type:'application/msword'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
