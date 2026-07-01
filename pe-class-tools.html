@@ -1137,14 +1137,14 @@ tr.sub-start td{border-top:1px solid #bbb;}
 .note{font-size:11px;color:#666;margin-top:8px;line-height:1.6;}
 
 
-@page WordSection1 { size:21cm 29.7cm; margin:1.8cm; }
+@page WordSection1 { size:21cm 29.7cm; margin:1.3cm; }
 div.WordSection1 { page:WordSection1; }
 
-h1{font-size:14pt;text-align:center;margin-bottom:8pt;}
-.daterow{font-size:11pt;margin-bottom:8pt;}
+h1{font-size:13pt;text-align:center;margin-bottom:4pt;}
+.daterow{font-size:10pt;margin-bottom:4pt;}
 table{border-collapse:collapse;width:100%;table-layout:fixed;}
-th,td{border:1pt solid #999;padding:3pt 5pt;font-size:10pt;word-break:break-all;}
-.sigrow{margin-top:12pt;font-size:11pt;}
+th,td{border:1pt solid #999;padding:1.5pt 3pt;font-size:9.5pt;line-height:1.15;}
+.sigrow{margin-top:6pt;font-size:10pt;}
 
 </style>
 </head>
@@ -6420,16 +6420,20 @@ function getDateStr() {
 
 function buildWordTable() {
   const d = monthData_m8[curMonth_m8];
-  let html = `<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:11pt;">
+  let html = `<table border="1" cellpadding="2" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:9.5pt;table-layout:fixed;">
+<colgroup>
+  <col style="width:6%;"><col style="width:11%;"><col style="width:4%;"><col style="width:26%;">
+  <col style="width:5%;"><col style="width:5%;"><col style="width:21%;"><col style="width:22%;">
+</colgroup>
 <tr style="background:#1565c0;color:white;">
-  <th style="width:60px;">大區</th>
-  <th style="width:90px;">子區</th>
-  <th style="width:28px;">編號</th>
+  <th>大區</th>
+  <th>子區</th>
+  <th>編號</th>
   <th>檢查要點</th>
-  <th style="width:32px;">是</th>
-  <th style="width:32px;">否</th>
-  <th style="width:180px;">待改進或檢修事項</th>
-  <th style="width:130px;">複檢日期及結果</th>
+  <th>是</th>
+  <th>否</th>
+  <th>待改進或檢修事項</th>
+  <th>複檢日期及結果</th>
 </tr>`;
   let prevArea=null, prevSub=null;
   // compute rowspans
@@ -6449,7 +6453,7 @@ function buildWordTable() {
     if (areaNew) {
       areaCount[area] = areaCount[area]||0;
       const span = areaSpans[area];
-      html += `<td rowspan="${span}" style="background:#e3f2fd;font-weight:bold;text-align:center;vertical-align:middle;">${area}</td>`;
+      html += `<td rowspan="${span}" style="background:#e3f2fd;font-weight:bold;text-align:center;vertical-align:middle;writing-mode:vertical-rl;text-orientation:upright;letter-spacing:2px;">${area}</td>`;
     }
     if (subNew) {
       const key = area+'|'+sub;
@@ -6496,14 +6500,14 @@ function m8_exportWord() {
   const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
 <head><meta charset='UTF-8'>
 <style>
-@page WordSection1 { size:21cm 29.7cm; margin:1.8cm; }
+@page WordSection1 { size:21cm 29.7cm; margin:1.3cm; }
 div.WordSection1 { page:WordSection1; }
 body{font-family:'微軟正黑體',Arial,sans-serif;font-size:11pt;margin:0;}
-h1{font-size:14pt;text-align:center;margin-bottom:8pt;}
-.daterow{font-size:11pt;margin-bottom:8pt;}
+h1{font-size:13pt;text-align:center;margin-bottom:4pt;}
+.daterow{font-size:10pt;margin-bottom:4pt;}
 table{border-collapse:collapse;width:100%;table-layout:fixed;}
-th,td{border:1pt solid #999;padding:3pt 5pt;font-size:10pt;word-break:break-all;}
-.sigrow{margin-top:12pt;font-size:11pt;}
+th,td{border:1pt solid #999;padding:1.5pt 3pt;font-size:9.5pt;line-height:1.15;}
+.sigrow{margin-top:6pt;font-size:10pt;}
 </style>
 </head>
 <body><div class="WordSection1">
