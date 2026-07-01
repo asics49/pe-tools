@@ -28,6 +28,7 @@ FILES = [
     ('m5',  '模組五',  '公假統計表',     'leave-record.html'),
     ('m6',  '模組六',  '成績登錄',       'grade-record.html'),
     ('m7',  '模組七',  '年度訓練計畫',   '年度訓練計畫表.html'),
+    ('m8',  '模組八',  '器材檢核表',     '器材檢核表.html'),
 ]
 
 OUTPUT = 'pe-class-tools.html'
@@ -58,6 +59,8 @@ CONFLICT_IDS = [
     'inSchool', 'inSport', 'inYear', 'inStartDate',
     'em_ty', 'em_js', 'em_zs', 'em_xl', 'em_sum', 'em_vol', 'em_int', 'em_perf',
     'em_bar_from', 'em_bar_to', 'em_line_from', 'em_line_to',
+    'inDay', 'monthTabs', 'monthLabel', 'checkTable', 'checkBody', 'sigRow',
+    'sig1', 'sig2', 'sig3', 'sig4', 'sig5',
 ]
 
 # JS variable names that conflict between specific modules
@@ -77,6 +80,8 @@ CONFLICT_VARS = {
     'm7':  {'chart': 'chart_m7', 'D': 'D_m7', 'BD': 'BD_m7', 'BIG': 'BIG_m7',
             'HT': 'HT_m7', 'WEEKS': 'WEEKS_m7', 'MONTHS': 'MONTHS_m7',
             'INIT_VAL': 'INIT_VAL_m7', '_editModalWeek': '_editModalWeek_m7'},
+    'm8':  {'MONTHS': 'MONTHS_m8', 'CHECKS': 'CHECKS_m8',
+            'curMonth': 'curMonth_m8', 'monthData': 'monthData_m8'},
     # 新增模組時，在這裡加上該模組的衝突變數：
 }
 

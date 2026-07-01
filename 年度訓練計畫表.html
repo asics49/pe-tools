@@ -742,15 +742,6 @@ function applyEditModal() {
   closeEditModal();
 }
 
-// 背景點擊關閉
-document.getElementById('editModal').addEventListener('click', function(e) {
-  if (e.target === this) closeEditModal();
-});
-// 柱狀輸入即時更新合計
-['em_ty','em_js','em_zs','em_xl'].forEach(id =>
-  document.getElementById(id).addEventListener('input', updateEditSum)
-);
-
 function resetCurves() {
   chart.data.datasets[4].data = Array(WEEKS).fill(INIT_VAL);
   chart.data.datasets[5].data = Array(WEEKS).fill(INIT_VAL);
@@ -975,6 +966,15 @@ ${planHTML}
 // ══════════════════════════════════════════════
 buildTable();
 buildChart();
+// 背景點擊關閉
+document.getElementById('editModal').addEventListener('click', function(e) {
+  if (e.target === this) closeEditModal();
+});
+// 柱狀輸入即時更新合計
+document.getElementById('em_ty').addEventListener('input', updateEditSum);
+document.getElementById('em_js').addEventListener('input', updateEditSum);
+document.getElementById('em_zs').addEventListener('input', updateEditSum);
+document.getElementById('em_xl').addEventListener('input', updateEditSum);
 </script>
 </body>
 </html>

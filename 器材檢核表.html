@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'微軟正黑體',Arial,sans-serif;font-size:13px;background:#f5f5f5;}
+.wrap{max-width:1200px;margin:0 auto;padding:16px;}
+h2{font-size:16px;font-weight:bold;margin-bottom:12px;color:#333;}
+
+/* toolbar */
+.toolbar{background:#fff;border:1px solid #ddd;border-radius:6px;padding:12px 16px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
+.toolbar label{font-weight:bold;font-size:12px;color:#555;margin-right:4px;}
+.toolbar input[type=text],.toolbar input[type=number]{border:1px solid #ccc;border-radius:4px;padding:4px 8px;font-size:13px;width:80px;}
+.toolbar input[type=text].wide{width:120px;}
+.period-group{display:flex;gap:8px;align-items:center;}
+.period-group label{font-weight:normal;display:flex;align-items:center;gap:3px;}
+
+/* month tabs */
+.month-tabs{display:flex;gap:4px;margin-bottom:12px;}
+.month-tab{padding:6px 18px;border:1px solid #ccc;background:#f0f0f0;border-radius:4px 4px 0 0;cursor:pointer;font-size:13px;font-weight:bold;}
+.month-tab.active{background:#1565c0;color:#fff;border-color:#1565c0;}
+
+/* table */
+.table-wrap{overflow-x:auto;background:#fff;border:1px solid #ddd;border-radius:0 6px 6px 6px;}
+table{border-collapse:collapse;width:100%;min-width:900px;}
+th{background:#1565c0;color:#fff;padding:6px 8px;text-align:center;font-size:12px;white-space:nowrap;}
+td{border:1px solid #ccc;padding:4px 6px;vertical-align:middle;font-size:12px;}
+td.area-cell{background:#e3f2fd;font-weight:bold;text-align:center;white-space:nowrap;}
+td.sub-cell{background:#f3f3f3;text-align:center;white-space:nowrap;}
+td.num-cell{text-align:center;width:36px;color:#666;}
+td.item-cell{min-width:160px;}
+td.yn-cell{text-align:center;width:46px;cursor:pointer;font-size:16px;user-select:none;}
+td.yn-cell:hover{background:#e8f5e9;}
+td.yn-y.checked{background:#c8e6c9;color:#2e7d32;font-weight:bold;}
+td.yn-n.checked{background:#ffcdd2;color:#c62828;font-weight:bold;}
+tr.row-no td{background:#fff8f8;}
+td.issue-cell{min-width:180px;}
+td.issue-cell input,td.recheck-cell input{width:100%;border:none;background:transparent;font-size:12px;padding:2px 4px;outline:none;}
+td.issue-cell input:focus,td.recheck-cell input:focus{background:#fffde7;border-radius:2px;}
+td.recheck-cell{min-width:140px;}
+
+/* other row */
+tr.other-row td{background:#fafafa;font-style:italic;}
+tr.other-row td.other-note{padding:2px;}
+tr.other-row td.other-note input{width:100%;border:none;background:transparent;font-size:12px;padding:2px 4px;color:#888;outline:none;}
+tr.other-row td.other-note input:focus{background:#fffde7;}
+
+/* first-in-group borders */
+tr.area-start td{border-top:2px solid #999;}
+tr.sub-start td{border-top:1px solid #bbb;}
+
+/* signature */
+.sig-row{display:flex;gap:16px;flex-wrap:wrap;margin:16px 0;padding:12px 16px;background:#fff;border:1px solid #ddd;border-radius:6px;}
+.sig-field{display:flex;align-items:center;gap:6px;font-size:12px;}
+.sig-field span{white-space:nowrap;font-weight:bold;}
+.sig-field input{border:none;border-bottom:1px solid #999;width:100px;font-size:12px;padding:2px 4px;outline:none;background:transparent;}
+
+.btn-row{display:flex;gap:8px;margin-top:12px;}
+.btn{padding:8px 20px;border:none;border-radius:4px;cursor:pointer;font-size:13px;font-weight:bold;}
+.btn-word{background:#1565c0;color:#fff;}
+.btn-word:hover{background:#0d47a1;}
+.btn-excel{background:#2e7d32;color:#fff;}
+.btn-excel:hover{background:#1b5e20;}
+
+.note{font-size:11px;color:#666;margin-top:8px;line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h2>體育器材安全檢核表</h2>
+
+<div class="toolbar">
+  <div><label>學年度</label><input type="number" id="inYear" value="115" min="110" max="130" style="width:60px;">年</div>
+  <div><label>檢查日期</label><span id="monthLabel" style="font-weight:bold;margin-right:4px;color:#1565c0;"></span><input type="text" id="inDay" value="" placeholder="日" style="width:44px;">日</div>
+  <div class="period-group">
+    <span style="font-weight:bold;font-size:12px;color:#555;">期別：</span>
+    <label><input type="radio" name="period" value="期中"> 期中</label>
+    <label><input type="radio" name="period" value="期末"> 期末</label>
+    <label><input type="radio" name="period" value="學期前"> 學期前</label>
+    <label><input type="radio" name="period" value="其他"> 其他</label>
+  </div>
+</div>
+
+<div class="month-tabs" id="monthTabs"></div>
+
+<div class="table-wrap">
+<table id="checkTable">
+  <thead>
+    <tr>
+      <th style="width:80px;">大區</th>
+      <th style="width:120px;">子區</th>
+      <th style="width:36px;">編號</th>
+      <th>檢查要點</th>
+      <th style="width:46px;">是</th>
+      <th style="width:46px;">否</th>
+      <th style="min-width:180px;">待改進或檢修事項</th>
+      <th style="min-width:140px;">複檢日期及結果</th>
+    </tr>
+  </thead>
+  <tbody id="checkBody"></tbody>
+</table>
+</div>
+
+<div class="sig-row" id="sigRow">
+  <div class="sig-field"><span>體育組：</span><input id="sig1" type="text" placeholder="簽名"></div>
+  <div class="sig-field"><span>學務主任：</span><input id="sig2" type="text" placeholder="簽名"></div>
+  <div class="sig-field"><span>事務組長：</span><input id="sig3" type="text" placeholder="簽名"></div>
+  <div class="sig-field"><span>總務主任：</span><input id="sig4" type="text" placeholder="簽名"></div>
+  <div class="sig-field"><span>校長：</span><input id="sig5" type="text" placeholder="簽名"></div>
+</div>
+
+<div class="btn-row">
+  <button class="btn btn-word" onclick="exportWord()">下載 Word</button>
+  <button class="btn btn-excel" onclick="exportExcel()">下載 Excel</button>
+</div>
+<div class="note">填寫說明：「是」欄填入 V 表示符合；「否」欄填入 V 表示有問題（自動標紅），請於「待改進事項」欄說明原因。</div>
+</div>
+
+<script>
+const MONTHS = ['9月', '1月', '3月', '6月'];
+const MONTH_NUMS = {'9月':'9', '1月':'1', '3月':'3', '6月':'6'};
+
+// Check items: [area, sub, num, item] or [area, sub, null, null] for "其他" row
+const CHECKS = [
+  ['操場','跑道','1','地面平坦'],
+  ['操場','跑道','2','跑道未變形'],
+  ['操場','跑道','3','跑道完整無破損'],
+  ['操場','草地球場','1','場地平整'],
+  ['操場','草地球場','2','草皮鋪面完整'],
+  ['操場','草地球場','3','球門焊接牢固無鏽蝕'],
+  ['操場','其他',null,null],
+  ['樂活運動站','運動器械','1','地墊平整'],
+  ['樂活運動站','運動器械','2','器材完整無損壞'],
+  ['樂活運動站','運動器械','3','使用說明標示清楚'],
+  ['樂活運動站','體操軟墊','1','防撞墊未損壞'],
+  ['樂活運動站','體操軟墊','2','地墊平坦'],
+  ['樂活運動站','懸吊架','1','螺絲緊鎖無鬆脫'],
+  ['樂活運動站','懸吊架','2','懸吊繩穩固無脫落'],
+  ['樂活運動站','懸吊架','3','橫槓未彎曲變形'],
+  ['樂活運動站','草皮跑道','1','撲面完整無皺褶'],
+  ['樂活運動站','草皮跑道','2','防撞墊未損壞'],
+  ['樂活運動站','其他',null,null],
+  ['桌球教室','桌球桌','1','球桌支架穩固'],
+  ['桌球教室','桌球桌','2','球桌螺絲緊鎖無鬆脫'],
+  ['桌球教室','桌球桌','3','球網完整無破損'],
+  ['桌球教室','桌球桌','4','防撞墊未損壞'],
+  ['桌球教室','其他',null,null],
+  ['風雨球場','籃球架','1','鋼管焊接未腐蝕'],
+  ['風雨球場','籃球架','2','籃板未破損'],
+  ['風雨球場','籃球架','3','籃框未鬆脫變形'],
+  ['風雨球場','籃球架','4','包覆球柱之軟墊未破損'],
+  ['風雨球場','籃球架','5','籃網狀況良好未破損'],
+  ['風雨球場','場地','1','場地平整未受損'],
+  ['風雨球場','場地','2','周邊排水溝正常'],
+  ['風雨球場','場地','3','球場周邊防撞保護墊完整'],
+  ['風雨球場','場地','4','場地使用標示清楚'],
+  ['風雨球場','其他',null,null],
+  ['活動中心','羽球場','1','羽球支架穩固'],
+  ['活動中心','羽球場','2','球架螺絲緊鎖無鬆脫'],
+  ['活動中心','羽球場','3','球網完整無破損'],
+  ['活動中心','羽球場','4','場地平整未受損'],
+  ['活動中心','其他',null,null],
+  ['詠清球場','五人制足球場地','1','球門焊接牢固無鏽蝕'],
+  ['詠清球場','五人制足球場地','2','場地平整未受損'],
+  ['詠清球場','五人制足球場地','3','周邊圍籬完整無損壞'],
+  ['詠清球場','其他',null,null],
+  ['其他場域','操場週邊澆灌系統','1','蓄水池壁完整無破損'],
+  ['其他場域','操場週邊澆灌系統','2','抽水馬達運作正常'],
+  ['其他場域','操場週邊澆灌系統','3','配電盤功能正常'],
+  ['其他場域','操場澆灌系統水源','1','水源充足穩定'],
+  ['其他場域','滾球場','1','場地平整安全'],
+  ['其他場域','風雨球場周邊地墊','1','地墊鋪設完整'],
+  ['其他場域','風雨球場周邊地墊','2','場內無危險障礙物'],
+];
+
+// Per-month data: { rows: [{yes,no,issue,recheck}], day, period, sigs }
+const monthData = {};
+MONTHS.forEach(m => {
+  monthData[m] = {
+    rows: CHECKS.map(c => ({yes:false, no:false, issue:'', recheck:'', otherNote:''})),
+    day: '', period: '', sigs: ['','','','','']
+  };
+});
+
+let curMonth = MONTHS[0];
+
+function buildTabs() {
+  const wrap = document.getElementById('monthTabs');
+  wrap.innerHTML = '';
+  MONTHS.forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'month-tab' + (m===curMonth?' active':'');
+    btn.textContent = m + '檢查';
+    btn.onclick = () => switchMonth(m);
+    wrap.appendChild(btn);
+  });
+}
+
+function switchMonth(m) {
+  saveCurrentMonth();
+  curMonth = m;
+  buildTabs();
+  loadCurrentMonth();
+  buildTable();
+}
+
+function saveCurrentMonth() {
+  const d = monthData[curMonth];
+  d.day = document.getElementById('inDay').value;
+  const pr = document.querySelector('input[name=period]:checked');
+  d.period = pr ? pr.value : '';
+  d.sigs = [
+    document.getElementById('sig1').value,
+    document.getElementById('sig2').value,
+    document.getElementById('sig3').value,
+    document.getElementById('sig4').value,
+    document.getElementById('sig5').value,
+  ];
+  // rows saved via direct mutation in click/input handlers
+}
+
+function loadCurrentMonth() {
+  const d = monthData[curMonth];
+  document.getElementById('inDay').value = d.day;
+  document.getElementById('monthLabel').textContent = document.getElementById('inYear').value + '年' + MONTH_NUMS[curMonth] + '月';
+  document.querySelectorAll('input[name=period]').forEach(r => r.checked = r.value===d.period);
+  document.getElementById('sig1').value = d.sigs[0]||'';
+  document.getElementById('sig2').value = d.sigs[1]||'';
+  document.getElementById('sig3').value = d.sigs[2]||'';
+  document.getElementById('sig4').value = d.sigs[3]||'';
+  document.getElementById('sig5').value = d.sigs[4]||'';
+}
+
+document.getElementById('inYear').addEventListener('input', () => {
+  document.getElementById('monthLabel').textContent = document.getElementById('inYear').value + '年' + MONTH_NUMS[curMonth] + '月';
+});
+
+function buildTable() {
+  const tbody = document.getElementById('checkBody');
+  tbody.innerHTML = '';
+  const d = monthData[curMonth];
+  let prevArea = null, prevSub = null;
+  CHECKS.forEach((c, idx) => {
+    const [area, sub, num, item] = c;
+    const rowData = d.rows[idx];
+    const isOther = num === null;
+    const areaStart = area !== prevArea;
+    const subStart = areaStart || sub !== prevSub;
+
+    const tr = document.createElement('tr');
+    let classes = [];
+    if (areaStart) classes.push('area-start');
+    else if (subStart) classes.push('sub-start');
+    if (isOther) classes.push('other-row');
+    if (rowData.no) classes.push('row-no');
+    tr.className = classes.join(' ');
+
+    if (isOther) {
+      tr.innerHTML = `<td class="area-cell" style="border-top:${areaStart?'2px solid #999':'1px solid #bbb'}">${areaStart?area:''}</td>
+        <td colspan="3" class="sub-cell" style="text-align:left;color:#888;font-style:italic;padding:3px 8px;">其他備註</td>
+        <td colspan="4" class="other-note"><input type="text" placeholder="如有其他事項請記錄於此..." value="${escHtml(rowData.otherNote||'')}"></td>`;
+      tr.querySelector('input').addEventListener('input', e => { d.rows[idx].otherNote = e.target.value; });
+    } else {
+      tr.innerHTML = `<td class="area-cell">${areaStart?area:''}</td>
+        <td class="sub-cell">${subStart?sub:''}</td>
+        <td class="num-cell">${num}</td>
+        <td class="item-cell">${escHtml(item)}</td>
+        <td class="yn-cell yn-y${rowData.yes?' checked':''}">✔</td>
+        <td class="yn-cell yn-n${rowData.no?' checked':''}">✔</td>
+        <td class="issue-cell"><input type="text" value="${escHtml(rowData.issue)}" placeholder="${rowData.no?'請說明原因…':''}"></td>
+        <td class="recheck-cell"><input type="text" value="${escHtml(rowData.recheck)}" placeholder="複檢日期/結果"></td>`;
+      tr.querySelector('.yn-y').addEventListener('click', () => toggleYN(idx, 'yes'));
+      tr.querySelector('.yn-n').addEventListener('click', () => toggleYN(idx, 'no'));
+      tr.querySelectorAll('input')[0].addEventListener('input', e => { d.rows[idx].issue = e.target.value; });
+      tr.querySelectorAll('input')[1].addEventListener('input', e => { d.rows[idx].recheck = e.target.value; });
+    }
+
+    tbody.appendChild(tr);
+    prevArea = area;
+    prevSub = sub;
+  });
+}
+
+function toggleYN(idx, which) {
+  const d = monthData[curMonth];
+  const r = d.rows[idx];
+  if (which==='yes') { r.yes = !r.yes; if(r.yes) r.no = false; }
+  else { r.no = !r.no; if(r.no) r.yes = false; }
+  buildTable();
+}
+
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function getTitle() {
+  const yr = document.getElementById('inYear').value;
+  const day = document.getElementById('inDay').value;
+  const mn = MONTH_NUMS[curMonth];
+  const pr = document.querySelector('input[name=period]:checked');
+  return `高雄市右昌國小「學校體育器材維護及運動安全」檢核表`;
+}
+
+function getDateStr() {
+  const yr = document.getElementById('inYear').value;
+  const mn = MONTH_NUMS[curMonth];
+  const day = document.getElementById('inDay').value || '　　';
+  const pr = document.querySelector('input[name=period]:checked');
+  const prStr = pr ? pr.value : '';
+  return `檢查日期：${yr}年${mn}月${day}日　　　　${prStr?'〔'+prStr+'〕':''}`;
+}
+
+function buildWordTable() {
+  const d = monthData[curMonth];
+  let html = `<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse;width:100%;font-size:11pt;">
+<tr style="background:#1565c0;color:white;">
+  <th style="width:60px;">大區</th>
+  <th style="width:90px;">子區</th>
+  <th style="width:28px;">編號</th>
+  <th>檢查要點</th>
+  <th style="width:32px;">是</th>
+  <th style="width:32px;">否</th>
+  <th style="width:180px;">待改進或檢修事項</th>
+  <th style="width:130px;">複檢日期及結果</th>
+</tr>`;
+  let prevArea=null, prevSub=null;
+  // compute rowspans
+  const areaSpans={}, subSpans={};
+  CHECKS.forEach(([area,sub],i) => {
+    areaSpans[area] = (areaSpans[area]||0)+1;
+    subSpans[area+'|'+sub] = (subSpans[area+'|'+sub]||0)+1;
+  });
+  const areaCount={}, subCount={};
+  CHECKS.forEach(([area,sub,num,item],idx) => {
+    const r = d.rows[idx];
+    const isOther = num===null;
+    const areaNew = area!==prevArea;
+    const subNew = areaNew || sub!==prevSub;
+    const rowBg = r.no ? 'background:#ffcdd2;' : '';
+    html += `<tr style="${rowBg}">`;
+    if (areaNew) {
+      areaCount[area] = areaCount[area]||0;
+      const span = areaSpans[area];
+      html += `<td rowspan="${span}" style="background:#e3f2fd;font-weight:bold;text-align:center;vertical-align:middle;">${area}</td>`;
+    }
+    if (subNew) {
+      const key = area+'|'+sub;
+      const span = subSpans[key];
+      html += `<td rowspan="${span}" style="background:#f3f3f3;text-align:center;vertical-align:middle;">${sub}</td>`;
+    }
+    if (isOther) {
+      html += `<td colspan="6" style="color:#888;font-style:italic;padding:3px 6px;">其他備註：${escHtml(r.otherNote||'')}</td>`;
+    } else {
+      const yMark = r.yes ? '✔' : '';
+      const nMark = r.no ? '✔' : '';
+      html += `<td style="text-align:center;">${num}</td>
+        <td>${escHtml(item)}</td>
+        <td style="text-align:center;color:green;">${yMark}</td>
+        <td style="text-align:center;color:red;">${nMark}</td>
+        <td>${escHtml(r.issue)}</td>
+        <td>${escHtml(r.recheck)}</td>`;
+    }
+    html += '</tr>';
+    prevArea=area; prevSub=sub;
+  });
+  html += '</table>';
+  return html;
+}
+
+function getSigs() {
+  const labels = ['體育組：','學務主任：','事務組長：','總務主任：','校長：'];
+  const sigVals = [
+    document.getElementById('sig1').value,
+    document.getElementById('sig2').value,
+    document.getElementById('sig3').value,
+    document.getElementById('sig4').value,
+    document.getElementById('sig5').value,
+  ];
+  return labels.map((l,i) => l + (sigVals[i]||'　　　　　')).join('　　　');
+}
+
+function exportWord() {
+  saveCurrentMonth();
+  const title = getTitle();
+  const dateStr = getDateStr();
+  const tableHtml = buildWordTable();
+  const sigs = getSigs();
+  const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head><meta charset='UTF-8'>
+<style>
+body{font-family:'微軟正黑體',Arial,sans-serif;font-size:11pt;margin:2cm;}
+h1{font-size:14pt;text-align:center;margin-bottom:8pt;}
+.daterow{font-size:11pt;margin-bottom:8pt;}
+table{border-collapse:collapse;width:100%;}
+th,td{border:1pt solid #999;padding:3pt 5pt;font-size:10pt;}
+.sigrow{margin-top:12pt;font-size:11pt;}
+</style>
+</head>
+<body>
+<h1>${title}</h1>
+<p class="daterow">${dateStr}</p>
+${tableHtml}
+<p class="sigrow">${sigs}</p>
+</body></html>`;
+  const blob = new Blob(['﻿'+html], {type:'application/msword'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `體育器材檢核表_${MONTH_NUMS[curMonth]}月.doc`;
+  a.click();
+}
+
+function exportExcel() {
+  saveCurrentMonth();
+  const d = monthData[curMonth];
+  const yr = document.getElementById('inYear').value;
+  const mn = MONTH_NUMS[curMonth];
+  const day = document.getElementById('inDay').value || '';
+  const pr = document.querySelector('input[name=period]:checked');
+
+  const rows = [
+    ['高雄市右昌國小「學校體育器材維護及運動安全」檢核表'],
+    [`檢查日期：${yr}年${mn}月${day}日`, '', '', '', '', '', pr?pr.value:'', ''],
+    ['大區','子區','編號','檢查要點','是','否','待改進或檢修事項','複檢日期及結果'],
+  ];
+  CHECKS.forEach(([area,sub,num,item],idx) => {
+    const r = d.rows[idx];
+    if (num===null) {
+      rows.push([area, '其他', '', r.otherNote||'', '', '', '', '']);
+    } else {
+      rows.push([area, sub, num, item, r.yes?'V':'', r.no?'V':'', r.issue, r.recheck]);
+    }
+  });
+  rows.push(['填寫說明：「是」欄填入 V 表示符合；「否」欄填入 V 表示有問題，請於「待改進事項」欄說明原因。']);
+  const sigs = [
+    document.getElementById('sig1').value,
+    document.getElementById('sig2').value,
+    document.getElementById('sig3').value,
+    document.getElementById('sig4').value,
+    document.getElementById('sig5').value,
+  ];
+  rows.push(['體育組：'+sigs[0], '學務主任：'+sigs[1], '', '事務組長：'+sigs[2], '', '總務主任：'+sigs[3], '', '校長：'+sigs[4]]);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:10},{wch:14},{wch:6},{wch:22},{wch:5},{wch:5},{wch:24},{wch:18}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, mn+'月檢查');
+  XLSX.writeFile(wb, `體育器材檢核表_${mn}月.xlsx`);
+}
+
+// init
+buildTabs();
+loadCurrentMonth();
+buildTable();
+</script>
+</body>
+</html>
