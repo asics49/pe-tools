@@ -1134,6 +1134,8 @@ tr.sub-start td{border-top:1px solid #bbb;}
 .btn-word:hover{background:#0d47a1;}
 .btn-excel{background:#2e7d32;color:#fff;}
 .btn-excel:hover{background:#1b5e20;}
+.btn-reset{background:#757575;color:#fff;}
+.btn-reset:hover{background:#424242;}
 
 .note{font-size:11px;color:#666;margin-top:8px;line-height:1.6;}
 
@@ -1995,6 +1997,7 @@ th,td{border:1pt solid #999;padding:1.5pt 3pt;font-size:9.5pt;line-height:1.15;}
 <div class="btn-row">
   <button class="btn btn-word" onclick="m8_exportWord()">下載 Word</button>
   <button class="btn btn-excel" onclick="exportExcel()">下載 Excel</button>
+  <button class="btn btn-reset" onclick="resetCurrentMonth()">重設本月檢核</button>
 </div>
 <div class="note">填寫說明：「是」欄填入 V 表示符合；「否」欄填入 V 表示有問題（自動標紅），請於「待改進事項」欄說明原因。</div>
 </div>
@@ -6309,6 +6312,16 @@ function switchMonth(m) {
   saveCurrentMonth();
   curMonth_m8 = m;
   buildTabs();
+  loadCurrentMonth();
+  m8_buildTable();
+}
+
+function resetCurrentMonth() {
+  if (!confirm(`確定要重設「${curMonth_m8}檢查」的所有填寫內容嗎？此動作無法復原。`)) return;
+  monthData_m8[curMonth_m8] = {
+    rows: CHECKS_m8.map(c => ({yes:false, no:false, issue:'', recheck:'', otherNote:''})),
+    day: '', period: '', sigs: ['','','','','']
+  };
   loadCurrentMonth();
   m8_buildTable();
 }
