@@ -416,7 +416,12 @@ ${tableHtml}
   a.click();
 }
 
-function exportExcel() {
+function excelBorderAll() {
+  const b = {style:'thin', color:{argb:'FF999999'}};
+  return {top:b, bottom:b, left:b, right:b};
+}
+
+async function exportExcel() {
   saveCurrentMonth();
   const d = monthData[curMonth];
   const yr = document.getElementById('inYear').value;
@@ -424,20 +429,159 @@ function exportExcel() {
   const day = document.getElementById('inDay').value || '';
   const pr = document.querySelector('input[name=period]:checked');
 
-  const rows = [
-    ['高雄市右昌國小「學校體育器材維護及運動安全」檢核表'],
-    [`檢查日期：${yr}年${mn}月${day}日`, '', '', '', '', '', pr?pr.value:'', ''],
-    ['大區','子區','編號','檢查要點','是','否','待改進或檢修事項','複檢日期及結果'],
+  const COL = {
+    title: 'FF1F4E79', date: 'FFEBF3FB', header: 'FF2E75B6',
+    area: 'FFBDD7EE', sub: 'FFDEEAF1', band1: 'FFF5F9FF', band2: 'FFFFFFFF',
+    yes: 'FFE2EFDA', no: 'FFFFCCCC', note: 'FFFFF9C4', sig: 'FFF5F5F5',
+  };
+  const fill = c => ({type:'pattern', pattern:'solid', fgColor:{argb:c}});
+  const border = excelBorderAll();
+
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet(mn+'月檢查');
+  ws.columns = [
+    {width:10}, {width:14}, {width:6}, {width:30}, {width:8}, {width:8}, {width:22}, {width:20},
   ];
+
+  // 標題列
+  ws.mergeCells('A1:H1');
+  const titleRow = ws.getRow(1);
+  titleRow.height = 26;
+  const titleCell = ws.getCell('A1');
+  titleCell.value = '高雄市右昌國小「學校體育器材維護及運動安全」檢核表';
+  titleCell.fill = fill(COL.title);
+  titleCell.font = {bold:true, color:{argb:'FFFFFFFF'}, size:14};
+  titleCell.alignment = {horizontal:'center', vertical:'middle'};
+  ['A1','B1','C1','D1','E1','F1','G1','H1'].forEach(a => ws.getCell(a).border = border);
+
+  // 日期列
+  ws.mergeCells('A2:F2');
+  ws.mergeCells('G2:H2');
+  const dateCell = ws.getCell('A2');
+  dateCell.value = `檢查日期：${yr}年${mn}月${day}日`;
+  dateCell.font = {bold:true};
+  dateCell.alignment = {horizontal:'left', vertical:'middle'};
+  const periodCell = ws.getCell('G2');
+  periodCell.value = pr ? pr.value : '';
+  periodCell.alignment = {horizontal:'center', vertical:'middle'};
+  ['A2','B2','C2','D2','E2','F2','G2','H2'].forEach(a => {
+    const c = ws.getCell(a);
+    c.fill = fill(COL.date);
+    c.border = border;
+  });
+
+  // 表頭列
+  const headers = ['大區','子區','編號','檢查要點','是','否','待改進或檢修事項','複檢日期及結果'];
+  const headerRow = ws.getRow(3);
+  headers.forEach((h,i) => {
+    const c = headerRow.getCell(i+1);
+    c.value = h;
+    c.fill = fill(COL.header);
+    c.font = {bold:true, color:{argb:'FFFFFFFF'}};
+    c.alignment = {horizontal:'center', vertical:'middle'};
+    c.border = border;
+  });
+
+  // 計算大區/子區 rowspan
+  const areaSpans={}, subSpans={};
+  CHECKS.forEach(([area,sub]) => {
+    areaSpans[area] = (areaSpans[area]||0)+1;
+    subSpans[area+'|'+sub] = (subSpans[area+'|'+sub]||0)+1;
+  });
+
+  let excelRow = 4;
+  let prevArea=null, prevSub=null, bandToggle=false;
+  const areaStartRow = {}, subStartRow = {};
   CHECKS.forEach(([area,sub,num,item],idx) => {
     const r = d.rows[idx];
-    if (num===null) {
-      rows.push([area, '其他', '', r.otherNote||'', '', '', '', '']);
+    const isOther = num===null;
+    const areaNew = area!==prevArea;
+    const subNew = areaNew || sub!==prevSub;
+    if (subNew) bandToggle = false; else bandToggle = !bandToggle;
+    const bandColor = bandToggle ? COL.band2 : COL.band1;
+
+    if (areaNew) areaStartRow[area] = excelRow;
+    if (subNew) subStartRow[area+'|'+sub] = excelRow;
+
+    const row = ws.getRow(excelRow);
+    // A 大區
+    const aCell = row.getCell(1);
+    aCell.fill = fill(COL.area);
+    aCell.font = {bold:true};
+    aCell.alignment = {horizontal:'center', vertical:'middle'};
+    aCell.border = border;
+    if (areaNew) aCell.value = area;
+    // B 子區
+    const bCell = row.getCell(2);
+    bCell.fill = fill(COL.sub);
+    bCell.alignment = {horizontal:'center', vertical:'middle'};
+    bCell.border = border;
+    if (subNew) bCell.value = sub;
+
+    if (isOther) {
+      ws.mergeCells(excelRow, 4, excelRow, 8);
+      const noteCell = row.getCell(4);
+      noteCell.value = '其他備註：' + (r.otherNote||'');
+      noteCell.font = {italic:true, color:{argb:'FF888888'}};
+      noteCell.alignment = {horizontal:'left', vertical:'middle'};
+      [3,4,5,6,7,8].forEach(ci => {
+        const c = row.getCell(ci);
+        c.fill = fill(bandColor);
+        c.border = border;
+      });
     } else {
-      rows.push([area, sub, num, item, r.yes?'V':'', r.no?'V':'', r.issue, r.recheck]);
+      const cCell = row.getCell(3);
+      cCell.value = num;
+      cCell.alignment = {horizontal:'center', vertical:'middle'};
+      const dCell = row.getCell(4);
+      dCell.value = item;
+      dCell.alignment = {horizontal:'left', vertical:'middle'};
+      const eCell = row.getCell(5);
+      eCell.value = r.yes ? 'V' : '';
+      eCell.alignment = {horizontal:'center', vertical:'middle'};
+      const fCell = row.getCell(6);
+      fCell.value = r.no ? 'V' : '';
+      fCell.alignment = {horizontal:'center', vertical:'middle'};
+      const gCell = row.getCell(7);
+      gCell.value = r.issue||'';
+      gCell.alignment = {horizontal:'left', vertical:'middle'};
+      const hCell = row.getCell(8);
+      hCell.value = r.recheck||'';
+      hCell.alignment = {horizontal:'left', vertical:'middle'};
+      [3,4,5,6,7,8].forEach(ci => {
+        const c = row.getCell(ci);
+        c.fill = fill(bandColor);
+        c.border = border;
+      });
+      if (r.yes) eCell.fill = fill(COL.yes);
+      if (r.no) fCell.fill = fill(COL.no);
     }
+    prevArea=area; prevSub=sub;
+    excelRow++;
   });
-  rows.push(['填寫說明：「是」欄填入 V 表示符合；「否」欄填入 V 表示有問題，請於「待改進事項」欄說明原因。']);
+
+  // 合併大區/子區 rowspan
+  Object.entries(areaSpans).forEach(([area,span]) => {
+    const start = areaStartRow[area];
+    if (span>1) ws.mergeCells(start, 1, start+span-1, 1);
+  });
+  Object.entries(subSpans).forEach(([key,span]) => {
+    const start = subStartRow[key];
+    if (span>1) ws.mergeCells(start, 2, start+span-1, 2);
+  });
+
+  // 填寫說明列
+  const noteRowIdx = excelRow;
+  ws.mergeCells(noteRowIdx, 1, noteRowIdx, 8);
+  const instrCell = ws.getCell(noteRowIdx, 1);
+  instrCell.value = '填寫說明：「是」欄填入 V 表示符合；「否」欄填入 V 表示有問題（自動標紅），請於「待改進事項」欄說明原因。';
+  instrCell.font = {size:9};
+  instrCell.fill = fill(COL.note);
+  instrCell.alignment = {horizontal:'left', vertical:'middle'};
+  for (let ci=1; ci<=8; ci++) ws.getCell(noteRowIdx, ci).border = border;
+  excelRow++;
+
+  // 簽名列
   const sigs = [
     document.getElementById('sig1').value,
     document.getElementById('sig2').value,
@@ -445,13 +589,37 @@ function exportExcel() {
     document.getElementById('sig4').value,
     document.getElementById('sig5').value,
   ];
-  rows.push(['體育組：'+sigs[0], '學務主任：'+sigs[1], '', '事務組長：'+sigs[2], '', '總務主任：'+sigs[3], '', '校長：'+sigs[4]]);
+  const sigRowIdx = excelRow;
+  ws.mergeCells(sigRowIdx, 2, sigRowIdx, 3);
+  ws.mergeCells(sigRowIdx, 4, sigRowIdx, 5);
+  ws.mergeCells(sigRowIdx, 6, sigRowIdx, 7);
+  const sigVals = [
+    ['體育組：'+(sigs[0]||''), 1],
+    ['學務主任：'+(sigs[1]||''), 2],
+    ['事務組長：'+(sigs[2]||''), 4],
+    ['總務主任：'+(sigs[3]||''), 6],
+    ['校長：'+(sigs[4]||''), 8],
+  ];
+  sigVals.forEach(([txt,col]) => {
+    const c = ws.getCell(sigRowIdx, col);
+    c.value = txt;
+    c.font = {bold:true};
+    c.alignment = {horizontal:'left', vertical:'middle'};
+  });
+  for (let ci=1; ci<=8; ci++) {
+    const c = ws.getCell(sigRowIdx, ci);
+    c.fill = fill(COL.sig);
+    c.border = border;
+  }
 
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:10},{wch:14},{wch:6},{wch:22},{wch:5},{wch:5},{wch:24},{wch:18}];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, mn+'月檢查');
-  XLSX.writeFile(wb, `體育器材檢核表_${mn}月.xlsx`);
+  ws.views = [{state:'frozen', ySplit:3}];
+
+  const buf = await wb.xlsx.writeBuffer();
+  const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `體育器材檢核表_${mn}月.xlsx`;
+  a.click();
 }
 
 // init
