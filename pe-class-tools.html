@@ -1202,8 +1202,7 @@ h2{font-size:16px;font-weight:bold;margin-bottom:12px;color:#333;}
 .empty-hint{color:#999;font-size:13px;padding:20px;text-align:center;}
 
 
-@page WordSection1 { size:21cm 29.7cm; margin:1.8cm; }
-div.WordSection1 { page:WordSection1; }
+${pageRules.join('\n')}
 
 table{border-collapse:collapse;}
 td{vertical-align:middle;}
@@ -6840,6 +6839,7 @@ async function exportExcel() {
 const NOTE_DEFAULT = '因檔案超過平台上傳限制，請點選連結或圖片至雲端硬碟審查。';
 const IMG_MAX_W = 1280;
 const IMG_MAX_H = 960;
+const CONTENT_WIDTH_PX = 657; // A4 21cm 減去左右 1.8cm 邊界，約在 96dpi 下的內容寬度
 
 let entries_m9 = [];
 let nextId_m9 = 1;
@@ -7012,8 +7012,24 @@ function generateQR(text) {
 const SCREENSHOT_MAX_W = 600;
 const SCREENSHOT_MAX_H = 420;
 
-function buildEntryContentHTML(e, school, year, qrDataUrl, logoSize) {
+function buildHeaderTableHTML(e, school, year, logoSize) {
   const logoBox = fitBox(logoSize.w, logoSize.h, 220, 50);
+  return `
+  <table style="width:${CONTENT_WIDTH_PX}px;table-layout:fixed;border-collapse:collapse;">
+    <colgroup><col style="width:${logoBox.w+16}px;"><col style="width:${CONTENT_WIDTH_PX-logoBox.w-16}px;"></colgroup>
+    <tr>
+      <td style="border-bottom:3px solid #1565c0;padding:0 10px 8px 0;vertical-align:middle;">
+        <img src="${DEFAULT_LOGO_DATAURL}" width="${logoBox.w}" height="${logoBox.h}" style="width:${logoBox.w}px;height:${logoBox.h}px;display:block;">
+      </td>
+      <td style="border-bottom:3px solid #1565c0;padding:0 0 8px 0;vertical-align:middle;overflow:hidden;">
+        <div style="font-size:11pt;color:#555;overflow-wrap:anywhere;">${m9_escHtml(school)} ${m9_escHtml(year)}學年度</div>
+        <div style="font-size:16pt;font-weight:bold;overflow-wrap:anywhere;">${m9_escHtml(e.title) || '(未命名項目)'}</div>
+      </td>
+    </tr>
+  </table>`;
+}
+
+function buildEntryBodyHTML(e, qrDataUrl) {
   let imgHtml;
   if (e.img) {
     const box = fitBox(e.img.w, e.img.h, SCREENSHOT_MAX_W, SCREENSHOT_MAX_H);
@@ -7025,32 +7041,26 @@ function buildEntryContentHTML(e, school, year, qrDataUrl, logoSize) {
     ? `<img src="${qrDataUrl}" width="110" height="110" style="width:110px;height:110px;"><div style="font-size:9pt;color:#666;margin-top:4px;">掃描 QR Code</div>`
     : '';
   return `
-  <table style="width:100%;border-collapse:collapse;margin-bottom:18px;">
-    <tr>
-      <td style="width:${logoBox.w+16}px;border-bottom:3px solid #1565c0;padding:0 10px 10px 0;vertical-align:middle;">
-        <img src="${DEFAULT_LOGO_DATAURL}" width="${logoBox.w}" height="${logoBox.h}" style="width:${logoBox.w}px;height:${logoBox.h}px;display:block;">
-      </td>
-      <td style="border-bottom:3px solid #1565c0;padding:0 0 10px 0;vertical-align:middle;">
-        <div style="font-size:11pt;color:#555;">${m9_escHtml(school)} ${m9_escHtml(year)}學年度</div>
-        <div style="font-size:16pt;font-weight:bold;">${m9_escHtml(e.title) || '(未命名項目)'}</div>
-      </td>
-    </tr>
-  </table>
   <div style="text-align:center;margin:20px 0;">
     ${imgHtml}
   </div>
-  <table style="width:100%;margin-top:10px;">
+  <table style="width:${CONTENT_WIDTH_PX}px;table-layout:fixed;margin-top:10px;">
+    <colgroup><col style="width:${CONTENT_WIDTH_PX-130}px;"><col style="width:130px;"></colgroup>
     <tr>
-      <td style="vertical-align:middle;">
+      <td style="vertical-align:middle;overflow:hidden;">
         <div style="font-size:12pt;font-weight:bold;margin-bottom:4px;">雲端連結：</div>
-        <div style="font-size:11pt;"><a href="${e.url}">${m9_escHtml(e.url)}</a></div>
-        <div style="font-size:10pt;color:#c62828;margin-top:10px;">${m9_escHtml(e.note)}</div>
+        <div style="font-size:11pt;word-break:break-all;overflow-wrap:anywhere;"><a href="${e.url}">${m9_escHtml(e.url)}</a></div>
+        <div style="font-size:10pt;color:#c62828;margin-top:10px;overflow-wrap:anywhere;">${m9_escHtml(e.note)}</div>
       </td>
       <td style="width:130px;text-align:center;">
         ${qrHtml}
       </td>
     </tr>
   </table>`;
+}
+
+function buildEntryContentHTML(e, school, year, qrDataUrl, logoSize) {
+  return `<div style="margin-bottom:18px;">${buildHeaderTableHTML(e, school, year, logoSize)}</div>${buildEntryBodyHTML(e, qrDataUrl)}`;
 }
 
 function buildExportFilename(ext) {
@@ -7069,28 +7079,34 @@ async function m9_exportWord() {
   const year = document.getElementById('m9_year').value || '';
   const logoSize = await loadImageSize(DEFAULT_LOGO_DATAURL);
 
-  const pages = [];
+  const pageRules = [];
+  const headerDivs = [];
+  const sectionDivs = [];
+
   for (let i = 0; i < entries_m9.length; i++) {
     const e = entries_m9[i];
     const qrDataUrl = await generateQR(e.url);
-    const pageBreak = i < entries_m9.length - 1 ? 'page-break-after:always;' : '';
-    pages.push(`<div style="${pageBreak}">${buildEntryContentHTML(e, school, year, qrDataUrl, logoSize)}</div>`);
+    const sec = `Sec${i+1}`;
+    const hid = `h${i+1}`;
+    pageRules.push(`@page ${sec} { size:21cm 29.7cm; margin:2.6cm 1.8cm 1.8cm 1.8cm; mso-header:${hid}; mso-header-margin:0.7cm; }`);
+    headerDivs.push(`<div style="mso-element:header;" id="${hid}">${buildHeaderTableHTML(e, school, year, logoSize)}</div>`);
+    sectionDivs.push(`<div class="${sec}" style="page:${sec};">${buildEntryBodyHTML(e, qrDataUrl)}</div>`);
   }
 
   const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
 <head><meta charset='UTF-8'>
 <style>
-@page WordSection1 { size:21cm 29.7cm; margin:1.8cm; }
-div.WordSection1 { page:WordSection1; }
+${pageRules.join('\n')}
 body{font-family:'微軟正黑體',Arial,sans-serif;margin:0;}
 table{border-collapse:collapse;}
 td{vertical-align:middle;}
 a{color:#1565c0;}
 </style>
 </head>
-<body><div class="WordSection1">
-${pages.join('\n')}
-</div></body></html>`;
+<body>
+${headerDivs.join('\n')}
+${sectionDivs.join('\n')}
+</body></html>`;
 
   const blob = new Blob(['﻿'+html], {type:'application/msword'});
   const a = document.createElement('a');
@@ -7118,9 +7134,17 @@ async function exportPDF() {
     const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
     const pageW = 210, pageH = 297;
 
-    const stage = document.createElement('div');
-    stage.style.cssText = 'position:fixed;left:-9999px;top:0;width:793px;padding:68px;background:#fff;font-family:"微軟正黑體",Arial,sans-serif;box-sizing:border-box;';
-    document.body.appendChild(stage);
+    // 用獨立 iframe 承載渲染內容，避免其他模組的全域 CSS（如 !important 的 table 樣式）滲入影響版面
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:793px;height:1123px;border:0;';
+    document.body.appendChild(iframe);
+    const idoc = iframe.contentDocument;
+    idoc.open();
+    idoc.write('<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="margin:0;"></body></html>');
+    idoc.close();
+    const stage = idoc.createElement('div');
+    stage.style.cssText = 'width:793px;padding:68px;background:#fff;font-family:"微軟正黑體",Arial,sans-serif;box-sizing:border-box;';
+    idoc.body.appendChild(stage);
 
     for (let i = 0; i < entries_m9.length; i++) {
       const e = entries_m9[i];
@@ -7133,8 +7157,7 @@ async function exportPDF() {
       if (i > 0) pdf.addPage();
       pdf.addImage(imgData, 'JPEG', 0, 0, pageW, imgH);
     }
-
-    document.body.removeChild(stage);
+    document.body.removeChild(iframe);
     pdf.save(buildExportFilename('pdf'));
   } catch (err) {
     alert('PDF 產生失敗：' + err.message);
