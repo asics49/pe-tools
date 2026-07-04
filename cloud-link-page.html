@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'微軟正黑體',Arial,sans-serif;font-size:13px;background:#f5f5f5;}
+.wrap{max-width:1200px;margin:0 auto;padding:16px;}
+h2{font-size:16px;font-weight:bold;margin-bottom:12px;color:#333;}
+
+.toolbar{background:#fff;border:1px solid #ddd;border-radius:6px;padding:12px 16px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
+.toolbar label{font-weight:bold;font-size:12px;color:#555;margin-right:4px;}
+.toolbar input[type=text],.toolbar input[type=number]{border:1px solid #ccc;border-radius:4px;padding:4px 8px;font-size:13px;}
+.toolbar input.wide{width:220px;}
+
+.entry-card{background:#fff;border:1px solid #ddd;border-radius:6px;padding:14px 16px;margin-bottom:12px;}
+.entry-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.entry-head b{color:#1565c0;font-size:13px;}
+.entry-del{background:#e57373;color:#fff;border:none;border-radius:4px;padding:4px 12px;cursor:pointer;font-size:12px;}
+.entry-del:hover{background:#c62828;}
+.entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.entry-field{display:flex;flex-direction:column;gap:4px;}
+.entry-field.full{grid-column:1 / -1;}
+.entry-field label{font-size:12px;font-weight:bold;color:#555;}
+.entry-field input[type=text],.entry-field textarea{border:1px solid #ccc;border-radius:4px;padding:6px 8px;font-size:13px;font-family:inherit;}
+.entry-field textarea{resize:vertical;min-height:44px;}
+.img-upload{display:flex;align-items:center;gap:10px;}
+.img-thumb{width:90px;height:60px;object-fit:cover;border:1px solid #ccc;border-radius:4px;background:#f0f0f0;display:none;}
+.img-thumb.show{display:block;}
+.img-placeholder{width:90px;height:60px;border:1px dashed #ccc;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#999;text-align:center;}
+
+.add-btn{background:#1565c0;color:#fff;border:none;border-radius:4px;padding:8px 18px;cursor:pointer;font-size:13px;font-weight:bold;margin-bottom:12px;}
+.add-btn:hover{background:#0d47a1;}
+
+.btn-row{display:flex;gap:8px;margin-top:12px;}
+.btn{padding:8px 20px;border:none;border-radius:4px;cursor:pointer;font-size:13px;font-weight:bold;}
+.btn-word{background:#1565c0;color:#fff;}
+.btn-word:hover{background:#0d47a1;}
+
+.note{font-size:11px;color:#666;margin-top:8px;line-height:1.6;}
+.empty-hint{color:#999;font-size:13px;padding:20px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h2>雲端連結頁產生器</h2>
+
+<div class="toolbar">
+  <div><label>校名</label><input type="text" id="school" class="wide" value="高雄市楠梓區右昌國小"></div>
+  <div><label>學年度</label><input type="number" id="year" value="115" min="110" max="130" style="width:60px;">年</div>
+</div>
+
+<div id="entryList"></div>
+<button class="add-btn" onclick="addEntry()">＋ 新增連結項目</button>
+
+<div class="btn-row">
+  <button class="btn btn-word" onclick="exportWord()">下載 Word</button>
+</div>
+<div class="note">
+使用說明：適用於評鑑平台單檔大小限制（如 5MB）而無法直接上傳的大型檔案或網站。<br>
+請將完整檔案上傳至 Google 雲端硬碟，並將資料夾／檔案權限設為「知道連結的人可以檢視」，再貼上連結網址與一張代表性截圖，即可產生含 QR Code 的連結頁，上傳至評鑑平台供委員點選查閱。
+</div>
+</div>
+
+<script>
+const NOTE_DEFAULT = '因檔案超過平台上傳限制，請點選連結或圖片至雲端硬碟審查。';
+
+let entries = [];
+let nextId = 1;
+
+function addEntry() {
+  entries.push({ id: nextId++, title: '', url: '', note: NOTE_DEFAULT, img: null });
+  renderEntryList();
+}
+
+function removeEntry(id) {
+  entries = entries.filter(e => e.id !== id);
+  renderEntryList();
+}
+
+function updateEntry(id, field, value) {
+  const e = entries.find(e => e.id === id);
+  if (e) e[field] = value;
+}
+
+function onEntryImgChange(id, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const e = entries.find(e => e.id === id);
+    if (e) { e.img = { dataUrl: ev.target.result, name: file.name }; }
+    renderEntryList();
+  };
+  reader.readAsDataURL(file);
+}
+
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderEntryList() {
+  const wrap = document.getElementById('entryList');
+  if (entries.length === 0) {
+    wrap.innerHTML = '<div class="empty-hint">尚未新增任何連結項目，請點選下方「＋ 新增連結項目」開始建立。</div>';
+    return;
+  }
+  wrap.innerHTML = entries.map((e, idx) => `
+    <div class="entry-card">
+      <div class="entry-head">
+        <b>項目 ${idx+1}</b>
+        <button class="entry-del" onclick="removeEntry(${e.id})">刪除</button>
+      </div>
+      <div class="entry-grid">
+        <div class="entry-field full">
+          <label>項目／檔案名稱</label>
+          <input type="text" placeholder="例如：113學年度體育班課程計畫網站連結" value="${escHtml(e.title)}"
+            oninput="updateEntry(${e.id},'title',this.value)">
+        </div>
+        <div class="entry-field full">
+          <label>雲端連結網址（Google 雲端硬碟／網站連結）</label>
+          <input type="text" placeholder="https://..." value="${escHtml(e.url)}"
+            oninput="updateEntry(${e.id},'url',this.value)">
+        </div>
+        <div class="entry-field full">
+          <label>代表性截圖</label>
+          <div class="img-upload">
+            ${e.img ? `<img class="img-thumb show" src="${e.img.dataUrl}">` : `<div class="img-placeholder">尚未上傳</div>`}
+            <input type="file" accept="image/*" onchange="onEntryImgChange(${e.id}, this)">
+          </div>
+        </div>
+        <div class="entry-field full">
+          <label>提醒文字</label>
+          <textarea oninput="updateEntry(${e.id},'note',this.value)">${escHtml(e.note)}</textarea>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function generateQR(text) {
+  return new Promise(resolve => {
+    if (!text) { resolve(''); return; }
+    const div = document.createElement('div');
+    div.style.cssText = 'position:absolute;left:-9999px;top:-9999px;';
+    document.body.appendChild(div);
+    try {
+      new QRCode(div, { text, width: 160, height: 160, correctLevel: QRCode.CorrectLevel.M });
+    } catch (err) {
+      document.body.removeChild(div);
+      resolve('');
+      return;
+    }
+    setTimeout(() => {
+      const canvas = div.querySelector('canvas');
+      const img = div.querySelector('img');
+      const dataUrl = canvas ? canvas.toDataURL('image/png') : (img ? img.src : '');
+      document.body.removeChild(div);
+      resolve(dataUrl);
+    }, 60);
+  });
+}
+
+async function exportWord() {
+  if (entries.length === 0) { alert('請先新增至少一筆連結項目。'); return; }
+  const school = document.getElementById('school').value || '';
+  const year = document.getElementById('year').value || '';
+
+  const pages = [];
+  for (let i = 0; i < entries.length; i++) {
+    const e = entries[i];
+    const qrDataUrl = await generateQR(e.url);
+    const imgHtml = e.img
+      ? `<img src="${e.img.dataUrl}" style="max-width:100%;max-height:380pt;border:1px solid #999;padding:4px;">`
+      : `<div style="color:#999;padding:60pt 0;border:1px dashed #ccc;">（尚未上傳截圖）</div>`;
+    const qrHtml = qrDataUrl
+      ? `<img src="${qrDataUrl}" style="width:110px;height:110px;"><div style="font-size:9pt;color:#666;margin-top:4px;">掃描 QR Code</div>`
+      : '';
+    const pageBreak = i < entries.length - 1 ? 'page-break-after:always;' : '';
+    pages.push(`
+<div style="${pageBreak}">
+  <div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #1565c0;padding-bottom:10px;margin-bottom:18px;">
+    <img src="${DEFAULT_LOGO_DATAURL}" style="height:56px;">
+    <div>
+      <div style="font-size:11pt;color:#555;">${escHtml(school)} ${escHtml(year)}學年度</div>
+      <div style="font-size:16pt;font-weight:bold;">${escHtml(e.title) || '(未命名項目)'}</div>
+    </div>
+  </div>
+  <div style="text-align:center;margin:20px 0;">
+    ${imgHtml}
+  </div>
+  <table style="width:100%;margin-top:10px;">
+    <tr>
+      <td style="vertical-align:middle;">
+        <div style="font-size:12pt;font-weight:bold;margin-bottom:4px;">雲端連結：</div>
+        <div style="font-size:11pt;"><a href="${e.url}">${escHtml(e.url)}</a></div>
+        <div style="font-size:10pt;color:#c62828;margin-top:10px;">${escHtml(e.note)}</div>
+      </td>
+      <td style="width:130px;text-align:center;">
+        ${qrHtml}
+      </td>
+    </tr>
+  </table>
+</div>`);
+  }
+
+  const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head><meta charset='UTF-8'>
+<style>
+@page WordSection1 { size:21cm 29.7cm; margin:1.8cm; }
+div.WordSection1 { page:WordSection1; }
+body{font-family:'微軟正黑體',Arial,sans-serif;margin:0;}
+table{border-collapse:collapse;}
+td{vertical-align:middle;}
+a{color:#1565c0;}
+</style>
+</head>
+<body><div class="WordSection1">
+${pages.join('\n')}
+</div></body></html>`;
+
+  const blob = new Blob(['﻿'+html], {type:'application/msword'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `雲端連結頁.doc`;
+  a.click();
+}
+
+// init
+renderEntryList();
+</script>
+</body>
+</html>

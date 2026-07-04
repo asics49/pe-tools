@@ -29,6 +29,7 @@ FILES = [
     ('m6',  '模組六',  '成績登錄',       'grade-record.html'),
     ('m7',  '模組七',  '年度訓練計畫',   '年度訓練計畫表.html'),
     ('m8',  '模組八',  '器材檢核表',     '器材檢核表.html'),
+    ('m9',  '模組九',  '雲端連結頁產生器', 'cloud-link-page.html'),
 ]
 
 OUTPUT = 'pe-class-tools.html'
@@ -61,6 +62,7 @@ CONFLICT_IDS = [
     'em_bar_from', 'em_bar_to', 'em_line_from', 'em_line_to',
     'inDay', 'monthTabs', 'monthLabel', 'checkTable', 'checkBody', 'sigRow',
     'sig1', 'sig2', 'sig3', 'sig4', 'sig5',
+    'school', 'year', 'entryList',
 ]
 
 # JS variable names that conflict between specific modules
@@ -82,6 +84,7 @@ CONFLICT_VARS = {
             'INIT_VAL': 'INIT_VAL_m7', '_editModalWeek': '_editModalWeek_m7'},
     'm8':  {'MONTHS': 'MONTHS_m8', 'CHECKS': 'CHECKS_m8',
             'curMonth': 'curMonth_m8', 'monthData': 'monthData_m8'},
+    'm9':  {'entries': 'entries_m9', 'nextId': 'nextId_m9'},
     # 新增模組時，在這裡加上該模組的衝突變數：
 }
 
@@ -240,6 +243,7 @@ def build():
 <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
