@@ -120,7 +120,7 @@ function resizeImageDataUrl(file, maxW, maxH, quality) {
         ctx.fillStyle = '#fff';
         ctx.fillRect(0, 0, outW, outH);
         ctx.drawImage(img, 0, 0, outW, outH);
-        resolve(canvas.toDataURL('image/jpeg', quality));
+        resolve({ dataUrl: canvas.toDataURL('image/jpeg', quality), w: outW, h: outH });
       };
       img.onerror = () => reject(new Error('圖片讀取失敗'));
       img.src = ev.target.result;
@@ -130,12 +130,26 @@ function resizeImageDataUrl(file, maxW, maxH, quality) {
   });
 }
 
+function loadImageSize(dataUrl) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => resolve({ w: 56, h: 56 });
+    img.src = dataUrl;
+  });
+}
+
+function fitBox(natW, natH, maxW, maxH) {
+  const scale = Math.min(maxW / natW, maxH / natH, 1);
+  return { w: Math.max(1, Math.round(natW * scale)), h: Math.max(1, Math.round(natH * scale)) };
+}
+
 function onEntryImgChange(id, input) {
   const file = input.files[0];
   if (!file) return;
-  resizeImageDataUrl(file).then(dataUrl => {
+  resizeImageDataUrl(file).then(({dataUrl, w, h}) => {
     const e = entries.find(e => e.id === id);
-    if (e) e.img = { dataUrl, name: file.name };
+    if (e) e.img = { dataUrl, name: file.name, w, h };
     renderEntryList();
   }).catch(err => alert('圖片處理失敗：' + err.message));
   input.value = '';
@@ -149,9 +163,9 @@ function onEntryPaste(id, event) {
     if (items[i].type.indexOf('image') !== -1) {
       event.preventDefault();
       const file = items[i].getAsFile();
-      resizeImageDataUrl(file).then(dataUrl => {
+      resizeImageDataUrl(file).then(({dataUrl, w, h}) => {
         const e = entries.find(e => e.id === id);
-        if (e) e.img = { dataUrl, name: '貼上的截圖.jpg' };
+        if (e) e.img = { dataUrl, name: '貼上的截圖.jpg', w, h };
         renderEntryList();
       }).catch(err => alert('圖片處理失敗：' + err.message));
       return;
@@ -233,21 +247,33 @@ function generateQR(text) {
   });
 }
 
-function buildEntryContentHTML(e, school, year, qrDataUrl) {
-  const imgHtml = e.img
-    ? `<img src="${e.img.dataUrl}" style="max-width:100%;max-height:380pt;border:1px solid #999;padding:4px;">`
-    : `<div style="color:#999;padding:60pt 0;border:1px dashed #ccc;">（尚未上傳截圖）</div>`;
+const SCREENSHOT_MAX_W = 600;
+const SCREENSHOT_MAX_H = 420;
+
+function buildEntryContentHTML(e, school, year, qrDataUrl, logoSize) {
+  const logoBox = fitBox(logoSize.w, logoSize.h, 220, 50);
+  let imgHtml;
+  if (e.img) {
+    const box = fitBox(e.img.w, e.img.h, SCREENSHOT_MAX_W, SCREENSHOT_MAX_H);
+    imgHtml = `<img src="${e.img.dataUrl}" width="${box.w}" height="${box.h}" style="width:${box.w}px;height:${box.h}px;border:1px solid #999;padding:4px;">`;
+  } else {
+    imgHtml = `<div style="color:#999;padding:60px 0;border:1px dashed #ccc;">（尚未上傳截圖）</div>`;
+  }
   const qrHtml = qrDataUrl
-    ? `<img src="${qrDataUrl}" style="width:110px;height:110px;"><div style="font-size:9pt;color:#666;margin-top:4px;">掃描 QR Code</div>`
+    ? `<img src="${qrDataUrl}" width="110" height="110" style="width:110px;height:110px;"><div style="font-size:9pt;color:#666;margin-top:4px;">掃描 QR Code</div>`
     : '';
   return `
-  <div style="display:flex;align-items:center;gap:12px;border-bottom:3px solid #1565c0;padding-bottom:10px;margin-bottom:18px;">
-    <img src="${DEFAULT_LOGO_DATAURL}" style="height:56px;">
-    <div>
-      <div style="font-size:11pt;color:#555;">${escHtml(school)} ${escHtml(year)}學年度</div>
-      <div style="font-size:16pt;font-weight:bold;">${escHtml(e.title) || '(未命名項目)'}</div>
-    </div>
-  </div>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:18px;">
+    <tr>
+      <td style="width:${logoBox.w+16}px;border-bottom:3px solid #1565c0;padding:0 10px 10px 0;vertical-align:middle;">
+        <img src="${DEFAULT_LOGO_DATAURL}" width="${logoBox.w}" height="${logoBox.h}" style="width:${logoBox.w}px;height:${logoBox.h}px;display:block;">
+      </td>
+      <td style="border-bottom:3px solid #1565c0;padding:0 0 10px 0;vertical-align:middle;">
+        <div style="font-size:11pt;color:#555;">${escHtml(school)} ${escHtml(year)}學年度</div>
+        <div style="font-size:16pt;font-weight:bold;">${escHtml(e.title) || '(未命名項目)'}</div>
+      </td>
+    </tr>
+  </table>
   <div style="text-align:center;margin:20px 0;">
     ${imgHtml}
   </div>
@@ -265,17 +291,28 @@ function buildEntryContentHTML(e, school, year, qrDataUrl) {
   </table>`;
 }
 
+function buildExportFilename(ext) {
+  const titles = entries.map(e => (e.title||'').trim()).filter(Boolean);
+  let base;
+  if (titles.length === 0) base = '雲端連結頁';
+  else if (titles.length === 1) base = titles[0];
+  else base = `${titles[0]}等${titles.length}筆`;
+  base = base.replace(/[\\/:*?"<>|]/g, '_');
+  return `${base}.${ext}`;
+}
+
 async function exportWord() {
   if (entries.length === 0) { alert('請先新增至少一筆連結項目。'); return; }
   const school = document.getElementById('school').value || '';
   const year = document.getElementById('year').value || '';
+  const logoSize = await loadImageSize(DEFAULT_LOGO_DATAURL);
 
   const pages = [];
   for (let i = 0; i < entries.length; i++) {
     const e = entries[i];
     const qrDataUrl = await generateQR(e.url);
     const pageBreak = i < entries.length - 1 ? 'page-break-after:always;' : '';
-    pages.push(`<div style="${pageBreak}">${buildEntryContentHTML(e, school, year, qrDataUrl)}</div>`);
+    pages.push(`<div style="${pageBreak}">${buildEntryContentHTML(e, school, year, qrDataUrl, logoSize)}</div>`);
   }
 
   const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -296,7 +333,7 @@ ${pages.join('\n')}
   const blob = new Blob(['﻿'+html], {type:'application/msword'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `雲端連結頁.doc`;
+  a.download = buildExportFilename('doc');
   a.click();
 }
 
@@ -314,18 +351,19 @@ async function exportPDF() {
   try {
     const school = document.getElementById('school').value || '';
     const year = document.getElementById('year').value || '';
+    const logoSize = await loadImageSize(DEFAULT_LOGO_DATAURL);
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
     const pageW = 210, pageH = 297;
 
     const stage = document.createElement('div');
-    stage.style.cssText = 'position:fixed;left:-9999px;top:0;width:793px;padding:68px;background:#fff;font-family:"微軟正黑體",Arial,sans-serif;';
+    stage.style.cssText = 'position:fixed;left:-9999px;top:0;width:793px;padding:68px;background:#fff;font-family:"微軟正黑體",Arial,sans-serif;box-sizing:border-box;';
     document.body.appendChild(stage);
 
     for (let i = 0; i < entries.length; i++) {
       const e = entries[i];
       const qrDataUrl = await generateQR(e.url);
-      stage.innerHTML = buildEntryContentHTML(e, school, year, qrDataUrl);
+      stage.innerHTML = buildEntryContentHTML(e, school, year, qrDataUrl, logoSize);
       await waitImagesLoaded(stage);
       const canvas = await html2canvas(stage, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
       const imgData = canvas.toDataURL('image/jpeg', 0.92);
@@ -335,7 +373,7 @@ async function exportPDF() {
     }
 
     document.body.removeChild(stage);
-    pdf.save('雲端連結頁.pdf');
+    pdf.save(buildExportFilename('pdf'));
   } catch (err) {
     alert('PDF 產生失敗：' + err.message);
   } finally {
