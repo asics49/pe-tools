@@ -1201,13 +1201,6 @@ h2{font-size:16px;font-weight:bold;margin-bottom:12px;color:#333;}
 .note{font-size:11px;color:#666;margin-top:8px;line-height:1.6;}
 .empty-hint{color:#999;font-size:13px;padding:20px;text-align:center;}
 
-
-${pageRules.join('\n')}
-
-table{border-collapse:collapse;}
-td{vertical-align:middle;}
-a{color:#1565c0;}
-
 </style>
 </head>
 <body>
@@ -5222,7 +5215,7 @@ function m5_cellXml(content, w, opts){
   return '<w:tc><w:tcPr><w:tcW w:w="'+w+'" w:type="dxa"/>'+span+shading+vAlign+'</w:tcPr>'+content+'</w:tc>';
 }
 
-function paraXml(text, opts){
+function m5_paraXml(text, opts){
   opts = opts||{};
   var jc      = opts.jc     ? '<w:jc w:val="'+opts.jc+'"/>' : '<w:jc w:val="center"/>';
   var bold    = opts.bold   ? '<w:b/>' : '';
@@ -5262,17 +5255,17 @@ async function m5_generateDocx(){
   function makeTable(list){
     var headers = ['項次','學生姓名','運動項目','比賽名稱','開始日期','結束日期'];
     var hCells = headers.map(function(h,i){
-      return m5_cellXml(paraXml(h,{bold:true,sz:24}), COL[i], {shading:'D9D9D9', vAlign:'center'});
+      return m5_cellXml(m5_paraXml(h,{bold:true,sz:24}), COL[i], {shading:'D9D9D9', vAlign:'center'});
     }).join('');
     var headRow = '<w:tr><w:trPr><w:jc w:val="center"/></w:trPr>'+hCells+'</w:tr>';
     var dataRows = list.map(function(r, idx){
       var cells = [
-        m5_cellXml(paraXml(String(idx+1)), COL[0]),
-        m5_cellXml(paraXml(r.name), COL[1]),
-        m5_cellXml(paraXml(sport), COL[2]),
-        m5_cellXml(paraXml(r.match,{jc:'left'}), COL[3]),
-        m5_cellXml(paraXml(formatDateROC(r.start)), COL[4]),
-        m5_cellXml(paraXml(formatDateROC(r.end)), COL[5]),
+        m5_cellXml(m5_paraXml(String(idx+1)), COL[0]),
+        m5_cellXml(m5_paraXml(r.name), COL[1]),
+        m5_cellXml(m5_paraXml(sport), COL[2]),
+        m5_cellXml(m5_paraXml(r.match,{jc:'left'}), COL[3]),
+        m5_cellXml(m5_paraXml(formatDateROC(r.start)), COL[4]),
+        m5_cellXml(m5_paraXml(formatDateROC(r.end)), COL[5]),
       ].join('');
       return '<w:tr><w:trPr><w:jc w:val="center"/></w:trPr>'+cells+'</w:tr>';
     }).join('');
@@ -7033,7 +7026,7 @@ function buildEntryBodyHTML(e, qrDataUrl) {
   let imgHtml;
   if (e.img) {
     const box = fitBox(e.img.w, e.img.h, SCREENSHOT_MAX_W, SCREENSHOT_MAX_H);
-    imgHtml = `<img src="${e.img.dataUrl}" width="${box.w}" height="${box.h}" style="width:${box.w}px;height:${box.h}px;border:1px solid #999;padding:4px;">`;
+    imgHtml = `<img src="${e.img.dataUrl}" width="${box.w}" height="${box.h}" style="width:${box.w}px;height:${box.h}px;">`;
   } else {
     imgHtml = `<div style="color:#999;padding:60px 0;border:1px dashed #ccc;">（尚未上傳截圖）</div>`;
   }
@@ -7073,46 +7066,214 @@ function buildExportFilename(ext) {
   return `${base}.${ext}`;
 }
 
+function m9_escXml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+}
+
+const WORD_FONT = '<w:rFonts w:ascii="Arial" w:eastAsia="微軟正黑體" w:hAnsi="Arial" w:cs="Arial"/>';
+const PAGE_W_DXA = 11906;  // A4 21cm
+const PAGE_H_DXA = 16838;  // A4 29.7cm
+const MARGIN_DXA = 1021;   // 1.8cm
+const CONTENT_W_DXA = PAGE_W_DXA - MARGIN_DXA * 2;
+
+function pxToEmu(px) { return Math.round(px * EMU_PER_PX); }
+function pxToDxa(px) { return Math.round(px * EMU_PER_PX / EMU_PER_DXA); }
+
+let docxDrawId = 100;
+function drawingXml(rId, wPx, hPx, name) {
+  const cx = pxToEmu(wPx), cy = pxToEmu(hPx);
+  const id = docxDrawId++;
+  return `<w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="${m9_escXml(name)}"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="${m9_escXml(name)}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${rId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>`;
+}
+
+function runXml(text, opts) {
+  opts = opts || {};
+  const bold = opts.bold ? '<w:b/>' : '';
+  const sz = opts.sz ? `<w:sz w:val="${opts.sz}"/><w:szCs w:val="${opts.sz}"/>` : '';
+  const color = opts.color ? `<w:color w:val="${opts.color}"/>` : '';
+  return `<w:r><w:rPr>${WORD_FONT}${bold}${sz}${color}</w:rPr><w:t xml:space="preserve">${m9_escXml(text)}</w:t></w:r>`;
+}
+
+function hyperlinkRunXml(rId, text, opts) {
+  opts = opts || {};
+  const sz = opts.sz ? `<w:sz w:val="${opts.sz}"/><w:szCs w:val="${opts.sz}"/>` : '';
+  return `<w:hyperlink r:id="${rId}" w:history="1"><w:r><w:rPr>${WORD_FONT}<w:color w:val="1565C0"/><w:u w:val="single"/>${sz}</w:rPr><w:t xml:space="preserve">${m9_escXml(text)}</w:t></w:r></w:hyperlink>`;
+}
+
+function m9_paraXml(runsXml, opts) {
+  opts = opts || {};
+  const jc = opts.jc ? `<w:jc w:val="${opts.jc}"/>` : '';
+  const spacing = opts.spacingAfter !== undefined ? `<w:spacing w:after="${opts.spacingAfter}"/>` : '';
+  return `<w:p><w:pPr>${spacing}${jc}</w:pPr>${runsXml}</w:p>`;
+}
+
+const TC_BORDER_NONE = '<w:tcBorders><w:top w:val="none"/><w:left w:val="none"/><w:right w:val="none"/><w:bottom w:val="none"/></w:tcBorders>';
+const TBL_BORDER_NONE = '<w:tblBorders><w:top w:val="none"/><w:left w:val="none"/><w:right w:val="none"/><w:bottom w:val="none"/><w:insideH w:val="none"/><w:insideV w:val="none"/></w:tblBorders>';
+
+function makeHeaderXmlDocx(e, school, year, logoRid, logoBox) {
+  const logoDxa = pxToDxa(logoBox.w) + 200;
+  const titleDxa = CONTENT_W_DXA - logoDxa;
+  const tcBottomBorder = '<w:tcBorders><w:top w:val="none"/><w:left w:val="none"/><w:right w:val="none"/><w:bottom w:val="single" w:sz="18" w:space="4" w:color="1565C0"/></w:tcBorders>';
+  const logoCell = `<w:tc><w:tcPr><w:tcW w:w="${logoDxa}" w:type="dxa"/><w:vAlign w:val="center"/>${tcBottomBorder}</w:tcPr>`
+    + `<w:p><w:pPr><w:spacing w:after="0"/></w:pPr><w:r>${drawingXml(logoRid, logoBox.w, logoBox.h, 'logo')}</w:r></w:p></w:tc>`;
+  const titleCell = `<w:tc><w:tcPr><w:tcW w:w="${titleDxa}" w:type="dxa"/><w:vAlign w:val="center"/>${tcBottomBorder}</w:tcPr>`
+    + m9_paraXml(runXml(`${school} ${year}學年度`, {sz:22, color:'555555'}), {spacingAfter:0})
+    + m9_paraXml(runXml(e.title || '(未命名項目)', {bold:true, sz:32}), {spacingAfter:0})
+    + `</w:tc>`;
+  const tbl = `<w:tbl><w:tblPr><w:tblW w:w="${CONTENT_W_DXA}" w:type="dxa"/>${TBL_BORDER_NONE}<w:tblLayout w:type="fixed"/></w:tblPr>`
+    + `<w:tblGrid><w:gridCol w:w="${logoDxa}"/><w:gridCol w:w="${titleDxa}"/></w:tblGrid><w:tr>${logoCell}${titleCell}</w:tr></w:tbl>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:hdr`
+    + ` xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"`
+    + ` xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"`
+    + ` xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"`
+    + ` xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"`
+    + ` xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">${tbl}<w:p/></w:hdr>`;
+}
+
+function makeBodyXmlDocx(e, imgRid, imgBox, qrRid, urlRid) {
+  const imgPara = imgRid
+    ? m9_paraXml(`<w:r>${drawingXml(imgRid, imgBox.w, imgBox.h, 'screenshot')}</w:r>`, {jc:'center', spacingAfter:200})
+    : m9_paraXml(runXml('（尚未上傳截圖）', {color:'999999'}), {jc:'center', spacingAfter:200});
+
+  const qrColDxa = 1950;
+  const linkColDxa = CONTENT_W_DXA - qrColDxa;
+  const linkCell = `<w:tc><w:tcPr><w:tcW w:w="${linkColDxa}" w:type="dxa"/><w:vAlign w:val="center"/>${TC_BORDER_NONE}</w:tcPr>`
+    + m9_paraXml(runXml('雲端連結：', {bold:true, sz:24}), {spacingAfter:80})
+    + m9_paraXml(e.url ? hyperlinkRunXml(urlRid, e.url, {sz:22}) : runXml('', {}), {spacingAfter:160})
+    + m9_paraXml(runXml(e.note||'', {color:'C62828', sz:20}), {spacingAfter:0})
+    + `</w:tc>`;
+  const qrCell = `<w:tc><w:tcPr><w:tcW w:w="${qrColDxa}" w:type="dxa"/><w:vAlign w:val="center"/>${TC_BORDER_NONE}</w:tcPr>`
+    + (qrRid
+      ? m9_paraXml(`<w:r>${drawingXml(qrRid, 110, 110, 'qr')}</w:r>`, {jc:'center', spacingAfter:60}) + m9_paraXml(runXml('掃描 QR Code', {sz:16, color:'666666'}), {jc:'center', spacingAfter:0})
+      : m9_paraXml('', {jc:'center'}))
+    + `</w:tc>`;
+  const tbl = `<w:tbl><w:tblPr><w:tblW w:w="${CONTENT_W_DXA}" w:type="dxa"/>${TBL_BORDER_NONE}<w:tblLayout w:type="fixed"/></w:tblPr>`
+    + `<w:tblGrid><w:gridCol w:w="${linkColDxa}"/><w:gridCol w:w="${qrColDxa}"/></w:tblGrid><w:tr>${linkCell}${qrCell}</w:tr></w:tbl>`;
+  return imgPara + tbl;
+}
+
+function dataUrlToBase64(dataUrl) {
+  return dataUrl.split(',')[1];
+}
+
+function extFromDataUrl(dataUrl) {
+  const m = /^data:image\/(png|jpeg|jpg)/.exec(dataUrl);
+  return m ? (m[1] === 'jpg' ? 'jpeg' : m[1]) : 'png';
+}
+
 async function m9_exportWord() {
   if (entries_m9.length === 0) { alert('請先新增至少一筆連結項目。'); return; }
   const school = document.getElementById('m9_school').value || '';
   const year = document.getElementById('m9_year').value || '';
   const logoSize = await loadImageSize(DEFAULT_LOGO_DATAURL);
+  const logoBox = fitBox(logoSize.w, logoSize.h, 220, 50);
+  const logoExt = extFromDataUrl(DEFAULT_LOGO_DATAURL);
 
-  const pageRules = [];
-  const headerDivs = [];
-  const sectionDivs = [];
+  const media = []; // {name, base64}
+  const docRels = []; // {id, type, target, external}
+  let ridCounter = 1;
+  const nextRid = () => `rId${ridCounter++}`;
+
+  const stylesRid = nextRid();
+  docRels.push({ id: stylesRid, type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles', target: 'styles.xml' });
+
+  const headerFiles = []; // {name, xml, relsXml}
+  const bodyParts = [];
+
+  media.push({ name: `logo.${logoExt}`, base64: dataUrlToBase64(DEFAULT_LOGO_DATAURL) });
 
   for (let i = 0; i < entries_m9.length; i++) {
     const e = entries_m9[i];
-    const qrDataUrl = await generateQR(e.url);
-    const sec = `Sec${i+1}`;
-    const hid = `h${i+1}`;
-    pageRules.push(`@page ${sec} { size:21cm 29.7cm; margin:2.6cm 1.8cm 1.8cm 1.8cm; mso-header:${hid}; mso-header-margin:0.7cm; }`);
-    headerDivs.push(`<div style="mso-element:header;" id="${hid}">${buildHeaderTableHTML(e, school, year, logoSize)}</div>`);
-    sectionDivs.push(`<div class="${sec}" style="page:${sec};">${buildEntryBodyHTML(e, qrDataUrl)}</div>`);
+    const headerName = `header${i+1}.xml`;
+    const headerLogoRid = 'rId1'; // 每個 header part 的 rels 各自獨立編號
+    const headerXml = makeHeaderXmlDocx(e, school, year, headerLogoRid, logoBox);
+    const headerRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="${headerLogoRid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.${logoExt}"/></Relationships>`;
+    headerFiles.push({ name: headerName, xml: headerXml, relsXml: headerRelsXml });
+
+    const docHeaderRid = nextRid();
+    docRels.push({ id: docHeaderRid, type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/header', target: headerName });
+
+    let imgRid = null, imgBox = null;
+    if (e.img) {
+      imgBox = fitBox(e.img.w, e.img.h, SCREENSHOT_MAX_W, SCREENSHOT_MAX_H);
+      const ext = extFromDataUrl(e.img.dataUrl);
+      const name = `image_${i+1}.${ext}`;
+      media.push({ name, base64: dataUrlToBase64(e.img.dataUrl) });
+      imgRid = nextRid();
+      docRels.push({ id: imgRid, type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image', target: `media/${name}` });
+    }
+
+    let qrRid = null;
+    if (e.url) {
+      const qrDataUrl = await generateQR(e.url);
+      if (qrDataUrl) {
+        const name = `qr_${i+1}.png`;
+        media.push({ name, base64: dataUrlToBase64(qrDataUrl) });
+        qrRid = nextRid();
+        docRels.push({ id: qrRid, type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image', target: `media/${name}` });
+      }
+    }
+
+    let urlRid = null;
+    if (e.url) {
+      urlRid = nextRid();
+      docRels.push({ id: urlRid, type: 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink', target: e.url, external: true });
+    }
+
+    bodyParts.push(makeBodyXmlDocx(e, imgRid, imgBox, qrRid, urlRid));
+
+    const sectPr = `<w:sectPr><w:headerReference w:type="default" r:id="${docHeaderRid}"/>`
+      + `<w:pgSz w:w="${PAGE_W_DXA}" w:h="${PAGE_H_DXA}"/>`
+      + `<w:pgMar w:top="1474" w:right="${MARGIN_DXA}" w:bottom="${MARGIN_DXA}" w:left="${MARGIN_DXA}" w:header="397" w:footer="397" w:gutter="0"/>`
+      + `</w:sectPr>`;
+    if (i < entries_m9.length - 1) {
+      bodyParts.push(`<w:p><w:pPr>${sectPr}</w:pPr></w:p>`);
+    } else {
+      bodyParts.push(sectPr);
+    }
   }
 
-  const html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-<head><meta charset='UTF-8'>
-<style>
-${pageRules.join('\n')}
-body{font-family:'微軟正黑體',Arial,sans-serif;margin:0;}
-table{border-collapse:collapse;}
-td{vertical-align:middle;}
-a{color:#1565c0;}
-</style>
-</head>
-<body>
-${headerDivs.join('\n')}
-${sectionDivs.join('\n')}
-</body></html>`;
+  const documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<w:document xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'
+    + ' xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+    + ' xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"'
+    + ' xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"'
+    + ' xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">'
+    + '<w:body>' + bodyParts.join('') + '</w:body></w:document>';
 
-  const blob = new Blob(['﻿'+html], {type:'application/msword'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = buildExportFilename('doc');
-  a.click();
+  const docRelsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+    + docRels.map(r => `<Relationship Id="${r.id}" Type="${r.type}" Target="${m9_escXml(r.target)}"${r.external ? ' TargetMode="External"' : ''}/>`).join('')
+    + '</Relationships>';
+
+  const stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr>'
+    + WORD_FONT + '<w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr></w:rPrDefault></w:docDefaults></w:styles>';
+
+  const headerOverrides = headerFiles.map((h, i) => `<Override PartName="/word/${h.name}" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>`).join('');
+  const contentTypesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+    + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+    + '<Default Extension="xml" ContentType="application/xml"/>'
+    + '<Default Extension="jpeg" ContentType="image/jpeg"/><Default Extension="png" ContentType="image/png"/>'
+    + '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+    + '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>'
+    + headerOverrides + '</Types>';
+
+  const rootRelsXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+    + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
+
+  const zip = new JSZip();
+  zip.file('[Content_Types].xml', contentTypesXml);
+  zip.file('_rels/.rels', rootRelsXml);
+  zip.file('word/document.xml', documentXml);
+  zip.file('word/_rels/document.xml.rels', docRelsXml);
+  zip.file('word/styles.xml', stylesXml);
+  headerFiles.forEach(h => {
+    zip.file(`word/${h.name}`, h.xml);
+    zip.file(`word/_rels/${h.name}.rels`, h.relsXml);
+  });
+  media.forEach(m => zip.file(`word/media/${m.name}`, m.base64, { base64: true }));
+
+  const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  saveAs(blob, buildExportFilename('docx'));
 }
 
 function waitImagesLoaded(container) {
