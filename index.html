@@ -74,8 +74,24 @@ body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;background:#F0ED
 .ref-btn svg{width:12px;height:12px;flex-shrink:0;}
 
 /* ── Stats ── */
-.stats{display:flex;gap:16px;padding:10px 16px;background:#fff;border-bottom:2px solid #E1DCCF;font-size:12px;color:#6B675F;}
+.stats{display:flex;gap:16px;padding:10px 16px;background:#fff;border-bottom:2px solid #E1DCCF;font-size:12px;color:#6B675F;align-items:center;flex-wrap:wrap;}
 .stat-num{font-weight:700;color:#223A52;font-size:15px;}
+.stat-num.done{color:#2E7A2E;}
+.stat-num.missing{color:#B23A3A;}
+
+/* ── Track column ── */
+.track-cell{white-space:nowrap;}
+.track-check{display:flex;align-items:center;gap:5px;font-size:11px;color:#555;cursor:pointer;user-select:none;margin-bottom:4px;}
+.track-check input{width:15px;height:15px;cursor:pointer;accent-color:#2E7A2E;}
+.track-note{width:130px;border:1px solid #D8D3CB;border-radius:4px;padding:3px 6px;font-size:11px;font-family:inherit;color:#555;background:#FCFBF8;}
+.track-note:focus{outline:none;border-color:#C9A24B;background:#fff;}
+.track-note::placeholder{color:#B8B2A4;}
+tr.row-done{background:#F2F8F2;}
+tr.row-done:hover td{background:#EAF4EA !important;}
+tr.row-flagged{background:#FDF4E9;}
+tr.row-flagged:hover td{background:#FBEBD6 !important;}
+.only-missing-btn{border:1.5px solid #B23A3A;background:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-family:inherit;cursor:pointer;color:#B23A3A;transition:all .15s;margin-left:auto;}
+.only-missing-btn.active{background:#B23A3A;color:#fff;font-weight:700;}
 </style>
 </head>
 <body>
@@ -99,6 +115,9 @@ body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;background:#F0ED
   <div>文件總數：<span class="stat-num" id="statTotal">—</span></div>
   <div>有對應工具：<span class="stat-num" id="statModule">—</span></div>
   <div>已設定上傳資料夾：<span class="stat-num" id="statDrive">—</span></div>
+  <div>已完成：<span class="stat-num done" id="statDone">—</span></div>
+  <div>未完成：<span class="stat-num missing" id="statMissing">—</span></div>
+  <button class="only-missing-btn" id="onlyMissingBtn" onclick="toggleOnlyMissing()">只顯示未完成</button>
 </div>
 
 <div class="main" id="mainContent"></div>
@@ -475,6 +494,66 @@ function personTags(p){
   }).join('');
 }
 
+// ── 完成追蹤（存在瀏覽器 localStorage，僅本機保存）──
+var TRACK_KEY = 'peEvalTracking115';
+var TRACKING = {};
+try{
+  TRACKING = JSON.parse(localStorage.getItem(TRACK_KEY) || '{}');
+}catch(e){ TRACKING = {}; }
+
+function saveTracking(){
+  try{ localStorage.setItem(TRACK_KEY, JSON.stringify(TRACKING)); }catch(e){}
+}
+
+function escAttr(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+function trackCellHtml(key){
+  var t = TRACKING[key] || {done:false, note:''};
+  var checked = t.done ? ' checked' : '';
+  return '<label class="track-check"><input type="checkbox" class="track-check-input"'+checked+'> 已完成</label>'
+    + '<input type="text" class="track-note" placeholder="備忘…" value="'+escAttr(t.note)+'">';
+}
+
+function setDone(key, val){
+  var t = TRACKING[key] || {done:false, note:''};
+  t.done = val;
+  TRACKING[key] = t;
+  saveTracking();
+}
+
+function setNote(key, val){
+  var t = TRACKING[key] || {done:false, note:''};
+  t.note = val;
+  TRACKING[key] = t;
+  saveTracking();
+}
+
+function applyRowTrackStyle(tr){
+  var key = tr.getAttribute('data-dockey');
+  var t = TRACKING[key] || {done:false, note:''};
+  tr.classList.toggle('row-done', !!t.done);
+  tr.classList.toggle('row-flagged', !t.done && !!(t.note && t.note.trim()));
+}
+
+function updateTrackStats(){
+  var doneCount = 0;
+  document.querySelectorAll('.doc-table tbody tr[data-dockey]').forEach(function(tr){
+    var key = tr.getAttribute('data-dockey');
+    if(TRACKING[key] && TRACKING[key].done) doneCount++;
+  });
+  document.getElementById('statDone').textContent = doneCount;
+  document.getElementById('statMissing').textContent = totalDocs - doneCount;
+}
+
+var onlyMissingActive = false;
+function toggleOnlyMissing(){
+  onlyMissingActive = !onlyMissingActive;
+  document.getElementById('onlyMissingBtn').classList.toggle('active', onlyMissingActive);
+  applyFilters();
+}
+
 // ── Render ──
 var main = document.getElementById('mainContent');
 var totalDocs=0, totalModule=0, totalDrive=0;
@@ -488,12 +567,13 @@ DATA.forEach(function(sec){
     html += '<div class="sub-section">';
     html += '<div class="sub-header"><span class="sub-id">'+sub.id+'</span><span class="sub-name">'+sub.name+'</span></div>';
     html += '<table class="doc-table"><thead><tr>'
-          + '<th style="width:38%">文件名稱</th>'
-          + '<th style="width:30%">負責人員</th>'
+          + '<th style="width:32%">文件名稱</th>'
+          + '<th style="width:22%">負責人員</th>'
           + '<th>工具 / 上傳</th>'
+          + '<th style="width:150px;">追蹤</th>'
           + '</tr></thead><tbody>';
 
-    sub.docs.forEach(function(doc){
+    sub.docs.forEach(function(doc, docIdx){
       var persons = doc.person && doc.person!=='—'
         ? doc.person.split('/').map(function(x){return x.trim();})
         : [];
@@ -503,12 +583,14 @@ DATA.forEach(function(sec){
       if(doc.module) totalModule++;
       if(doc.driveUrl) totalDrive++;
 
+      var docKey = sub.id+'::'+docIdx+'::'+doc.name;
       var toolRow = doc.module ? '<div class="btn-row">'+modBtn(doc.module)+'</div>' : '';
       var upRow = '<div class="btn-row">'+uploadBtn(doc.uploadSystemUrl || doc.driveUrl)+refBtn(doc.refUrl)+'</div>';
-      html += '<tr'+dataAttr+'>'
+      html += '<tr'+dataAttr+' data-dockey="'+docKey+'">'
             + '<td class="doc-name">'+doc.name+'</td>'
             + '<td>'+personTags(doc.person)+'</td>'
             + '<td><div class="btn-group">'+toolRow+upRow+'</div></td>'
+            + '<td class="track-cell">'+trackCellHtml(docKey)+'</td>'
             + '</tr>';
     });
 
@@ -523,7 +605,33 @@ document.getElementById('statTotal').textContent = totalDocs;
 document.getElementById('statModule').textContent = totalModule;
 document.getElementById('statDrive').textContent = totalDrive;
 
-// ── Filter ──
+// 套用每列已完成/備忘的樣式，並統計完成數
+document.querySelectorAll('.doc-table tbody tr[data-dockey]').forEach(function(tr){
+  applyRowTrackStyle(tr);
+});
+updateTrackStats();
+
+// 勾選/備忘變更：事件代理到 main，不用逐列綁定
+main.addEventListener('change', function(e){
+  if(e.target.classList.contains('track-check-input')){
+    var tr = e.target.closest('tr');
+    var key = tr.getAttribute('data-dockey');
+    setDone(key, e.target.checked);
+    applyRowTrackStyle(tr);
+    updateTrackStats();
+    if(onlyMissingActive) applyFilters();
+  }
+});
+main.addEventListener('input', function(e){
+  if(e.target.classList.contains('track-note')){
+    var tr = e.target.closest('tr');
+    var key = tr.getAttribute('data-dockey');
+    setNote(key, e.target.value);
+    applyRowTrackStyle(tr);
+  }
+});
+
+// ── Filter（負責人員 + 只顯示未完成，兩者可同時套用）──
 var currentFilter = 'all';
 function filterPerson(p){
   currentFilter = p;
@@ -537,15 +645,22 @@ function filterPerson(p){
       else if(btn.textContent==='全部顯示') btn.classList.add('all-btn','inactive');
     }
   });
+  applyFilters();
+}
 
-  document.querySelectorAll('.doc-table tbody tr').forEach(function(tr){
-    if(p==='all'){
-      tr.classList.remove('hidden-row');
-    } else {
+function applyFilters(){
+  document.querySelectorAll('.doc-table tbody tr[data-dockey]').forEach(function(tr){
+    var personMatch = true;
+    if(currentFilter !== 'all'){
       var persons = (tr.getAttribute('data-persons')||'').split(',');
-      var match = persons.some(function(x){ return x===p.toLowerCase(); });
-      tr.classList.toggle('hidden-row', !match);
+      personMatch = persons.some(function(x){ return x===currentFilter.toLowerCase(); });
     }
+    var missingMatch = true;
+    if(onlyMissingActive){
+      var key = tr.getAttribute('data-dockey');
+      missingMatch = !(TRACKING[key] && TRACKING[key].done);
+    }
+    tr.classList.toggle('hidden-row', !(personMatch && missingMatch));
   });
 
   // hide sub-sections where all rows hidden
