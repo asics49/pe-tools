@@ -89,6 +89,11 @@ body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;background:#F0ED
 .track-check input{width:15px;height:15px;cursor:pointer;accent-color:#2E7A2E;}
 tr.row-done{background:#F2F8F2;}
 tr.row-done:hover td{background:#EAF4EA !important;}
+
+/* ── Sub 已完成 ── */
+.sub-done-check{display:flex;align-items:center;gap:5px;font-size:11px;color:#555;cursor:pointer;user-select:none;white-space:nowrap;margin-top:3px;}
+.sub-done-check input{width:15px;height:15px;cursor:pointer;accent-color:#2E7A2E;}
+.sub-header.sub-done{background:#E3F0E3;}
 .only-missing-btn{border:1.5px solid #B23A3A;background:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-family:inherit;cursor:pointer;color:#B23A3A;transition:all .15s;margin-left:auto;}
 .only-missing-btn.active{background:#B23A3A;color:#fff;font-weight:700;}
 </style>
@@ -515,6 +520,17 @@ function saveSubNotes(){
   try{ localStorage.setItem(SUB_NOTE_KEY, JSON.stringify(SUB_NOTES)); }catch(e){}
 }
 
+// 子標已完成（勾選後會清空該子標的備忘）
+var SUB_DONE_KEY = 'peEvalSubDone115';
+var SUB_DONE = {};
+try{
+  SUB_DONE = JSON.parse(localStorage.getItem(SUB_DONE_KEY) || '{}');
+}catch(e){ SUB_DONE = {}; }
+
+function saveSubDone(){
+  try{ localStorage.setItem(SUB_DONE_KEY, JSON.stringify(SUB_DONE)); }catch(e){}
+}
+
 function escAttr(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 }
@@ -543,9 +559,19 @@ function setSubNote(key, val){
   saveSubNotes();
 }
 
+function setSubDone(key, val){
+  SUB_DONE[key] = val;
+  saveSubDone();
+  if(val){
+    SUB_NOTES[key] = '';
+    saveSubNotes();
+  }
+}
+
 function applySubHeaderStyle(header){
   var key = header.getAttribute('data-subkey');
   header.classList.toggle('has-note', !!(SUB_NOTES[key] && SUB_NOTES[key].trim()));
+  header.classList.toggle('sub-done', !!SUB_DONE[key]);
 }
 
 function autoGrow(el){
@@ -582,10 +608,12 @@ DATA.forEach(function(sec){
   sec.subs.forEach(function(sub){
     var subKey = sec.major+'::'+sub.id;
     var subNoteVal = SUB_NOTES[subKey] || '';
+    var subDoneChecked = SUB_DONE[subKey] ? ' checked' : '';
     html += '<div class="sub-section">';
     html += '<div class="sub-header" data-subkey="'+escAttr(subKey)+'">'
           + '<span class="sub-id">'+sub.id+'</span><span class="sub-name">'+sub.name+'</span>'
           + '<textarea class="sub-note" rows="1" placeholder="子標備忘（可換行）…">'+escAttr(subNoteVal)+'</textarea>'
+          + '<label class="sub-done-check"><input type="checkbox" class="sub-done-input"'+subDoneChecked+'> 已完成</label>'
           + '</div>';
     html += '<table class="doc-table"><thead><tr>'
           + '<th style="width:32%">文件名稱</th>'
@@ -641,6 +669,17 @@ main.addEventListener('change', function(e){
     applyRowTrackStyle(tr);
     updateTrackStats();
     if(onlyMissingActive) applyFilters();
+  }
+  if(e.target.classList.contains('sub-done-input')){
+    var header = e.target.closest('.sub-header');
+    var key = header.getAttribute('data-subkey');
+    setSubDone(key, e.target.checked);
+    if(e.target.checked){
+      var note = header.querySelector('.sub-note');
+      note.value = '';
+      autoGrow(note);
+    }
+    applySubHeaderStyle(header);
   }
 });
 main.addEventListener('input', function(e){
