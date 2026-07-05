@@ -33,9 +33,13 @@ body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;background:#F0ED
 /* ── Sub Section ── */
 .sub-section{border:1px solid #D8D3CB;border-top:none;border-radius:0 0 4px 4px;overflow:hidden;margin-bottom:1px;}
 .sub-section:last-child{border-radius:0 0 8px 8px;}
-.sub-header{background:#E8E4DC;padding:8px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid #D8D3CB;}
-.sub-id{background:#8B2E2E;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;}
-.sub-name{font-size:13px;font-weight:700;color:#223A52;}
+.sub-header{background:#E8E4DC;padding:8px 16px;display:flex;align-items:flex-start;flex-wrap:wrap;gap:8px;border-bottom:1px solid #D8D3CB;}
+.sub-header.has-note{background:#FDF4E9;}
+.sub-id{background:#8B2E2E;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;margin-top:2px;}
+.sub-name{font-size:13px;font-weight:700;color:#223A52;margin-top:3px;}
+.sub-note{flex:1;min-width:200px;margin-left:auto;border:1px solid #D8D3CB;border-radius:4px;padding:4px 8px;font-size:11px;font-family:inherit;color:#555;background:#FCFBF8;resize:vertical;min-height:26px;line-height:1.5;}
+.sub-note:focus{outline:none;border-color:#C9A24B;background:#fff;}
+.sub-note::placeholder{color:#B8B2A4;}
 
 /* ── Doc Table ── */
 .doc-table{width:100%;border-collapse:collapse;}
@@ -81,15 +85,10 @@ body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;background:#F0ED
 
 /* ── Track column ── */
 .track-cell{white-space:nowrap;}
-.track-check{display:flex;align-items:center;gap:5px;font-size:11px;color:#555;cursor:pointer;user-select:none;margin-bottom:4px;}
+.track-check{display:flex;align-items:center;gap:5px;font-size:11px;color:#555;cursor:pointer;user-select:none;}
 .track-check input{width:15px;height:15px;cursor:pointer;accent-color:#2E7A2E;}
-.track-note{width:130px;border:1px solid #D8D3CB;border-radius:4px;padding:3px 6px;font-size:11px;font-family:inherit;color:#555;background:#FCFBF8;}
-.track-note:focus{outline:none;border-color:#C9A24B;background:#fff;}
-.track-note::placeholder{color:#B8B2A4;}
 tr.row-done{background:#F2F8F2;}
 tr.row-done:hover td{background:#EAF4EA !important;}
-tr.row-flagged{background:#FDF4E9;}
-tr.row-flagged:hover td{background:#FBEBD6 !important;}
 .only-missing-btn{border:1.5px solid #B23A3A;background:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-family:inherit;cursor:pointer;color:#B23A3A;transition:all .15s;margin-left:auto;}
 .only-missing-btn.active{background:#B23A3A;color:#fff;font-weight:700;}
 </style>
@@ -505,36 +504,53 @@ function saveTracking(){
   try{ localStorage.setItem(TRACK_KEY, JSON.stringify(TRACKING)); }catch(e){}
 }
 
+// 子標備忘（每個子標一則，而非每筆文件一則）
+var SUB_NOTE_KEY = 'peEvalSubNotes115';
+var SUB_NOTES = {};
+try{
+  SUB_NOTES = JSON.parse(localStorage.getItem(SUB_NOTE_KEY) || '{}');
+}catch(e){ SUB_NOTES = {}; }
+
+function saveSubNotes(){
+  try{ localStorage.setItem(SUB_NOTE_KEY, JSON.stringify(SUB_NOTES)); }catch(e){}
+}
+
 function escAttr(s){
   return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 }
 
 function trackCellHtml(key){
-  var t = TRACKING[key] || {done:false, note:''};
+  var t = TRACKING[key] || {done:false};
   var checked = t.done ? ' checked' : '';
-  return '<label class="track-check"><input type="checkbox" class="track-check-input"'+checked+'> 已完成</label>'
-    + '<input type="text" class="track-note" placeholder="備忘…" value="'+escAttr(t.note)+'">';
+  return '<label class="track-check"><input type="checkbox" class="track-check-input"'+checked+'> 已完成</label>';
 }
 
 function setDone(key, val){
-  var t = TRACKING[key] || {done:false, note:''};
+  var t = TRACKING[key] || {done:false};
   t.done = val;
-  TRACKING[key] = t;
-  saveTracking();
-}
-
-function setNote(key, val){
-  var t = TRACKING[key] || {done:false, note:''};
-  t.note = val;
   TRACKING[key] = t;
   saveTracking();
 }
 
 function applyRowTrackStyle(tr){
   var key = tr.getAttribute('data-dockey');
-  var t = TRACKING[key] || {done:false, note:''};
+  var t = TRACKING[key] || {done:false};
   tr.classList.toggle('row-done', !!t.done);
-  tr.classList.toggle('row-flagged', !t.done && !!(t.note && t.note.trim()));
+}
+
+function setSubNote(key, val){
+  SUB_NOTES[key] = val;
+  saveSubNotes();
+}
+
+function applySubHeaderStyle(header){
+  var key = header.getAttribute('data-subkey');
+  header.classList.toggle('has-note', !!(SUB_NOTES[key] && SUB_NOTES[key].trim()));
+}
+
+function autoGrow(el){
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
 }
 
 function updateTrackStats(){
@@ -564,13 +580,18 @@ DATA.forEach(function(sec){
   var html = '<div class="major-title">'+sec.major+'</div>';
 
   sec.subs.forEach(function(sub){
+    var subKey = sec.major+'::'+sub.id;
+    var subNoteVal = SUB_NOTES[subKey] || '';
     html += '<div class="sub-section">';
-    html += '<div class="sub-header"><span class="sub-id">'+sub.id+'</span><span class="sub-name">'+sub.name+'</span></div>';
+    html += '<div class="sub-header" data-subkey="'+escAttr(subKey)+'">'
+          + '<span class="sub-id">'+sub.id+'</span><span class="sub-name">'+sub.name+'</span>'
+          + '<textarea class="sub-note" rows="1" placeholder="子標備忘（可換行）…">'+escAttr(subNoteVal)+'</textarea>'
+          + '</div>';
     html += '<table class="doc-table"><thead><tr>'
           + '<th style="width:32%">文件名稱</th>'
           + '<th style="width:22%">負責人員</th>'
           + '<th>工具 / 上傳</th>'
-          + '<th style="width:150px;">追蹤</th>'
+          + '<th style="width:90px;">追蹤</th>'
           + '</tr></thead><tbody>';
 
     sub.docs.forEach(function(doc, docIdx){
@@ -623,12 +644,19 @@ main.addEventListener('change', function(e){
   }
 });
 main.addEventListener('input', function(e){
-  if(e.target.classList.contains('track-note')){
-    var tr = e.target.closest('tr');
-    var key = tr.getAttribute('data-dockey');
-    setNote(key, e.target.value);
-    applyRowTrackStyle(tr);
+  if(e.target.classList.contains('sub-note')){
+    var header = e.target.closest('.sub-header');
+    var key = header.getAttribute('data-subkey');
+    setSubNote(key, e.target.value);
+    applySubHeaderStyle(header);
+    autoGrow(e.target);
   }
+});
+
+// 子標備忘：套用初始樣式並依內容自動調整高度
+document.querySelectorAll('.sub-header').forEach(function(header){
+  applySubHeaderStyle(header);
+  autoGrow(header.querySelector('.sub-note'));
 });
 
 // ── Filter（負責人員 + 只顯示未完成，兩者可同時套用）──
