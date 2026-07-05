@@ -7317,6 +7317,21 @@ async function exportPDF() {
       const imgH = Math.min(pageH, pageW * canvas.height / canvas.width);
       if (i > 0) pdf.addPage();
       pdf.addImage(imgData, 'JPEG', 0, 0, pageW, imgH);
+
+      // 圖片是整頁截圖（無法點擊），另外疊加一個透明可點擊區塊還原超連結
+      if (e.url) {
+        const linkEl = stage.querySelector('a[href]');
+        if (linkEl) {
+          const stageRect = stage.getBoundingClientRect();
+          const linkRect = linkEl.getBoundingClientRect();
+          const mmPerPx = pageW / stageRect.width;
+          const x = (linkRect.left - stageRect.left) * mmPerPx;
+          const y = (linkRect.top - stageRect.top) * mmPerPx;
+          const w = linkRect.width * mmPerPx;
+          const h = linkRect.height * mmPerPx;
+          pdf.link(x, y, w, h, { url: e.url });
+        }
+      }
     }
     document.body.removeChild(iframe);
     pdf.save(buildExportFilename('pdf'));
