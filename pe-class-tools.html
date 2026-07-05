@@ -7329,7 +7329,10 @@ async function exportPDF() {
           const y = (linkRect.top - stageRect.top) * mmPerPx;
           const w = linkRect.width * mmPerPx;
           const h = linkRect.height * mmPerPx;
-          pdf.link(x, y, w, h, { url: e.url });
+          // jsPDF 的 link() 會把 Rect 的 y 座標順序寫反（lly>ury，不符合 PDF 規範），
+          // Chrome/pdf.js 會自動容錯校正，但 Adobe Acrobat/Reader 判定為無效區域而不可點擊。
+          // 傳入 (y+h, -h) 可讓 jsPDF 內部運算後產生順序正確的 Rect。
+          pdf.link(x, y + h, w, -h, { url: e.url });
         }
       }
     }
