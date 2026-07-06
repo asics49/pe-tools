@@ -1,6 +1,6 @@
 # 體育班評鑑模組開發 — 專案脈絡總覽
 
-> 最後更新：2026-06-28
+> 最後更新：2026-07-06
 
 ---
 
@@ -62,7 +62,11 @@ Google Sheets（上傳記錄）
 | `guide.html` | 工具使用說明網頁，含左側導覽列、折疊 Q&A、手機響應式 |
 | `leave-record.html` | m5 學生公假統計表模組原始檔 |
 | `grade-record.html` | m6 學習輔導補助成績登錄模組（已整合進 pe-class-tools.html）|
+| `年度訓練計畫表.html` | m7 年度訓練計畫模組原始檔 |
+| `器材檢核表.html` | m8 體育器材安全檢核表模組原始檔 |
+| `cloud-link-page.html` | m9 雲端連結頁產生器模組原始檔 |
 | `build.py` | 合併腳本，偵測衝突函式並加前綴 |
+| `.nojekyll` | 讓 GitHub Pages 跳過 Jekyll 處理 |
 | `CHANGELOG.md` | 版本紀錄 |
 | `CLAUDE.md` | 本文件（專案脈絡） |
 
@@ -92,7 +96,7 @@ Google Sheets（上傳記錄）
 - `apply_renames()`：對整個模組原始碼做字串取代（含 HTML onclick 屬性）
 - 外部 CDN 腳本需加在 build.py 殼層 HTML 的 `<head>` 裡（模組的 `<script src>` 會被忽略）
 
-已加入殼層的 CDN：JSZip、FileSaver.js、SheetJS (xlsx.full.min.js)、PDF.js (3.11.174)、Chart.js (4.4.1)
+已加入殼層的 CDN：JSZip、FileSaver.js、SheetJS (xlsx.full.min.js)、ExcelJS (4.4.0)、PDF.js (3.11.174)、Chart.js (4.4.1)、qrcodejs (1.0.0)、html2canvas (1.4.1)、jsPDF (2.5.1)
 
 ---
 
@@ -108,6 +112,8 @@ Google Sheets（上傳記錄）
 | m5 | 公假統計表 | leave-record.html | 2-1-3 田徑/足球團隊公假統計表 |
 | m6 | 成績登錄 | grade-record.html | 學習輔導補助學生成績登錄 |
 | m7 | 年度訓練計畫 | 年度訓練計畫表.html | 運動代表隊年度訓練計畫表 |
+| m8 | 器材檢核表 | 器材檢核表.html | 3-1-2 體育班設備器材管理維護及更新 |
+| m9 | 雲端連結頁產生器 | cloud-link-page.html | 通用（檔案超過平台上傳限制時使用） |
 
 ---
 
@@ -212,6 +218,62 @@ CDN 殼層：Chart.js 4.4.1
 
 ---
 
+## m8 器材檢核表（2026-07-05 新增）
+
+### 功能
+- **4 個月份分頁**（9月/1月/3月/6月檢查），各自獨立儲存勾選狀態
+- **檢核清單**：49 筆項目，涵蓋 7 大區（操場、樂活運動站、桌球教室、風雨球場、活動中心、詠清球場、其他場域）
+- **是/否互動**：點擊切換勾選，「否」自動列紅底
+- **重設本月檢核**：確認後清空目前月份的勾選/待改進/複檢/日期/期別/簽名
+- **Word 匯出**：`@page WordSection1` A4 直式、大區欄直式文字（`writing-mode:vertical-rl`）、colgroup 百分比欄寬
+- **Excel 匯出**：改用 **ExcelJS**（SheetJS 免費版不支援儲存格樣式），比照校方範本呈現框線、色塊、是/否底色
+
+### build.py 設定
+```python
+FILES: ('m8', '模組八', '器材檢核表', '器材檢核表.html')
+CONFLICT_VARS m8: {'MONTHS': 'MONTHS_m8', 'CHECKS': 'CHECKS_m8', 'curMonth': 'curMonth_m8', 'monthData': 'monthData_m8'}
+CONFLICT_IDS: inDay, monthTabs, monthLabel, checkTable, checkBody, sigRow, sig1~5
+CDN 殼層：ExcelJS 4.4.0
+```
+
+### 已知 bug 修復記錄
+- m7 頂層（非函式內）的 `addEventListener` 語句在合併後會於頁面載入時立即執行；其中 `forEach(id => getElementById(id))` 因 `prefix_ids` 只替換字面字串、無法處理變數形式的 id，導致 `null.addEventListener` 拋錯，中斷後續腳本執行（m8 常數因此卡在 TDZ）
+  - **修復**：把該段 `addEventListener` 移進 `// init` 區段（延遲到分頁啟動時才執行），並把 `forEach` 動態 id 拆成逐一明確呼叫
+
+---
+
+## m9 雲端連結頁產生器（2026-07-05 新增）
+
+### 動機
+評鑑平台單檔大小限制（如 5MB），部分大型檔案/網站只能改放 Google 雲端硬碟並開放檢視連結。此模組讓使用者填標題、雲端連結、上傳/貼上截圖，批次產生含 QR Code 的「連結頁」上傳至平台，取代原檔案。
+
+### 功能
+- **多筆項目管理**：新增/刪除，每筆各自一頁
+- **截圖**：可直接 `Ctrl+V` 貼上剪貼簿截圖，或選擇檔案；一律用 canvas 縮放到 1280×960 內並轉 JPEG 壓縮
+- **QR Code**：qrcodejs 產生，方便委員現場掃描
+- **Word 匯出**：真正的 `.docx`（OOXML zip），每筆項目各自一個 section、各自的 `word/headerN.xml`，LOGO+標題落在 Word 真正的「頁首」區域（比照 m5 的做法，而非 HTML `mso-element:header` 技巧——後者在實測中對真正 Word 無效）
+- **PDF 匯出**：html2canvas 把每頁渲染成圖片後用 jsPDF 組成多頁 PDF；另外用 `pdf.link()` 在連結文字位置疊加可點擊區塊
+- **下載檔名**：依項目標題命名（多筆時用「首筆標題等N筆」），不再固定檔名
+
+### build.py 設定
+```python
+FILES: ('m9', '模組九', '雲端連結頁產生器', 'cloud-link-page.html')
+CONFLICT_VARS m9: {'entries': 'entries_m9', 'nextId': 'nextId_m9'}
+CONFLICT_IDS: school, year, entryList
+CDN 殼層：qrcodejs 1.0.0、html2canvas 1.4.1、jsPDF 2.5.1
+```
+
+### 已知 bug 修復記錄（皆為深層 debug 案例，值得記住）
+- **PDF 截圖/連結框跑出頁面**：離屏渲染容器原本直接掛在 `pe-class-tools.html` 主文件內，因而繼承到 m7 模組殘留的全域樣式 `table{width:100% !important;table-layout:auto !important;}`，導致內部表格寬度失控（實測跑到 900px，超出 793px 版面）
+  - **修復**：改用獨立 `<iframe>` 承載離屏渲染內容，徹底隔絕主文件的全域 CSS 污染；表格寬度改用明確 px（非 `%`），並加 `table-layout:fixed` + `colgroup`
+- **PDF 連結在 Chrome/pdf.js 正常但 Adobe Acrobat/Reader 不可點擊**：用 pdf.js 解析出的 annotation 看似正常，但比對「原始 PDF bytes」才發現 jsPDF 的 `link()` 把 `/Rect` 的 y 座標順序寫反了（`lly > ury`，違反 PDF 規格要求 `lly ≤ ury`）。Chrome/pdf.js 會自動容錯校正座標順序，Adobe 較嚴格、判定為無效區域
+  - **修復**：呼叫 `pdf.link(x, y+h, w, -h, opts)` 取代 `pdf.link(x, y, w, h, opts)`，讓 jsPDF 內部運算後產生的 Rect 座標順序正確
+  - **教訓**：驗證 PDF 產出「不能只看某個 PDF 函式庫解析結果」，因為多數函式庫（含 pdf.js）對不規範座標會自動容錯；務必直接檢查原始 PDF bytes 或用目標軟體（Adobe）實測
+- **Word LOGO/標題沒有真正落在「頁首」**：最初用 HTML `mso-element:header` + `@page mso-header:hN` 技巧（免建立真正 docx），但實測在真正 Word 中無效（仍顯示在內文區塊）
+  - **修復**：改用跟 m5 相同的真 `.docx`（JSZip 組 OOXML），每筆項目各自一個 section + 專屬 `word/headerN.xml`
+
+---
+
 ## Apps Script Code.gs 主要函式
 
 | 函式 | 說明 |
@@ -240,7 +302,14 @@ CDN 殼層：Chart.js 4.4.1
 
 目前 `uploadSystemUrl` 只有 1-1 子標的 2 筆文件有設定（測試用），其餘 87 筆仍連到 Drive 資料夾。
 
-模組卡片列（頁面頂部）目前共 9 張：m1～m7（7 張）、體育組資料上傳（綠色）、工具使用說明（紫色）。
+模組卡片列（頁面頂部）目前共 11 張：m1～m9（9 張）、體育組資料上傳（綠色）、工具使用說明（紫色）。
+
+### 文件完成追蹤（2026-07-05 新增，2026-07-06 調整）
+- 每筆文件的「追蹤」欄位有「已完成」勾選框，狀態存 `localStorage['peEvalTracking115']`（key 為 `子標id::文件索引::文件名稱`）
+- **子標層級備忘**（非每筆文件）：`textarea` 支援換行、自動依內容調整高度，存 `localStorage['peEvalSubNotes115']`（key 為 `大標題::子標id`）
+- 子標旁另有獨立的「已完成」勾選（`localStorage['peEvalSubDone115']`），勾選後會**自動清空該子標的備忘內容**
+- 統計列新增「已完成」/「未完成」筆數；「只顯示未完成」篩選按鈕可與原本的「篩選負責人員」同時套用（AND 邏輯）
+- 純瀏覽器本機資料，不會同步到雲端；**若之後調整文件清單順序或改文件名稱，逐筆文件的勾選 key 可能對不上而遺失**（子標層級的備忘/已完成則只要大標題與子標編號不變就不受影響）
 
 ---
 
@@ -271,6 +340,10 @@ CDN 殼層：Chart.js 4.4.1
 - [x] **m6 grade-record.html** 學習輔導補助成績登錄（2026-06-24，4 期別、PDF 批次匯入、已整合進 pe-class-tools.html）
 - [x] pe-class-tools.html 切換分頁時同步更新 URL hash（`history.replaceState`）
 - [x] **m7 年度訓練計畫表.html** 互動式年度訓練計畫（2026-06-28，Chart.js 混合圖、拖拉折線、Word 匯出、已整合進 pe-class-tools.html）
+- [x] **m8 器材檢核表.html** 體育器材安全檢核表（2026-07-05，4 月份分頁、Word/ExcelJS 匯出、重設本月檢核）
+- [x] **m9 cloud-link-page.html** 雲端連結頁產生器（2026-07-05，貼上截圖自動縮放、真 docx 頁首、PDF 可點擊連結、QR Code）
+- [x] index.html 文件完成追蹤（2026-07-05～06，已完成勾選 + 子標層級備忘 + 只顯示未完成篩選）
+- [x] 新增 `.nojekyll` 解決 GitHub Pages Jekyll 建置偶發失敗問題（2026-07-06）
 
 ### 待辦
 - [ ] **Drive 掃描權限**：需用學校帳號執行 `grantAccessToGmail`（目前掃描結果全為「無法存取資料夾」）
@@ -294,6 +367,9 @@ CDN 殼層：Chart.js 4.4.1
 | m6 分頁空白 | leave-record.html `.wrap` 少一個 `</div>`，panel_m5 未閉合，panel_m6 被嵌套在 panel_m5 內 | 補上 `</div>` 閉合 `.wrap`（leave-record.html line 198 後）|
 | build.py `get_body` 抓到 `</head><body>` | grade-record.html `<style>` 在 `<head>` 內，`</style>` 後緊接 `</head><body>` | `get_body` 加 regex 濾除 `</head>`、`<body>`、`</body>`、`</html>` |
 | m7 點擊柱狀圖無反應 | `'nearest'+intersect:true` 在合併版面需精確命中圖元 | click handler 改用 `'index'+intersect:false` |
+| m8/m9 合併後模組互相干擾（TDZ、CSS 污染） | 所有模組 CSS/JS 合併進同一份文件，任一模組的「頂層執行語句」或「未加前綴的全域選擇器樣式」都會影響其他模組 | 新模組的初始化邏輯務必放進 `// init` 區段；CSS 盡量加模組專屬 class，避免裸的 `table{}`、`div{}` 等全域選擇器 |
+| GitHub Pages 建置失敗（Page build failed） | Repo 預設用 Jekyll 處理靜態頁面，複雜 HTML/JS 內容偶爾被 Jekyll 誤判 | 新增根目錄 `.nojekyll` 空檔案，跳過 Jekyll 處理 |
+| jsPDF `link()` 產生的連結在 Adobe 不可點擊 | jsPDF 把 `/Rect` 的 y 座標順序寫反（`lly>ury`），Adobe 嚴格判定無效，Chrome/pdf.js 會自動容錯 | 呼叫 `pdf.link(x, y+h, w, -h, opts)` 取代 `(x, y, w, h)` 抵銷 jsPDF 內部的反轉 |
 
 ---
 
