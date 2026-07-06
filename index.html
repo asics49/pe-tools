@@ -96,6 +96,12 @@ tr.row-done:hover td{background:#EAF4EA !important;}
 .sub-header.sub-done{background:#E3F0E3;}
 .only-missing-btn{border:1.5px solid #B23A3A;background:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-family:inherit;cursor:pointer;color:#B23A3A;transition:all .15s;margin-left:auto;}
 .only-missing-btn.active{background:#B23A3A;color:#fff;font-weight:700;}
+
+/* ── Backup buttons ── */
+.backup-btn{border:1.5px solid #223A52;background:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-family:inherit;cursor:pointer;color:#223A52;transition:all .15s;white-space:nowrap;}
+.backup-btn:hover{background:#223A52;color:#fff;}
+.backup-import-label{position:relative;display:inline-flex;align-items:center;}
+.backup-import-label input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -122,6 +128,10 @@ tr.row-done:hover td{background:#EAF4EA !important;}
   <div>已完成：<span class="stat-num done" id="statDone">—</span></div>
   <div>未完成：<span class="stat-num missing" id="statMissing">—</span></div>
   <button class="only-missing-btn" id="onlyMissingBtn" onclick="toggleOnlyMissing()">只顯示未完成</button>
+  <button class="backup-btn" onclick="exportBackup()">匯出進度備份</button>
+  <label class="backup-btn backup-import-label">匯入進度備份
+    <input type="file" accept="application/json" id="backupFileInput" onchange="importBackup(this)">
+  </label>
 </div>
 
 <div class="main" id="mainContent"></div>
@@ -577,6 +587,49 @@ function applySubHeaderStyle(header){
 function autoGrow(el){
   el.style.height = 'auto';
   el.style.height = el.scrollHeight + 'px';
+}
+
+// ── 進度備份匯出／匯入（跨電腦搬移用）──
+function exportBackup(){
+  var backup = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    tracking: TRACKING,
+    subNotes: SUB_NOTES,
+    subDone: SUB_DONE
+  };
+  var blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
+  var a = document.createElement('a');
+  var ymd = new Date().toISOString().slice(0,10).replace(/-/g,'');
+  a.href = URL.createObjectURL(blob);
+  a.download = '評鑑進度備份_'+ymd+'.json';
+  a.click();
+}
+
+function importBackup(input){
+  var file = input.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    try{
+      var backup = JSON.parse(ev.target.result);
+      if(!confirm('確定要匯入這份備份嗎？會覆蓋目前瀏覽器上的已完成勾選與備忘內容。')){
+        input.value = '';
+        return;
+      }
+      TRACKING = backup.tracking || {};
+      SUB_NOTES = backup.subNotes || {};
+      SUB_DONE = backup.subDone || {};
+      saveTracking();
+      saveSubNotes();
+      saveSubDone();
+      location.reload();
+    }catch(e){
+      alert('備份檔案格式錯誤，無法匯入：'+e.message);
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
 }
 
 function updateTrackStats(){
