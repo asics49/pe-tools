@@ -552,6 +552,11 @@ async function generateDocx(){
     let cellsXml = [];
     let picId = 1;
 
+    // 偵測多數方向：橫向多用 4:3，直向多用 3:4
+    const imgBlocks = blocks.filter(b => b.file && b.dataUrl);
+    const portraitCount = imgBlocks.filter(b => b.height > b.width).length;
+    const TARGET_RATIO = (portraitCount > imgBlocks.length / 2) ? (3 / 4) : (4 / 3);
+
     for(let i=0;i<blocks.length;i++){
       const b = blocks[i];
       const colIdx = i % cols;
@@ -567,19 +572,19 @@ async function generateDocx(){
         const relId = `rId${100+idx}`;
         rels.push({id: relId, target: `media/${fname}`});
 
-        // 置中裁切到 4:3（<a:srcRect> 值為 per-millage，100000 = 100%）
-        const TARGET_RATIO = 4 / 3;
+        // 置中裁切到統一比例（<a:srcRect> 值為 per-millage，100000 = 100%）
         const imgRatio = b.width / b.height;
         let srcL = 0, srcT = 0, srcR = 0, srcB = 0;
         if (imgRatio > TARGET_RATIO) {
-          // 橫向太寬 → 裁左右
+          // 相對目標比例太寬 → 裁左右
           const cropFrac = 1 - TARGET_RATIO / imgRatio;
           srcL = srcR = Math.round(cropFrac / 2 * 100000);
         } else if (imgRatio < TARGET_RATIO) {
-          // 縱向太高 → 裁上下
+          // 相對目標比例太高 → 裁上下
           const cropFrac = 1 - imgRatio / TARGET_RATIO;
           srcT = srcB = Math.round(cropFrac / 2 * 100000);
         }
+        // 直向模式：cx 受 maxImgWidthEmu 限制，cy 受 maxImgHeightEmu 限制
         const cx = Math.round(Math.min(maxImgWidthEmu, maxImgHeightEmu * TARGET_RATIO));
         const cy = Math.round(cx / TARGET_RATIO);
         const srcRect = {l: srcL, t: srcT, r: srcR, b: srcB};
