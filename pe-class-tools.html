@@ -2432,12 +2432,12 @@ function getColWidths(n){
 // Per-row vertical overhead (table cell margins, caption line, spacing) and a
 // small buffer for the page header taking slightly more than one line.
 const ROW_OVERHEAD_EMU = 700000;
-const HEADER_BUFFER_EMU = 80000;
+const HEADER_BUFFER_EMU = 100000;
 
 // Pick a max image height so that the default block count for this layout
 // fits within one A4 page (rowsPerPage = targetBlocks_m1 / cols_m1).
 function getMaxImgHeightEmu(){
-  const pageContentHeightEmu = (16838 - 850 - 720) * EMU_PER_DXA; // A4 minus top/bottom margins
+  const pageContentHeightEmu = (16838 - 1417 - 720) * EMU_PER_DXA; // A4 minus top/bottom margins (top=2.5cm)
   const rowsPerPage = targetBlocks_m1 / cols_m1;
   return Math.floor((pageContentHeightEmu - HEADER_BUFFER_EMU - rowsPerPage * ROW_OVERHEAD_EMU) / rowsPerPage);
 }
@@ -2560,7 +2560,7 @@ async function m1_generateDocx(){
 
       // size logo_m1 to fit within a box, then derive left column width from it
       const maxLogoWEmu = 2600000;
-      const maxLogoHEmu = 270000;
+      const maxLogoHEmu = 400000;
       const wEmu = logo_m1.width * EMU_PER_PX;
       const hEmu = logo_m1.height * EMU_PER_PX;
       const scale = Math.min(maxLogoWEmu/wEmu, maxLogoHEmu/hEmu, 1) || 1;
@@ -2623,7 +2623,7 @@ ${headerRels.map(r=>`<Relationship Id="${r.id}" Type="http://schemas.openxmlform
 ${rowsXml}
 </w:tbl>
 <w:p/>
-<w:sectPr><w:headerReference w:type="default" r:id="rId900"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="850" w:right="720" w:bottom="720" w:left="720" w:header="280" w:footer="720" w:gutter="0"/></w:sectPr>
+<w:sectPr><w:headerReference w:type="default" r:id="rId900"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1417" w:right="720" w:bottom="720" w:left="720" w:header="340" w:footer="720" w:gutter="0"/></w:sectPr>
 </w:body>
 </w:document>`;
 
