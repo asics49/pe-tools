@@ -503,7 +503,10 @@ function placeholderParagraphXml(){
   return `<w:p><w:pPr><w:spacing w:before="600" w:after="600"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:color w:val="999999"/><w:i/></w:rPr><w:t>（尚未上傳照片）</w:t></w:r></w:p>`;
 }
 
-function imageParagraphXml(relId, cx, cy, docPrId){
+function imageParagraphXml(relId, cx, cy, docPrId, srcRect){
+  const srcRectXml = srcRect
+    ? `<a:srcRect l="${srcRect.l}" t="${srcRect.t}" r="${srcRect.r}" b="${srcRect.b}"/>`
+    : '';
   return `<w:p><w:pPr><w:spacing w:after="80"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>` +
     `<wp:inline distT="0" distB="0" distL="0" distR="0">` +
     `<wp:extent cx="${cx}" cy="${cy}"/>` +
@@ -512,7 +515,7 @@ function imageParagraphXml(relId, cx, cy, docPrId){
     `<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
     `<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
     `<pic:nvPicPr><pic:cNvPr id="${docPrId}" name="Picture ${docPrId}"/><pic:cNvPicPr/></pic:nvPicPr>` +
-    `<pic:blipFill><a:blip r:embed="${relId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>` +
+    `<pic:blipFill><a:blip r:embed="${relId}"/>${srcRectXml}<a:stretch><a:fillRect/></a:stretch></pic:blipFill>` +
     `<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>` +
     `</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
 }
@@ -564,13 +567,24 @@ async function generateDocx(){
         const relId = `rId${100+idx}`;
         rels.push({id: relId, target: `media/${fname}`});
 
-        const wEmu = b.width * EMU_PER_PX;
-        const hEmu = b.height * EMU_PER_PX;
-        const scale = Math.min(maxImgWidthEmu / wEmu, maxImgHeightEmu / hEmu, 1) || 1;
-        const cx = Math.round(wEmu * scale);
-        const cy = Math.round(hEmu * scale);
+        // 置中裁切到 4:3（<a:srcRect> 值為 per-millage，100000 = 100%）
+        const TARGET_RATIO = 4 / 3;
+        const imgRatio = b.width / b.height;
+        let srcL = 0, srcT = 0, srcR = 0, srcB = 0;
+        if (imgRatio > TARGET_RATIO) {
+          // 橫向太寬 → 裁左右
+          const cropFrac = 1 - TARGET_RATIO / imgRatio;
+          srcL = srcR = Math.round(cropFrac / 2 * 100000);
+        } else if (imgRatio < TARGET_RATIO) {
+          // 縱向太高 → 裁上下
+          const cropFrac = 1 - imgRatio / TARGET_RATIO;
+          srcT = srcB = Math.round(cropFrac / 2 * 100000);
+        }
+        const cx = Math.round(Math.min(maxImgWidthEmu, maxImgHeightEmu * TARGET_RATIO));
+        const cy = Math.round(cx / TARGET_RATIO);
+        const srcRect = {l: srcL, t: srcT, r: srcR, b: srcB};
 
-        cellInner = imageParagraphXml(relId, cx, cy, picId++) + captionParagraphXml(b.caption);
+        cellInner = imageParagraphXml(relId, cx, cy, picId++, srcRect) + captionParagraphXml(b.caption);
       } else {
         cellInner = placeholderParagraphXml() + captionParagraphXml(b.caption);
       }
