@@ -1,6 +1,6 @@
 # 體育班評鑑模組開發 — 專案脈絡總覽
 
-> 最後更新：2026-07-06
+> 最後更新：2026-07-11
 
 ---
 
@@ -104,11 +104,11 @@ Google Sheets（上傳記錄）
 
 | ID | 名稱 | 來源檔 | 對應評鑑項目 |
 |----|------|--------|------------|
-| m1 | 成果報告書頁首 | result-report-header.html | 1-1 |
-| m2 | 照片成果文件 | photo-doc.html | 各子標 |
-| m3a | 課程規劃表 | curriculum-plan.html | 體育課規劃 |
-| m3b | 訓練計畫 | training-plan.html | 術科訓練 |
-| m4 | 學習護照 | learning-passport.html | 學生紀錄 |
+| m1 | 照片佐證資料 | photo-doc-generator.html | 各子標（照片佐證） |
+| m2 | 補課紀錄表 | makeup-class-record.html | 3-1-1 賽後補課 |
+| m3a | 成果報告表頭 | result-report-header.html | 1-1 |
+| m3b | 開課課程一覽 | course-overview.html | 體育課規劃 |
+| m4 | 職業試探活動 | career-activity.html | 3-4 生涯發展 |
 | m5 | 公假統計表 | leave-record.html | 2-1-3 田徑/足球團隊公假統計表 |
 | m6 | 成績登錄 | grade-record.html | 學習輔導補助學生成績登錄 |
 | m7 | 年度訓練計畫 | 年度訓練計畫表.html | 運動代表隊年度訓練計畫表 |
@@ -117,23 +117,75 @@ Google Sheets（上傳記錄）
 
 ---
 
+## m1 photo-doc-generator.html 照片佐證資料（2026-07-10～11 新增「每頁2張」版面）
+
+### 功能
+- **每列照片數量版面**（`LAYOUT_PRESETS`）：1=每列1張大圖、2=每列2張2排、3=每列2張3排、
+  4=**每頁2張（大圖）**——`cols`（每列欄數）與 `blocks`（預設區塊數）的組合已經通用支援「每頁 N 張」，
+  `getMaxImgHeightEmu()` 只依 `targetBlocks/cols` 這個固定比例算圖片最大高度，**不受使用者實際新增的
+  照片張數影響**，所以不管加減幾張，每頁的排版永遠正確符合一張 A4（已用 2→5 張測試，圖片高度數值不變）
+- **每頁2張版面的說明文字**：獨立成一個儲存格，放在照片格「下方」（另一列 `<w:tr>`），不是同一格疊放、
+  也不是側邊並排（曾誤解為側邊並排，已修正回下方）
+- **手動旋轉照片**：區塊操作列的「旋轉」按鈕，用 canvas 順時針轉 90 度並更新 `dataUrl/width/height`；
+  **不做自動判別方向**——EXIF 只能反映拍照當下手機朝向，無法可靠判斷內容「應該」呈現的方向，故意
+  不做自動旋轉，一律靠使用者手動控制
+- 旋轉按鈕一律顯示（未上傳照片時呈 disabled 樣式），避免使用者誤以為沒有這個功能
+
+### build.py 設定
+```python
+FILES: ('m1', '模組一', '照片佐證資料', 'photo-doc-generator.html')
+CONFLICT_VARS m1: {'logo': 'logo_m1', 'nextId': 'nextId_m1', 'cols': 'cols_m1',
+                   'targetBlocks': 'targetBlocks_m1', 'blocks': 'blocks_m1'}
+```
+
+### 已知 bug 修復記錄（皆為合併後才會出現的 class/字串撞名問題，值得記住）
+- **預覽格線版面失效**：JS 用字串組合 `'preview-grid cols-' + cols` 產生 class name，`build.py` 幫
+  `cols` 變數改名成 `cols_m1` 時，因為 `\bcols\b` 正規表示式把連字號視為單字邊界，連字串常數裡的
+  `cols-` 都被誤判成同一個變數名稱，錯誤置換成 `cols_m1-1`，導致 CSS 選擇器 `.preview-grid.cols-1`
+  完全對不上
+  - **修復**：class 名稱改用不含變數字面的 `grid-c` 前綴（`grid-c1`/`grid-c2`/`grid-c3`）
+- **旋轉／上移／下移／刪除按鈕全部隱形**：`.icon-btn` 這個 class 名稱同時被 career-activity.html
+  （m4）定義了一份完全不同用途的樣式（白色圖示 + 半透明白底，是設計給 m4 自己的深色卡片背景用），
+  build.py 把所有模組 CSS 串接成同一份，m4 排在 m1 後面，層疊時 m4 的版本蓋掉 m1 的，導致這幾個按鈕
+  變成「白色圖示疊在白色背景」，實質上完全隱形（用 `getComputedStyle` 量測 color/background 皆為
+  `rgb(255,255,255)` 才抓到，肉眼／看程式碼都看不出來）
+  - **修復**：改用模組專屬的 `.m1-icon-btn`，避免撞名
+  - **教訓**：合併版裡任何「通用命名」的 class（`.icon-btn`、`.card`、`.wrap`……）都有撞名風險；
+    純外觀異常（顏色錯、看不到東西）不一定是渲染 bug，優先懷疑 CSS 層疊被其他模組覆蓋，直接用
+    `getComputedStyle` 量測實際套用的顏色/背景，不要用肉眼或字元編碼去猜
+
+---
+
 ## m5 學生公假統計表（2026-06-21 新增）
 
 ### 功能
 - **基本資訊**：學年度、運動類別（田徑/足球）
-- **Excel 匯入**（SheetJS）：自動偵測欄位（年級、姓名、比賽名稱、日期等）
+- **Excel 匯入**（SheetJS）：自動偵測欄位（年級、姓名、比賽名稱、日期等）；**下載 Excel 範例檔**
+  （2026-07-11 新增，`downloadTemplate()`）產生含正確欄位標題、西元/民國年範例列、填寫說明的
+  `.xlsx`，已測試匯入回系統可正確解析兩種年份格式
 - **日期區間解析**：`2025/10/7-10/9`、ROC 年（< 1000 自動 +1911）
 - **全選/批次刪除**：表頭 checkbox + 刪除選取按鈕
 - **學校 LOGO**：預設右昌國小校徽，可自訂上傳；Word 頁首左側顯示
+- **各年級統計列與核章欄**（2026-07-11 新增，參考「115年度…公假統計表 足球.docx」範例格式）：
+  - **班級學生總數**：無法從公假名單反推（沒請假的學生不會出現在名單裡），由使用者在預覽區塊
+    手動輸入，存進 `gradeTotals[grade]`
+  - **公假人數**：依「學生姓名」自動去重計算（`computeLeaveSummary()`），同一學生多筆競賽紀錄只算一人
+  - **公假比率**：有輸入總人數才自動算百分比，否則顯示範例中的公式提示文字（不會出現 NaN）
+  - 統計列在 Word 表格最下方用 `gridSpan` 合併 3 組儲存格（學生總數/公假人數/比率各佔 2 欄）
+  - 每個年級表格下方新增核章列「體育組長　　學務主任　　校長」，文字與間距比照範例
 - **Word 輸出**：
   - 頁首（每頁自動重複）：LOGO 置左 + 大標題置中（高雄市右昌國小體育班學生公假統計表）
-  - 依年級分頁，每頁含副標題（學年度/類別/年級）與統計表格
+  - 依年級分頁，每頁含副標題（學年度/類別/年級）、統計表格（含統計列）、核章列
 
 ### Word XML 重點
 - 頁首使用 `word/header1.xml` + `word/_rels/header1.xml.rels`
 - 圖片 content type 需在 `[Content_Types].xml` 宣告（`jpeg`/`png`）
 - EMU → DXA 換算：除以 635（非 914.4）
 - `w:hdr` 需宣告 `xmlns:a` 與 `xmlns:pic` namespace
+- 頁首標題「高雄市右昌國小體育班學生公假統計表」（17字）原本用左右對稱留白欄置中標題，
+  可用寬度只有 4538dxa，20pt 下 17 字需要 6800dxa，必定跑兩行；**修復**：右側留白欄改用小固定
+  寬度（500dxa，不再鏡射 LOGO 寬度）+ 字級微調（40→34半點），標題欄可用寬度變成 6588dxa，
+  已用 canvas 量測實際字型寬度（385px）確認在欄寬（439px）內能一行顯示完畢
 
 ### build.py 設定
 ```python
@@ -215,6 +267,8 @@ CDN 殼層：Chart.js 4.4.1
 - 計畫主表欄寬：3% + 3% + 4% + 52×1.731% ≈ 100%
 - `// init` 標記讓 `buildTable()` + `buildChart()` 在分頁第一次啟動時才執行（避免 Canvas 尺寸為 0）
 - 圖表 click 事件用 `'index' + intersect:false`，點擊任意 x 位置即可找到週次（`'nearest'+intersect:true` 需精確命中圖元，在合併版面下容易失效）
+- **版面模式（2026-07-10 調整）**：`.m7-main-area` 從 `height:calc(100vh-56px);overflow:hidden` 改為 `min-height` 各卡片，讓頁面可往下捲動且欄位大小正常
+- **計畫表格子統一高度**：`buildTable()` 結尾用 `tbl.querySelectorAll('tr')` 強制第 3 列後每列 `height:20px`；注意必須用 element 相對查詢（不能用 `querySelectorAll('#planTable tr')`，因為 build.py 的 `prefix_ids` 不處理 querySelector 以外的 CSS 選擇器）
 
 ---
 
@@ -310,6 +364,10 @@ CDN 殼層：qrcodejs 1.0.0、html2canvas 1.4.1、jsPDF 2.5.1
 - 子標旁另有獨立的「已完成」勾選（`localStorage['peEvalSubDone115']`），勾選後會**自動清空該子標的備忘內容**
 - 統計列新增「已完成」/「未完成」筆數；「只顯示未完成」篩選按鈕可與原本的「篩選負責人員」同時套用（AND 邏輯）
 - 純瀏覽器本機資料，不會同步到雲端；**若之後調整文件清單順序或改文件名稱，逐筆文件的勾選 key 可能對不上而遺失**（子標層級的備忘/已完成則只要大標題與子標編號不變就不受影響）
+- **匯出/匯入進度備份**（2026-07-11 新增）：因追蹤資料是純瀏覽器 localStorage、換電腦或換瀏覽器不會
+  自動同步，新增「匯出進度備份」/「匯入進度備份」按鈕，把 `TRACKING`/`SUB_NOTES`/`SUB_DONE` 三份
+  資料打包成 JSON 檔下載，換電腦時匯入即可還原；可搭配專案本身就在 Google 雲端硬碟同步的資料夾
+  手動搬移備份檔
 
 ---
 
@@ -344,6 +402,11 @@ CDN 殼層：qrcodejs 1.0.0、html2canvas 1.4.1、jsPDF 2.5.1
 - [x] **m9 cloud-link-page.html** 雲端連結頁產生器（2026-07-05，貼上截圖自動縮放、真 docx 頁首、PDF 可點擊連結、QR Code）
 - [x] index.html 文件完成追蹤（2026-07-05～06，已完成勾選 + 子標層級備忘 + 只顯示未完成篩選）
 - [x] 新增 `.nojekyll` 解決 GitHub Pages Jekyll 建置偶發失敗問題（2026-07-06）
+- [x] index.html 追蹤進度匯出/匯入備份，方便跨電腦搬移（2026-07-11）
+- [x] **m1 photo-doc-generator.html** 新增「每頁2張（大圖）」版面、說明獨立成下方儲存格、
+      手動旋轉照片按鈕（2026-07-10～11）
+- [x] **m5 leave-record.html** 新增 Excel 範例檔下載、班級總人數/公假人數/比率統計列、
+      核章簽名列、頁首標題單行修復（2026-07-11）
 
 ### 待辦
 - [ ] **Drive 掃描權限**：需用學校帳號執行 `grantAccessToGmail`（目前掃描結果全為「無法存取資料夾」）
@@ -370,6 +433,11 @@ CDN 殼層：qrcodejs 1.0.0、html2canvas 1.4.1、jsPDF 2.5.1
 | m8/m9 合併後模組互相干擾（TDZ、CSS 污染） | 所有模組 CSS/JS 合併進同一份文件，任一模組的「頂層執行語句」或「未加前綴的全域選擇器樣式」都會影響其他模組 | 新模組的初始化邏輯務必放進 `// init` 區段；CSS 盡量加模組專屬 class，避免裸的 `table{}`、`div{}` 等全域選擇器 |
 | GitHub Pages 建置失敗（Page build failed） | Repo 預設用 Jekyll 處理靜態頁面，複雜 HTML/JS 內容偶爾被 Jekyll 誤判 | 新增根目錄 `.nojekyll` 空檔案，跳過 Jekyll 處理 |
 | jsPDF `link()` 產生的連結在 Adobe 不可點擊 | jsPDF 把 `/Rect` 的 y 座標順序寫反（`lly>ury`），Adobe 嚴格判定無效，Chrome/pdf.js 會自動容錯 | 呼叫 `pdf.link(x, y+h, w, -h, opts)` 取代 `(x, y, w, h)` 抵銷 jsPDF 內部的反轉 |
+| 所有模組頁面無法捲動 | m7 的 `html,body{height:100%;overflow:hidden}` 合併後污染全域，導致任何分頁都無法捲動 | 從 m7 源頭移除該規則；`build.py get_css()` 加負向 lookbehind `(?<![.#\w-])` 防止誤刪 `.s-body{}` 等含 `body` 字串的選擇器 |
+| m7 合併後 class 污染其他模組（`.card{overflow:hidden}`）| m7 用通用 class 名稱（`.card`、`.main-area`、`.toolbar`）與其他模組的 CSS 互相覆蓋 | m7 所有自訂 class 統一加 `m7-` 前綴 |
+| m7 計畫表格子高度不一致 | 空的 `contenteditable` td 瀏覽器插入隱形 `<br>` 導致比有內容的格子高；且 `querySelectorAll('#planTable tr')` 在合併版中 ID 已被改名為 `planTable_m7`，fix 完全無效 | `buildTable()` 結尾改用 `tbl.querySelectorAll('tr')` element 相對查詢，強制第 3 列後每列 `style.height='20px'` |
+| m1 預覽格線版面失效 | `build.py` 幫 `cols` 變數改名時，`\bcols\b` 正規表示式誤判字串常數 `'cols-'+cols` 裡的字面文字也是同一變數，錯誤置換 | class 名稱改用不含變數字面的 `grid-c` 前綴，避免字串跟變數名稱撞在一起 |
+| m1 旋轉/上移/下移/刪除按鈕全部隱形 | `.icon-btn` class 同時被 m4（career-activity.html）定義成白色圖示+半透明白底（給它自己的深色卡片背景用），CSS 合併後層疊蓋掉 m1 版本，變成白圖示疊白底 | 改用模組專屬的 `.m1-icon-btn`；純外觀異常優先用 `getComputedStyle` 量測實際套用顏色，不要用肉眼或猜編碼問題 |
 
 ---
 
