@@ -166,11 +166,6 @@
     font-size:11px;color:var(--ink-soft);padding:5px 7px;border-top:1px solid var(--line);
     min-height:1.6em;line-height:1.5;word-break:break-all;
   }
-  .preview-cell.split{display:flex;align-items:stretch;}
-  .preview-cell.split .preview-photo{aspect-ratio:auto;flex:0 0 68%;}
-  .preview-cell.split .preview-caption{
-    flex:1;border-top:none;border-left:1px solid var(--line);
-  }
   .empty-hint{
     text-align:center;color:var(--ink-soft);font-size:13px;padding:30px 10px;
   }
@@ -398,6 +393,29 @@ function onCaptionChange(id, val){
   renderPreview();
 }
 
+// 順時針旋轉 90 度（相機拍照方向跟內容方向不一致時手動校正用）
+function rotateBlock(id){
+  const b = blocks.find(x=>x.id===id);
+  if(!b || !b.dataUrl) return;
+  const img = new Image();
+  img.onload = function(){
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalHeight;
+    canvas.height = img.naturalWidth;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width/2, canvas.height/2);
+    ctx.rotate(90 * Math.PI/180);
+    ctx.drawImage(img, -img.naturalWidth/2, -img.naturalHeight/2);
+    const mime = (b.file && b.file.type === 'image/png') ? 'image/png' : 'image/jpeg';
+    b.dataUrl = canvas.toDataURL(mime, 0.92);
+    b.width = canvas.width;
+    b.height = canvas.height;
+    renderBlocks();
+    renderPreview();
+  };
+  img.src = b.dataUrl;
+}
+
 function renderBlocks(){
   const container = document.getElementById('blocksContainer');
   if(blocks.length===0){
@@ -409,6 +427,7 @@ function renderBlocks(){
       <div class="block-head">
         <span class="tag">區塊 ${i+1}</span>
         <div class="block-actions">
+          ${b.dataUrl ? `<span class="icon-btn" onclick="rotateBlock(${b.id})" title="旋轉90度">⟳</span>` : ''}
           <span class="icon-btn" onclick="moveBlock(${b.id},-1)" title="上移">↑</span>
           <span class="icon-btn" onclick="moveBlock(${b.id},1)" title="下移">↓</span>
           <span class="icon-btn danger" onclick="removeBlock(${b.id})" title="刪除">✕</span>
@@ -453,7 +472,7 @@ function renderPreview(){
   }
 
   grid.innerHTML = blocks.map(b=>`
-    <div class="preview-cell${splitCaption ? ' split' : ''}">
+    <div class="preview-cell">
       <div class="preview-photo">
         ${b.dataUrl ? `<img src="${b.dataUrl}">` : '請點選此處文字後，貼上照片'}
       </div>
@@ -561,10 +580,6 @@ async function generateDocx(){
     const cellPaddingDxa = 220; // total left+right cell margin reserve
     const maxImgHeightEmu = getMaxImgHeightEmu(); // sized so the default block count fits one A4 page
 
-    // 說明獨立成一個欄位時：照片欄佔 68%、說明欄佔 32%（同一列並排，而非疊在同一格）
-    const photoColWidthDxa = Math.round(PAGE_CONTENT_WIDTH_DXA * 0.68);
-    const captionColWidthDxa = PAGE_CONTENT_WIDTH_DXA - photoColWidthDxa;
-
     const zip = new JSZip();
     const mediaFiles = [];
     const rels = [];
@@ -580,7 +595,7 @@ async function generateDocx(){
     for(let i=0;i<blocks.length;i++){
       const b = blocks[i];
       const colIdx = i % cols;
-      const colWidth = splitCaption ? photoColWidthDxa : colWidths[colIdx];
+      const colWidth = splitCaption ? PAGE_CONTENT_WIDTH_DXA : colWidths[colIdx];
       const maxImgWidthEmu = (colWidth - cellPaddingDxa) * EMU_PER_DXA;
       let photoInner, captionInner;
       if(b.file && b.dataUrl){
@@ -616,9 +631,10 @@ async function generateDocx(){
       captionInner = captionParagraphXml(b.caption);
 
       if(splitCaption){
-        const photoCell = `<w:tc><w:tcPr><w:tcW w:w="${photoColWidthDxa}" w:type="dxa"/><w:vAlign w:val="center"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar></w:tcPr>${photoInner}</w:tc>`;
-        const captionCell = `<w:tc><w:tcPr><w:tcW w:w="${captionColWidthDxa}" w:type="dxa"/><w:vAlign w:val="center"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar></w:tcPr>${captionInner}</w:tc>`;
-        rowsXmlParts.push(`<w:tr>${photoCell}${captionCell}</w:tr>`);
+        // 說明獨立成一個儲存格，放在照片格「下方」（另一列），而非同一格或側邊並排
+        const photoCell = `<w:tc><w:tcPr><w:tcW w:w="${PAGE_CONTENT_WIDTH_DXA}" w:type="dxa"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar></w:tcPr>${photoInner}</w:tc>`;
+        const captionCell = `<w:tc><w:tcPr><w:tcW w:w="${PAGE_CONTENT_WIDTH_DXA}" w:type="dxa"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar></w:tcPr>${captionInner}</w:tc>`;
+        rowsXmlParts.push(`<w:tr>${photoCell}</w:tr>`, `<w:tr>${captionCell}</w:tr>`);
       } else {
         cellsXml.push(
           `<w:tc><w:tcPr><w:tcW w:w="${colWidth}" w:type="dxa"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar></w:tcPr>${photoInner}${captionInner}</w:tc>`
@@ -629,7 +645,7 @@ async function generateDocx(){
     let rowsXml, gridCols;
     if(splitCaption){
       rowsXml = rowsXmlParts.join('');
-      gridCols = `<w:gridCol w:w="${photoColWidthDxa}"/><w:gridCol w:w="${captionColWidthDxa}"/>`;
+      gridCols = `<w:gridCol w:w="${PAGE_CONTENT_WIDTH_DXA}"/>`;
     } else {
       // pad to full rows
       while(cellsXml.length % cols !== 0){
