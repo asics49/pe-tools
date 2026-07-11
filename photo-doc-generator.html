@@ -153,9 +153,9 @@
     flex:1;text-align:center;font-weight:700;font-size:14px;color:var(--navy);
   }
   .preview-grid{display:grid;gap:8px;}
-  .preview-grid.cols-1{grid-template-columns:1fr;}
-  .preview-grid.cols-2{grid-template-columns:1fr 1fr;}
-  .preview-grid.cols-3{grid-template-columns:1fr 1fr 1fr;}
+  .preview-grid.grid-c1{grid-template-columns:1fr;}
+  .preview-grid.grid-c2{grid-template-columns:1fr 1fr;}
+  .preview-grid.grid-c3{grid-template-columns:1fr 1fr 1fr;}
   .preview-cell{border:1px solid var(--line);border-radius:4px;overflow:hidden;}
   .preview-photo{
     aspect-ratio:4/3;background:#F0EEE8;display:flex;align-items:center;
@@ -241,6 +241,12 @@
         </div>
         每列 2 張（3排）
       </div>
+      <div class="layout-opt" data-preset="4" onclick="setLayout(4)">
+        <div class="mini-grid" style="grid-template-columns:1fr;grid-template-rows:1fr 1fr;width:40px;height:42px;">
+          <div></div><div></div>
+        </div>
+        每頁 2 張（大圖）
+      </div>
     </div>
   </div>
 
@@ -257,7 +263,7 @@
         <img id="previewLogo" style="display:none;" />
         <div class="preview-title" id="previewTitle">（尚未輸入標題）</div>
       </div>
-      <div class="preview-grid cols-1" id="previewGrid">
+      <div class="preview-grid grid-c1" id="previewGrid">
         <div class="empty-hint">尚未新增任何照片區塊</div>
       </div>
     </div>
@@ -282,11 +288,13 @@ let blocks = []; // {id, file, dataUrl, width, height, caption}
 let nextId = 1;
 let logo = null; // {file, dataUrl, width, height}
 
-// Layout presets: 1=1x1（每列1張・大圖）、2=2x2（每列2張・2排）、3=2x3（每列2張・3排）
+// Layout presets: 1=1x1（每列1張・大圖）、2=2x2（每列2張・2排）、3=2x3（每列2張・3排）、
+//                4=1x2（每頁2張・大圖直式堆疊，參考班級日誌照片格式）
 const LAYOUT_PRESETS = {
   1: {cols: 1, blocks: 1},
   2: {cols: 2, blocks: 4},
   3: {cols: 2, blocks: 6},
+  4: {cols: 1, blocks: 2},
 };
 
 function setLayout(presetId){
@@ -430,7 +438,7 @@ function renderPreview(){
   }
 
   const grid = document.getElementById('previewGrid');
-  grid.className = 'preview-grid cols-' + cols;
+  grid.className = 'preview-grid grid-c' + cols;
 
   if(blocks.length===0){
     grid.innerHTML = '<div class="empty-hint">尚未新增任何照片區塊</div>';
