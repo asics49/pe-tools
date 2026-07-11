@@ -188,6 +188,11 @@ body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans
     font-size:11px;color:var(--ink-soft);padding:5px 7px;border-top:1px solid var(--line);
     min-height:1.6em;line-height:1.5;word-break:break-all;
   }
+  .preview-cell.split{display:flex;align-items:stretch;}
+  .preview-cell.split .preview-photo{aspect-ratio:auto;flex:0 0 68%;}
+  .preview-cell.split .preview-caption{
+    flex:1;border-top:none;border-left:1px solid var(--line);
+  }
   .empty-hint{
     text-align:center;color:var(--ink-soft);font-size:13px;padding:30px 10px;
   }
@@ -2240,20 +2245,22 @@ let targetBlocks_m1 = 1;
 let blocks_m1 = []; // {id, file, dataUrl, width, height, caption}
 let nextId_m1 = 1;
 let logo_m1 = null; // {file, dataUrl, width, height}
+let splitCaption = false; // true：說明文字獨立成一個欄位（照片欄｜說明欄並排），而非疊在同一格內
 
 // Layout presets: 1=1x1（每列1張・大圖）、2=2x2（每列2張・2排）、3=2x3（每列2張・3排）、
-//                4=1x2（每頁2張・大圖直式堆疊，參考班級日誌照片格式）
+//                4=1x2（每頁2張・大圖，照片與說明各自獨立欄位並排，參考班級日誌照片格式）
 const LAYOUT_PRESETS = {
   1: {cols_m1: 1, blocks_m1: 1},
   2: {cols_m1: 2, blocks_m1: 4},
   3: {cols_m1: 2, blocks_m1: 6},
-  4: {cols_m1: 1, blocks_m1: 2},
+  4: {cols_m1: 1, blocks_m1: 2, splitCaption: true},
 };
 
 function setLayout(presetId){
   const preset = LAYOUT_PRESETS[presetId];
   cols_m1 = preset.cols_m1;
   targetBlocks_m1 = preset.blocks_m1;
+  splitCaption = !!preset.splitCaption;
   document.querySelectorAll('.layout-opt').forEach(el=>{
     el.classList.toggle('active', parseInt(el.dataset.preset)===presetId);
   });
@@ -2399,7 +2406,7 @@ function m1_renderPreview(){
   }
 
   grid.innerHTML = blocks_m1.map(b=>`
-    <div class="preview-cell">
+    <div class="preview-cell${splitCaption ? ' split' : ''}">
       <div class="preview-photo">
         ${b.dataUrl ? `<img src="${b.dataUrl}">` : '請點選此處文字後，貼上照片'}
       </div>
@@ -2507,10 +2514,15 @@ async function m1_generateDocx(){
     const cellPaddingDxa = 220; // total left+right cell margin reserve
     const maxImgHeightEmu = getMaxImgHeightEmu(); // sized so the default block count fits one A4 page
 
+    // 說明獨立成一個欄位時：照片欄佔 68%、說明欄佔 32%（同一列並排，而非疊在同一格）
+    const photoColWidthDxa = Math.round(PAGE_CONTENT_WIDTH_DXA * 0.68);
+    const captionColWidthDxa = PAGE_CONTENT_WIDTH_DXA - photoColWidthDxa;
+
     const zip = new JSZip();
     const mediaFiles = [];
     const rels = [];
     let cellsXml = [];
+    let rowsXmlParts = [];
     let picId = 1;
 
     // 偵測多數方向：橫向多用 4:3，直向多用 3:4
@@ -2521,9 +2533,9 @@ async function m1_generateDocx(){
     for(let i=0;i<blocks_m1.length;i++){
       const b = blocks_m1[i];
       const colIdx = i % cols_m1;
-      const colWidth = colWidths[colIdx];
+      const colWidth = splitCaption ? photoColWidthDxa : colWidths[colIdx];
       const maxImgWidthEmu = (colWidth - cellPaddingDxa) * EMU_PER_DXA;
-      let cellInner;
+      let photoInner, captionInner;
       if(b.file && b.dataUrl){
         const ext = (b.file.type === 'image/png') ? 'png' : 'jpeg';
         const base64 = b.dataUrl.split(',')[1];
@@ -2550,27 +2562,39 @@ async function m1_generateDocx(){
         const cy = Math.round(cx / TARGET_RATIO);
         const srcRect = {l: srcL, t: srcT, r: srcR, b: srcB};
 
-        cellInner = imageParagraphXml(relId, cx, cy, picId++, srcRect) + captionParagraphXml(b.caption);
+        photoInner = imageParagraphXml(relId, cx, cy, picId++, srcRect);
       } else {
-        cellInner = placeholderParagraphXml() + captionParagraphXml(b.caption);
+        photoInner = placeholderParagraphXml();
       }
-      cellsXml.push(
-        `<w:tc><w:tcPr><w:tcW w:w="${colWidth}" w:type="dxa"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar></w:tcPr>${cellInner}</w:tc>`
-      );
+      captionInner = captionParagraphXml(b.caption);
+
+      if(splitCaption){
+        const photoCell = `<w:tc><w:tcPr><w:tcW w:w="${photoColWidthDxa}" w:type="dxa"/><w:vAlign w:val="center"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar></w:tcPr>${photoInner}</w:tc>`;
+        const captionCell = `<w:tc><w:tcPr><w:tcW w:w="${captionColWidthDxa}" w:type="dxa"/><w:vAlign w:val="center"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar></w:tcPr>${captionInner}</w:tc>`;
+        rowsXmlParts.push(`<w:tr>${photoCell}${captionCell}</w:tr>`);
+      } else {
+        cellsXml.push(
+          `<w:tc><w:tcPr><w:tcW w:w="${colWidth}" w:type="dxa"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar></w:tcPr>${photoInner}${captionInner}</w:tc>`
+        );
+      }
     }
 
-    // pad to full rows
-    while(cellsXml.length % cols_m1 !== 0){
-      const colIdx = cellsXml.length % cols_m1;
-      cellsXml.push(`<w:tc><w:tcPr><w:tcW w:w="${colWidths[colIdx]}" w:type="dxa"/></w:tcPr><w:p/></w:tc>`);
+    let rowsXml, gridCols;
+    if(splitCaption){
+      rowsXml = rowsXmlParts.join('');
+      gridCols = `<w:gridCol w:w="${photoColWidthDxa}"/><w:gridCol w:w="${captionColWidthDxa}"/>`;
+    } else {
+      // pad to full rows
+      while(cellsXml.length % cols_m1 !== 0){
+        const colIdx = cellsXml.length % cols_m1;
+        cellsXml.push(`<w:tc><w:tcPr><w:tcW w:w="${colWidths[colIdx]}" w:type="dxa"/></w:tcPr><w:p/></w:tc>`);
+      }
+      rowsXml = '';
+      for(let i=0;i<cellsXml.length;i+=cols_m1){
+        rowsXml += `<w:tr>${cellsXml.slice(i,i+cols_m1).join('')}</w:tr>`;
+      }
+      gridCols = colWidths.map(w=>`<w:gridCol w:w="${w}"/>`).join('');
     }
-
-    let rowsXml = '';
-    for(let i=0;i<cellsXml.length;i+=cols_m1){
-      rowsXml += `<w:tr>${cellsXml.slice(i,i+cols_m1).join('')}</w:tr>`;
-    }
-
-    const gridCols = colWidths.map(w=>`<w:gridCol w:w="${w}"/>`).join('');
 
     // ---- Header (title, optionally with logo_m1) — rendered as a real page header (w:hdr), not body content ----
     const headerRels = [];
