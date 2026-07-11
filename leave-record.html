@@ -72,6 +72,9 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
 .preview-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px;}
 .preview-tbl th{background:#EFEAE0;border:1px solid #C8C2B2;padding:5px 8px;text-align:center;font-weight:700;}
 .preview-tbl td{border:1px solid #C8C2B2;padding:5px 8px;text-align:center;}
+.preview-summary-row{display:flex;flex-wrap:wrap;gap:16px;align-items:center;font-size:12px;color:var(--ink-soft);background:#F5F2EC;border:1px solid #C8C2B2;border-radius:4px;padding:6px 10px;margin-bottom:6px;}
+.preview-summary-row label{display:flex;align-items:center;gap:4px;}
+.grade-total-input{width:60px;border:1px solid var(--line-strong);border-radius:4px;padding:2px 6px;font-size:12px;font-family:inherit;}
 
 /* bottom bar */
 .bottom-bar{position:fixed;left:0;right:0;bottom:0;background:rgba(246,244,238,.92);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:12px 18px;display:flex;justify-content:center;gap:10px;z-index:10;}
@@ -221,6 +224,12 @@ var selectedIds = new Set();
 var workbookCache = null; // 快取已載入的 workbook
 
 var GRADES = ['1年級','2年級','3年級','4年級','5年級','6年級'];
+var gradeTotals = {}; // 各年級「班級學生總數」，使用者手動輸入（無法從公假名單反推）
+
+function onGradeTotalChange(grade, val){
+  gradeTotals[grade] = parseInt(val, 10) || 0;
+  updatePreview();
+}
 
 /* ══════════════════════════════
    列管理
@@ -611,6 +620,18 @@ function getGrouped(){
   return groups;
 }
 
+// 依「學生姓名」去重計算公假人數（同一學生多筆競賽紀錄只算一人），並算出比率文字
+function computeLeaveSummary(grade, list){
+  var uniqueNames = {};
+  list.forEach(function(r){ if(r.name) uniqueNames[r.name] = true; });
+  var leaveCount = Object.keys(uniqueNames).length;
+  var total = gradeTotals[grade] || 0;
+  var ratioText = total > 0
+    ? ('請公假比率＝'+leaveCount+'/'+total+'＝'+(leaveCount/total*100).toFixed(1)+'%')
+    : '請公假比率＝請公假人數/學生總數';
+  return { leaveCount: leaveCount, total: total, ratioText: ratioText };
+}
+
 function updatePreview(){
   var groups = getGrouped();
   var sport = document.getElementById('leaveSport').value || '足球';
@@ -623,7 +644,14 @@ function updatePreview(){
   var html = '';
   gradeKeys.forEach(function(grade){
     var list = groups[grade];
+    var summary = computeLeaveSummary(grade, list);
     html += '<div class="preview-grade-title">'+year+'　'+sport+'類　'+grade+'</div>';
+    html += '<div class="preview-summary-row">'
+      + '<label>班級學生總數：<input type="number" min="0" class="grade-total-input" value="'+(gradeTotals[grade]||'')+'" '
+      + 'oninput="onGradeTotalChange(\''+grade+'\', this.value)"> 人</label>'
+      + '<span>公假人數：<b>'+summary.leaveCount+'</b> 人</span>'
+      + '<span>'+escHtml(summary.ratioText)+'</span>'
+      + '</div>';
     html += '<table class="preview-tbl"><thead><tr><th>項次</th><th>學生姓名</th><th>運動項目</th><th>比賽名稱</th><th>開始日期</th><th>結束日期</th></tr></thead><tbody>';
     list.forEach(function(r, i){
       html += '<tr><td>'+(i+1)+'</td><td>'+escHtml(r.name)+'</td><td>'+escHtml(sport)+'</td><td>'+escHtml(r.match)+'</td><td>'+formatDateROC(r.start)+'</td><td>'+formatDateROC(r.end)+'</td></tr>';
@@ -699,7 +727,7 @@ async function generateDocx(){
   var BDR_H = '<w:top w:val="single" w:sz="12" w:space="0" w:color="000000"/><w:left w:val="single" w:sz="12" w:space="0" w:color="000000"/><w:bottom w:val="single" w:sz="12" w:space="0" w:color="000000"/><w:right w:val="single" w:sz="12" w:space="0" w:color="000000"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="000000"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="000000"/>';
   var gridCols = COL.map(function(w){ return '<w:gridCol w:w="'+w+'"/>'; }).join('');
 
-  function makeTable(list){
+  function makeTable(list, grade){
     var headers = ['項次','學生姓名','運動項目','比賽名稱','開始日期','結束日期'];
     var hCells = headers.map(function(h,i){
       return cellXml(paraXml(h,{bold:true,sz:24}), COL[i], {shading:'D9D9D9', vAlign:'center'});
@@ -716,10 +744,32 @@ async function generateDocx(){
       ].join('');
       return '<w:tr><w:trPr><w:jc w:val="center"/></w:trPr>'+cells+'</w:tr>';
     }).join('');
+
+    // 統計列：學生總數／公假人數（依姓名去重自動帶入）／公假比率
+    var summary = computeLeaveSummary(grade, list);
+    var w01 = COL[0]+COL[1], w23 = COL[2]+COL[3], w45 = COL[4]+COL[5];
+    var totalText = '學生總數 '+(summary.total||'')+' 人';
+    var countText = '公假人數 '+summary.leaveCount+' 人';
+    var sCells = [
+      cellXml(paraXml(totalText,{bold:true,sz:22}), w01, {span:2, shading:'F2F2F2'}),
+      cellXml(paraXml(countText,{bold:true,sz:22}), w23, {span:2, shading:'F2F2F2'}),
+      cellXml(paraXml(summary.ratioText,{bold:true,sz:20}), w45, {span:2, shading:'F2F2F2'}),
+    ].join('');
+    var summaryRow = '<w:tr><w:trPr><w:jc w:val="center"/></w:trPr>'+sCells+'</w:tr>';
+
     return '<w:tbl>'+
       '<w:tblPr><w:tblW w:w="'+CONTENT_W+'" w:type="dxa"/><w:jc w:val="center"/><w:tblBorders>'+BDR_H+'</w:tblBorders></w:tblPr>'+
       '<w:tblGrid>'+gridCols+'</w:tblGrid>'+
-      headRow + dataRows + '</w:tbl>';
+      headRow + dataRows + summaryRow + '</w:tbl>';
+  }
+
+  // 核章欄：比照範例，表格下方留一行讓體育組長／學務主任／校長簽名或蓋章
+  function sigPara(){
+    var font = '<w:rFonts w:ascii="標楷體" w:eastAsia="標楷體" w:hAnsi="標楷體" w:cs="標楷體"/>';
+    var sz = '<w:sz w:val="28"/><w:szCs w:val="28"/>';
+    var text = ' 體育組長                學務主任                 校長';
+    return '<w:p><w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:rPr>'+font+sz+'</w:rPr></w:pPr>'+
+      '<w:r><w:rPr>'+font+sz+'</w:rPr><w:t xml:space="preserve">'+escXml(text)+'</w:t></w:r></w:p>';
   }
 
   function makeHeaderXml(mediaFiles){
@@ -779,8 +829,9 @@ async function generateDocx(){
   gradeKeys.forEach(function(grade, i){
     if(i > 0) bodyParts.push(pageBreakPara());
     bodyParts.push(titlePara(grade));
-    bodyParts.push(makeTable(groups[grade]));
+    bodyParts.push(makeTable(groups[grade], grade));
     bodyParts.push('<w:p/>');
+    bodyParts.push(sigPara());
   });
 
   var headerXml = makeHeaderXml(mediaFiles);
