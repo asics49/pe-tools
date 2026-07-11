@@ -108,6 +108,7 @@
   }
   .icon-btn:hover{border-color:var(--navy-soft);color:var(--navy);}
   .icon-btn.danger:hover{border-color:var(--maroon);color:var(--maroon);}
+  .icon-btn.disabled{opacity:.4;cursor:not-allowed;pointer-events:none;}
 
   .text-btn{
     display:inline-block;border:none;background:none;color:var(--ink-soft);
@@ -427,7 +428,7 @@ function renderBlocks(){
       <div class="block-head">
         <span class="tag">區塊 ${i+1}</span>
         <div class="block-actions">
-          ${b.dataUrl ? `<span class="icon-btn" onclick="rotateBlock(${b.id})" title="旋轉90度">⟳</span>` : ''}
+          <span class="icon-btn${b.dataUrl ? '' : ' disabled'}" onclick="rotateBlock(${b.id})" title="${b.dataUrl ? '旋轉90度' : '請先上傳照片'}">⟳</span>
           <span class="icon-btn" onclick="moveBlock(${b.id},-1)" title="上移">↑</span>
           <span class="icon-btn" onclick="moveBlock(${b.id},1)" title="下移">↓</span>
           <span class="icon-btn danger" onclick="removeBlock(${b.id})" title="刪除">✕</span>
