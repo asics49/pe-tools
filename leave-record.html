@@ -135,6 +135,9 @@ textarea{resize:vertical;min-height:80px;line-height:1.6;}
       <p style="margin-top:4px;font-size:12px;color:#aaa;">自動偵測欄位（年級、姓名、比賽名稱、日期等）</p>
     </div>
     <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="onFileChange(event)">
+    <div style="margin-top:8px;">
+      <a href="#" onclick="downloadTemplate();return false;" style="font-size:12px;color:var(--navy);text-decoration:underline;">📥 下載 Excel 範例檔</a>
+    </div>
 
     <!-- 工作表選擇（多工作表才顯示） -->
     <div class="sheet-picker" id="sheetPicker">
@@ -444,6 +447,25 @@ function onSheetChange(){
   importSheet(workbookCache, workbookCache.SheetNames[idx]);
 }
 
+// 下載可直接匯入的 Excel 範例檔（欄位順序與說明皆對應 detectColumns/isHeaderRow 的規則）
+function downloadTemplate(){
+  var rows = [
+    ['年級','姓名','比賽名稱','開始日期','結束日期'],
+    [5, '王小明', '114學年度全國田徑錦標賽', '2025/10/7', '2025/10/9'],
+    [6, '陳小華', '114學年度全國田徑錦標賽', '114/10/7', '114/10/9'],
+    [],
+    ['填寫說明：'],
+    ['1. 第一列請保留欄位標題（年級、姓名、比賽名稱、開始日期、結束日期），系統會自動辨識欄位順序。'],
+    ['2. 日期可用西元（2025/10/7）或民國年（114/10/7），系統會自動判斷並轉換。'],
+    ['3. 若開始/結束日期是同一年份，也可以只填一欄「日期區間」，格式如：2025/10/7-10/9'],
+  ];
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:6},{wch:12},{wch:26},{wch:12},{wch:12}];
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '公假統計表範例');
+  XLSX.writeFile(wb, '公假統計表_Excel範例檔.xlsx');
+}
+
 function importSheet(wb, sheetName){
   var ws = wb.Sheets[sheetName];
   var data = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
@@ -717,14 +739,18 @@ async function generateDocx(){
       var wEmu=logo.width*EP, hEmu=logo.height*EP, scale=Math.min(maxH/hEmu,1);
       var cx=Math.round(wEmu*scale), cy=Math.round(hEmu*scale);
       var logoDXA = Math.round(cx/635)+200;
-      var titleDXA = CONTENT_W_H - 2*logoDXA;
+      // 右側留白欄改用小固定寬度（而非鏡射 logo 寬度），把多出的空間讓給標題欄，
+      // 讓標題文字在 20 字內盡量維持一行；標題字級也略縮小(40→34)以確保單行。
+      var spacerDXA = 500;
+      var titleDXA = CONTENT_W_H - logoDXA - spacerDXA;
+      var titleSz = '<w:sz w:val="34"/><w:szCs w:val="34"/>';
       var draw='<w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="'+cx+'" cy="'+cy+'"/><wp:docPr id="99" name="LogoPic"/><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="99" name="LogoPic"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+cx+'" cy="'+cy+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>';
       var NB='<w:tcBorders><w:top w:val="none"/><w:left w:val="none"/><w:bottom w:val="none"/><w:right w:val="none"/></w:tcBorders>';
       var lc='<w:tc><w:tcPr><w:tcW w:w="'+logoDXA+'" w:type="dxa"/><w:vAlign w:val="center"/>'+NB+'</w:tcPr><w:p><w:pPr><w:spacing w:after="0"/><w:jc w:val="left"/></w:pPr><w:r>'+draw+'</w:r></w:p></w:tc>';
-      var tc='<w:tc><w:tcPr><w:tcW w:w="'+titleDXA+'" w:type="dxa"/><w:vAlign w:val="center"/>'+NB+'</w:tcPr><w:p><w:pPr><w:spacing w:after="0"/><w:jc w:val="center"/><w:rPr>'+font+sz+'<w:b/></w:rPr></w:pPr><w:r><w:rPr>'+font+sz+'<w:b/></w:rPr><w:t>'+titleText+'</w:t></w:r></w:p></w:tc>';
-      var sc='<w:tc><w:tcPr><w:tcW w:w="'+logoDXA+'" w:type="dxa"/><w:vAlign w:val="center"/>'+NB+'</w:tcPr><w:p><w:pPr><w:spacing w:after="0"/></w:pPr></w:p></w:tc>';
+      var tc='<w:tc><w:tcPr><w:tcW w:w="'+titleDXA+'" w:type="dxa"/><w:vAlign w:val="center"/>'+NB+'</w:tcPr><w:p><w:pPr><w:spacing w:after="0"/><w:jc w:val="center"/><w:rPr>'+font+titleSz+'<w:b/></w:rPr></w:pPr><w:r><w:rPr>'+font+titleSz+'<w:b/></w:rPr><w:t>'+titleText+'</w:t></w:r></w:p></w:tc>';
+      var sc='<w:tc><w:tcPr><w:tcW w:w="'+spacerDXA+'" w:type="dxa"/><w:vAlign w:val="center"/>'+NB+'</w:tcPr><w:p><w:pPr><w:spacing w:after="0"/></w:pPr></w:p></w:tc>';
       var NoBdr='<w:tblBorders><w:top w:val="none" w:sz="0" w:color="auto"/><w:left w:val="none" w:sz="0" w:color="auto"/><w:bottom w:val="none" w:sz="0" w:color="auto"/><w:right w:val="none" w:sz="0" w:color="auto"/><w:insideH w:val="none" w:sz="0" w:color="auto"/><w:insideV w:val="none" w:sz="0" w:color="auto"/></w:tblBorders>';
-      bodyContent = '<w:tbl><w:tblPr><w:tblW w:w="'+CONTENT_W_H+'" w:type="dxa"/>'+NoBdr+'<w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid><w:gridCol w:w="'+logoDXA+'"/><w:gridCol w:w="'+titleDXA+'"/><w:gridCol w:w="'+logoDXA+'"/></w:tblGrid><w:tr>'+lc+tc+sc+'</w:tr></w:tbl><w:p/>';
+      bodyContent = '<w:tbl><w:tblPr><w:tblW w:w="'+CONTENT_W_H+'" w:type="dxa"/>'+NoBdr+'<w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid><w:gridCol w:w="'+logoDXA+'"/><w:gridCol w:w="'+titleDXA+'"/><w:gridCol w:w="'+spacerDXA+'"/></w:tblGrid><w:tr>'+lc+tc+sc+'</w:tr></w:tbl><w:p/>';
     } else {
       bodyContent = '<w:p><w:pPr><w:spacing w:line="400" w:lineRule="auto"/><w:jc w:val="center"/><w:rPr>'+font+sz+'<w:b/></w:rPr></w:pPr><w:r><w:rPr>'+font+sz+'<w:b/></w:rPr><w:t>'+titleText+'</w:t></w:r></w:p>';
     }
