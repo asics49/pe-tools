@@ -1814,8 +1814,10 @@ h2{font-size:16px;font-weight:bold;margin-bottom:12px;color:#333;}
       <button class="ibtn outline" onclick="document.getElementById('m6_importFile').click()">📂 Excel 匯入名單</button>
       <input type="file" id="m6_importFile" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
       <button class="ibtn outline" onclick="m6_downloadTemplate()">⬇ 下載名單範本</button>
+      <button class="ibtn outline" onclick="recomputeAllRanks()">🔄 重新計算名次</button>
     </div>
     <div class="import-hint" id="m6_importHint"></div>
+    <p style="font-size:12px;color:var(--ink-soft);margin:6px 0 0;">班名次／年名次由系統依五科總分自動計算（匯入成績檔後自動更新一次），並非來自成績檔本身；如手動修改分數，請按「重新計算名次」更新。</p>
   </div>
 
   <div class="bulk-bar">
@@ -5658,7 +5660,43 @@ function switchEvalTab(sid, key){
     document.getElementById('st-'+sid+'-'+e.key).classList.toggle('active', e.key===key);
   });
 }
-function setScore(id, key, f, val){ students_m6.find(x=>x.id===id)[key][f]=val; m6_renderPreview(); }
+function setScore(id, key, f, val){
+  students_m6.find(x=>x.id===id)[key][f]=val;
+  if(['ch','en','math','soc','sci'].includes(f)) computeRanks(key);
+  m6_renderPreview();
+}
+
+/* ── 名次計算：依五科總分排名，班名次＝全班（目前名單）排名，年名次＝同年級排名（並列同名次、下一名次跳號） ── */
+function computeRanks(evalKey){
+  const scored = students_m6.map(s=>{
+    const sc=s[evalKey];
+    const vals=[sc.ch,sc.en,sc.math,sc.soc,sc.sci].map(v=>parseFloat(v));
+    const valid = vals.every(v=>!isNaN(v));
+    return {s, total: valid ? vals.reduce((a,b)=>a+b,0) : null};
+  });
+  const assignRank=list=>{
+    list.sort((a,b)=>b.total-a.total);
+    let rank=0, prevTotal=null, seen=0;
+    list.forEach(x=>{
+      seen++;
+      if(x.total!==prevTotal){ rank=seen; prevTotal=x.total; }
+      x.rank=String(rank);
+    });
+  };
+  assignRank(scored.filter(x=>x.total!==null));
+  scored.forEach(x=>{ x.s[evalKey].cr = x.total!==null ? x.rank : ''; });
+  const byGrade={};
+  scored.forEach(x=>{ if(x.total!==null) (byGrade[x.s.grade]=byGrade[x.s.grade]||[]).push(x); });
+  Object.values(byGrade).forEach(assignRank);
+  scored.forEach(x=>{ x.s[evalKey].gr = x.total!==null ? x.rank : ''; });
+  scored.forEach(({s})=>{
+    ['cr','gr'].forEach(f=>{
+      const inp=document.getElementById('sf-'+s.id+'-'+evalKey+'-'+f);
+      if(inp) inp.value = s[evalKey][f];
+    });
+  });
+}
+function recomputeAllRanks(){ EVALS_m6.forEach(e=>computeRanks(e.key)); m6_renderPreview(); }
 
 /* ── render ── */
 function renderList(){
@@ -5667,7 +5705,7 @@ function renderList(){
   if(!students_m6.length){el.innerHTML='';return;}
   el.innerHTML=students_m6.map((s,i)=>{
     const tabs=EVALS_m6.map(e=>`<button id="st-${s.id}-${e.key}" class="eval-tab ${e.cls}${e.key==='s1m'?' active':''}" onclick="event.stopPropagation();switchEvalTab(${s.id},'${e.key}')">${e.label}</button>`).join('');
-    const panels=EVALS_m6.map(e=>`<div id="sp-${s.id}-${e.key}" class="score-panel${e.key==='s1m'?' active':''}"><div class="score-fields">${FIELDS_m6.map(({f,label})=>`<div><div class="sf-label">${label}</div><input class="sf-input" type="text" inputmode="numeric" value="${s[e.key][f]}" oninput="setScore(${s.id},'${e.key}','${f}',this.value)"></div>`).join('')}</div></div>`).join('');
+    const panels=EVALS_m6.map(e=>`<div id="sp-${s.id}-${e.key}" class="score-panel${e.key==='s1m'?' active':''}"><div class="score-fields">${FIELDS_m6.map(({f,label})=>`<div><div class="sf-label">${label}</div><input id="sf-${s.id}-${e.key}-${f}" class="sf-input" type="text" inputmode="numeric" value="${s[e.key][f]}" oninput="setScore(${s.id},'${e.key}','${f}',this.value)"></div>`).join('')}</div></div>`).join('');
     return `<div class="s-card"><div class="s-head" onclick="toggleBody(${s.id})"><input type="checkbox" class="s-chk" ${s._checked?'checked':''} onclick="event.stopPropagation();onCheck(${s.id},this.checked)"><span class="s-idx">${i+1}.</span><span class="s-name">${s.name}</span><span class="s-grade">${s.grade}年級</span><span class="s-toggle ${s._open?'open':''}" id="ti-${s.id}">▼</span><button class="s-del" onclick="event.stopPropagation();deleteStudent(${s.id})">✕</button></div><div class="s-body ${s._open?'open':''}" id="sb-${s.id}"><div class="eval-tabs">${tabs}</div>${panels}</div></div>`;
   }).join('');
 }
@@ -5709,14 +5747,15 @@ async function parsePdfFile(file){
   for(let pn=1;pn<=pdf.numPages;pn++){
     const page=await pdf.getPage(pn);
     const content=await page.getTextContent();
-    const rowMap=new Map();
-    content.items.forEach(item=>{
-      const text=item.str.trim(); if(!text) return;
-      const y=Math.round(item.transform[5]/3)*3;
-      if(!rowMap.has(y)) rowMap.set(y,[]);
-      rowMap.get(y).push({text,x:item.transform[4]});
+    const items=content.items.map(item=>({text:item.str.trim(),x:item.transform[4],y:item.transform[5]})).filter(i=>i.text);
+    items.sort((a,b)=> b.y-a.y || a.x-b.x);
+    const clusters=[];
+    items.forEach(it=>{
+      let cluster=clusters[clusters.length-1];
+      if(!cluster || Math.abs(cluster.y-it.y)>8){ cluster={y:it.y,items:[]}; clusters.push(cluster); }
+      cluster.items.push(it);
     });
-    const rows=[...rowMap.entries()].sort((a,b)=>b[0]-a[0]).map(([,items])=>items.sort((a,b)=>a.x-b.x).map(i=>i.text));
+    const rows=clusters.map(c=>c.items.sort((a,b)=>a.x-b.x).map(i=>i.text));
     const found=matchScoreHeaderRow(rows);
     if(!found) continue;
     const {map,headerIdx}=found;
@@ -5787,6 +5826,8 @@ async function importScoreFiles(fileList){
     lines.push('✅ '+eLabel+'：新增 '+added+'、更新 '+updated+' 人（'+r.file+'　'+(r.isExcel?'Excel':'PDF')+'）');
     totalAdded+=added; totalUpdated+=updated;
   });
+  const touchedKeys=new Set(results.filter(r=>r.ok&&r.evalKey&&r.parsed.length).map(r=>r.evalKey));
+  touchedKeys.forEach(k=>computeRanks(k));
   hint.innerHTML=lines.join('<br>');
   renderList(); m6_renderPreview();
 }
