@@ -162,22 +162,24 @@ table.prev td.mt{color:#ccc;}
   <h2><span class="num">2</span>學生成績</h2>
 
   <div class="import-box">
-    <p>拖放或選擇多個 PDF，系統依檔名自動判斷期別；也可匯入 Excel 名單。</p>
+    <p>拖放或選擇多個 PDF／Excel 成績檔，系統依檔名自動判斷期別；也可匯入 Excel 名單。</p>
     <div id="pdfDrop" class="pdf-drop" onclick="document.getElementById('pdfFiles').click()"
       ondragover="event.preventDefault();this.classList.add('drag')"
       ondragleave="this.classList.remove('drag')"
-      ondrop="event.preventDefault();this.classList.remove('drag');importPdfFiles(event.dataTransfer.files)">
+      ondrop="event.preventDefault();this.classList.remove('drag');importScoreFiles(event.dataTransfer.files)">
       <div class="pdf-drop-icon">📂</div>
-      <div class="pdf-drop-text">點擊選擇 PDF 或拖放到此處</div>
-      <div class="pdf-drop-sub">可同時選取多個 PDF，依檔名判別：<br>
+      <div class="pdf-drop-text">點擊選擇 PDF／Excel 成績檔，或拖放到此處</div>
+      <div class="pdf-drop-sub">可同時選取多個檔案（PDF 或 Excel 混合皆可），依檔名判別期別：<br>
         <span class="tag e1">上+期中</span>→上學期期中
         <span class="tag e2">上+期末</span>→上學期期末
         <span class="tag e3">下+期中</span>→下學期期中
         <span class="tag e4">下+期末</span>→下學期期末
+        <br>Excel 成績檔需含欄位：姓名、國文、英文、數學、社會、自然（座號/年級可有可無）
       </div>
     </div>
-    <input type="file" id="pdfFiles" accept=".pdf" multiple style="display:none" onchange="importPdfFiles(this.files);this.value=''">
+    <input type="file" id="pdfFiles" accept=".pdf,.xlsx,.xls" multiple style="display:none" onchange="importScoreFiles(this.files);this.value=''">
     <div class="import-row" style="margin-top:8px">
+      <button class="ibtn outline" onclick="downloadScoreTemplate()">⬇ 下載成績範本</button>
       <button class="ibtn outline" onclick="document.getElementById('importFile').click()">📂 Excel 匯入名單</button>
       <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="importExcel(this)">
       <button class="ibtn outline" onclick="downloadTemplate()">⬇ 下載名單範本</button>
@@ -374,20 +376,48 @@ async function parsePdfFile(file){
   return parsed;
 }
 
-async function importPdfFiles(fileList){
+/* ── Excel 成績檔解析（座號/姓名/年級/國文/英文/數學/社會/自然，欄位順序不拘，依標題文字比對） ── */
+const SCORE_XLSX_PATTERNS = { name:/姓名/, grade:/年級/, ch:/國文/, en:/英文/, math:/數學/, soc:/社會/, sci:/自然/ };
+async function parseExcelScoreFile(file){
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, {type:'array'});
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, defval:''});
+  let map = null;
+  for(let i=0;i<Math.min(5,rows.length);i++){
+    const row=rows[i], testMap={};
+    row.forEach((cell,ci)=>{
+      const s=String(cell||'').trim();
+      Object.keys(SCORE_XLSX_PATTERNS).forEach(k=>{ if(testMap[k]===undefined && SCORE_XLSX_PATTERNS[k].test(s)) testMap[k]=ci; });
+    });
+    if(testMap.name!==undefined){ map=testMap; rows.splice(0,i+1); break; }
+  }
+  if(!map) return [];
+  const pick=(row,k)=> map[k]!==undefined ? String(row[map[k]]||'').trim() : '';
+  return rows
+    .map(row=>({
+      name: pick(row,'name'),
+      grade: pick(row,'grade').replace(/[^0-9]/g,'') || '5',
+      ch:pick(row,'ch'), en:pick(row,'en'), math:pick(row,'math'), soc:pick(row,'soc'), sci:pick(row,'sci'),
+    }))
+    .filter(p=>p.name);
+}
+
+/* ── 成績批次匯入：PDF／Excel 混合皆可，依副檔名分流解析，依檔名判斷期別 ── */
+async function importScoreFiles(fileList){
   if(!fileList||!fileList.length) return;
   const hint=document.getElementById('importHint');
-  const files=Array.from(fileList).filter(f=>f.name.toLowerCase().endsWith('.pdf'));
-  if(!files.length){hint.textContent='請選擇 PDF 檔案';return;}
+  const files=Array.from(fileList).filter(f=>/\.(pdf|xlsx|xls)$/i.test(f.name));
+  if(!files.length){hint.textContent='請選擇 PDF 或 Excel 檔案';return;}
   hint.textContent='解析中（0/'+files.length+'）…';
   const results=[];
   for(let i=0;i<files.length;i++){
     const file=files[i];
     const evalKey=detectEvalKey(file.name);
+    const isExcel=/\.xlsx?$/i.test(file.name);
     hint.textContent='解析中（'+(i+1)+'/'+files.length+'）：'+file.name;
     try{
-      const parsed=await parsePdfFile(file);
-      results.push({file:file.name,evalKey,parsed,ok:true});
+      const parsed = isExcel ? await parseExcelScoreFile(file) : await parsePdfFile(file);
+      results.push({file:file.name,evalKey,parsed,ok:true,isExcel});
     }catch(e){
       results.push({file:file.name,evalKey,parsed:[],ok:false,err:e.message});
     }
@@ -397,20 +427,33 @@ async function importPdfFiles(fileList){
   results.forEach(r=>{
     if(!r.ok){lines.push('❌ '+r.file+'：'+r.err);return;}
     if(!r.evalKey){lines.push('⚠️ '+r.file+'：無法判斷期別（檔名需含上/下+期中/期末）');return;}
-    if(!r.parsed.length){lines.push('⚠️ '+r.file+'：未找到成績資料');return;}
+    if(!r.parsed.length){lines.push('⚠️ '+r.file+'：未找到成績資料'+(r.isExcel?'（請確認第一列含「姓名」等欄位標題）':''));return;}
     let added=0,updated=0;
     r.parsed.forEach(p=>{
       let s=students.find(x=>x.name===p.name);
       if(!s){s=newStudent(p.name,p.grade);students.push(s);added++;}
       else updated++;
-      Object.assign(s[r.evalKey],{ch:p.ch,soc:p.soc,sci:p.sci,math:p.math,cr:p.cr});
+      if(r.isExcel) Object.assign(s[r.evalKey],{ch:p.ch,en:p.en,math:p.math,soc:p.soc,sci:p.sci});
+      else Object.assign(s[r.evalKey],{ch:p.ch,soc:p.soc,sci:p.sci,math:p.math,cr:p.cr});
     });
     const eLabel=EVALS.find(e=>e.key===r.evalKey).label;
-    lines.push('✅ '+eLabel+'：新增 '+added+'、更新 '+updated+' 人（'+r.file+'）');
+    lines.push('✅ '+eLabel+'：新增 '+added+'、更新 '+updated+' 人（'+r.file+'　'+(r.isExcel?'Excel':'PDF')+'）');
     totalAdded+=added; totalUpdated+=updated;
   });
   hint.innerHTML=lines.join('<br>');
   renderList(); renderPreview();
+}
+
+function downloadScoreTemplate(){
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([
+    ['座號','姓名','年級','國文','英文','數學','社會','自然'],
+    [1,'王小明',5,88,99,92,81,94],
+    [2,'李小華',5,85,60,75,79,92],
+  ]);
+  ws['!cols']=[{wch:6},{wch:12},{wch:6},{wch:6},{wch:6},{wch:6},{wch:6},{wch:6}];
+  XLSX.utils.book_append_sheet(wb,ws,'成績範例');
+  XLSX.writeFile(wb,'成績登錄_Excel範例檔.xlsx');
 }
 
 /* ── Excel import ── */
