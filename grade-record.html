@@ -112,6 +112,9 @@ table.prev th.e3{background:var(--e3);}
 table.prev th.e4{background:var(--e4);}
 table.prev td.nm{text-align:left;font-weight:600;}
 table.prev td.mt{color:#ccc;}
+table.prev td.low{background:#FADDDD;color:#B00020;font-weight:700;}
+.low-score-box{background:#FDF0F0;border:1.5px solid #E8A0A0;border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;line-height:1.9;color:#8A1E1E;}
+.low-score-box b{color:#B00020;}
 
 /* bottom bar */
 .bottom-bar{position:fixed;left:0;right:0;bottom:0;background:rgba(246,244,238,.95);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:10px 16px;z-index:10;}
@@ -185,8 +188,12 @@ table.prev td.mt{color:#ccc;}
       <button class="ibtn outline" onclick="downloadTemplate()">⬇ 下載名單範本</button>
       <button class="ibtn outline" onclick="recomputeAllRanks()">🔄 重新計算名次</button>
     </div>
+    <div class="import-row" style="margin-top:8px">
+      <button class="ibtn outline" onclick="document.getElementById('fullYearFile').click()">📥 匯入全學年成績檔（已填好四期成績）</button>
+      <input type="file" id="fullYearFile" accept=".xlsx,.xls" style="display:none" onchange="importFullYearFile(this.files);this.value=''">
+    </div>
     <div class="import-hint" id="importHint"></div>
-    <p style="font-size:12px;color:var(--ink-soft);margin:6px 0 0;">班名次／年名次由系統依五科總分自動計算（匯入成績檔後自動更新一次），並非來自成績檔本身；如手動修改分數，請按「重新計算名次」更新。</p>
+    <p style="font-size:12px;color:var(--ink-soft);margin:6px 0 0;">班名次／年名次由系統依五科總分自動計算（匯入成績檔後自動更新一次，會覆蓋檔案內原有名次），並非來自成績檔本身；如手動修改分數，請按「重新計算名次」更新。「匯入全學年成績檔」適用已含四期成績的整年度檔案（格式同本工具匯出的 Excel：學生姓名／年級＋四期×國文英文數學社會自然）。</p>
   </div>
 
   <div class="bulk-bar">
@@ -221,6 +228,7 @@ table.prev td.mt{color:#ccc;}
 <!-- 3. 預覽 -->
 <div class="card">
   <h2><span class="num">3</span>預覽</h2>
+  <div id="lowScoreBox"></div>
   <div class="preview-wrap">
     <div id="previewArea"><p style="color:var(--ink-soft);font-size:13px;">尚無資料</p></div>
   </div>
@@ -375,17 +383,30 @@ function renderList(){
   }).join('');
 }
 
+const LOW_SCORE_FIELDS=['ch','en','math','soc','sci'];
+const LOW_SCORE_THRESHOLD=60;
 function renderPreview(){
   const el=document.getElementById('previewArea');
-  if(!students.length){el.innerHTML='<p style="color:var(--ink-soft);font-size:13px;">尚無資料</p>';return;}
+  const box=document.getElementById('lowScoreBox');
+  if(!students.length){el.innerHTML='<p style="color:var(--ink-soft);font-size:13px;">尚無資料</p>';box.innerHTML='';return;}
   const y=getYear();
+  const lowList=[];
   let html=`<table class="prev"><thead><tr><th rowspan="2">學生姓名</th><th rowspan="2">年級</th>${EVALS.map(e=>`<th colspan="7" class="${e.cls}">${y}學年度${e.label}</th>`).join('')}</tr><tr>${EVALS.map(e=>FIELDS.map(({label})=>`<th class="${e.cls}">${label}</th>`).join('')).join('')}</tr></thead><tbody>`;
   students.forEach(s=>{
     html+=`<tr><td class="nm">${s.name}</td><td>${s.grade}年</td>`;
-    EVALS.forEach(e=>FIELDS.forEach(({f})=>{ const v=s[e.key][f]; html+=v!==''?`<td>${v}</td>`:`<td class="mt">-</td>`; }));
+    EVALS.forEach(e=>FIELDS.forEach(({f,label})=>{
+      const v=s[e.key][f];
+      const n=parseFloat(v);
+      const isLow=LOW_SCORE_FIELDS.includes(f) && v!=='' && !isNaN(n) && n<LOW_SCORE_THRESHOLD;
+      if(isLow) lowList.push(s.name+'　'+e.label+'－'+label+'：'+v+'分');
+      html+=v!==''?`<td${isLow?' class="low"':''}>${v}</td>`:`<td class="mt">-</td>`;
+    }));
     html+='</tr>';
   });
   el.innerHTML=html+'</tbody></table>';
+  box.innerHTML = lowList.length
+    ? `<div class="low-score-box"><b>⚠️ 未達 ${LOW_SCORE_THRESHOLD} 分名單（共 ${lowList.length} 筆）：</b><br>${lowList.join('<br>')}</div>`
+    : '';
 }
 
 /* ── 成績檔欄位比對（座號/姓名/年級/國文/英文/數學/社會/自然，欄位順序不拘、允許欄名帶「-1」等後綴，依標題文字比對） ── */
@@ -452,6 +473,94 @@ async function parseExcelScoreFile(file){
       ch:pick(row,'ch'), en:pick(row,'en'), math:pick(row,'math'), soc:pick(row,'soc'), sci:pick(row,'sci'),
     }))
     .filter(p=>p.name);
+}
+
+/* ── 全學年成績檔匯入（已含四期成績的寬表格，格式同本工具匯出的 Excel）
+   標題列：學生姓名/年級 + 四組「期別名稱（合併儲存格）」，其下一列為各期的國文/英文/數學/社會/自然/班名次/年名次 ── */
+const FULL_YEAR_FIELD_PATTERNS = { ch:/國文/, en:/英文/, math:/數學/, soc:/社會/, sci:/自然/, cr:/班名次/, gr:/年名次/ };
+const FULL_YEAR_PERIOD_PATTERNS = [
+  {key:'s1m', re:/上.*期中/}, {key:'s1f', re:/上.*期末/},
+  {key:'s2m', re:/下.*期中/}, {key:'s2f', re:/下.*期末/},
+];
+function detectPeriodKeyFromText(text){
+  const t=String(text||'');
+  const hit=FULL_YEAR_PERIOD_PATTERNS.find(p=>p.re.test(t));
+  return hit ? hit.key : null;
+}
+async function parseFullYearExcel(file){
+  const buf=await file.arrayBuffer();
+  const wb=XLSX.read(buf,{type:'array'});
+  const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
+  let nameRowIdx=-1;
+  for(let i=0;i<Math.min(6,rows.length);i++){
+    if(rows[i].some(c=>/姓名/.test(String(c||'')))){ nameRowIdx=i; break; }
+  }
+  if(nameRowIdx<0) return null;
+  const periodRow=rows[nameRowIdx]||[];
+  const fieldRow=rows[nameRowIdx+1]||[];
+  const maxCols=Math.max(periodRow.length,fieldRow.length);
+  const periodForCol=[];
+  let last=null;
+  for(let c=0;c<maxCols;c++){
+    const v=String(periodRow[c]||'').trim();
+    if(v) last=v;
+    periodForCol[c]=last;
+  }
+  let nameCol=-1,gradeCol=-1;
+  periodRow.forEach((c,ci)=>{ if(nameCol<0 && /姓名/.test(String(c||''))) nameCol=ci; if(gradeCol<0 && /年級/.test(String(c||''))) gradeCol=ci; });
+  if(nameCol<0) fieldRow.forEach((c,ci)=>{ if(nameCol<0 && /姓名/.test(String(c||''))) nameCol=ci; });
+  if(gradeCol<0) fieldRow.forEach((c,ci)=>{ if(gradeCol<0 && /年級/.test(String(c||''))) gradeCol=ci; });
+  if(nameCol<0) return null;
+  const colMap={};
+  for(let ci=0;ci<maxCols;ci++){
+    if(ci===nameCol||ci===gradeCol) continue;
+    const evalKey=detectPeriodKeyFromText(periodForCol[ci]);
+    if(!evalKey) continue;
+    const label=String(fieldRow[ci]||'').trim();
+    const fieldKey=Object.keys(FULL_YEAR_FIELD_PATTERNS).find(k=>FULL_YEAR_FIELD_PATTERNS[k].test(label));
+    if(fieldKey) colMap[ci]={evalKey,field:fieldKey};
+  }
+  if(!Object.keys(colMap).length) return null;
+  const dataStart=nameRowIdx+2;
+  const result=[];
+  for(let ri=dataStart; ri<rows.length; ri++){
+    const row=rows[ri];
+    const name=String(row[nameCol]||'').trim();
+    if(!name) continue;
+    const grade=gradeCol>=0 ? String(row[gradeCol]||'').replace(/[^0-9]/g,'') : '';
+    const scores={};
+    Object.entries(colMap).forEach(([ci,{evalKey,field}])=>{
+      const v=row[ci];
+      if(v===undefined||v===null||v==='') return;
+      scores[evalKey]=scores[evalKey]||{};
+      scores[evalKey][field]=String(v).trim();
+    });
+    result.push({name,grade,scores});
+  }
+  return result;
+}
+async function importFullYearFile(fileList){
+  if(!fileList||!fileList.length) return;
+  const file=fileList[0];
+  const hint=document.getElementById('importHint');
+  hint.textContent='解析中：'+file.name;
+  let entries;
+  try{ entries=await parseFullYearExcel(file); }
+  catch(e){ hint.textContent='❌ '+file.name+'：'+e.message; return; }
+  if(!entries || !entries.length){
+    hint.textContent='⚠️ '+file.name+'：未能辨識全學年成績格式（需含「學生姓名」標題列，及各期別欄位「國文/英文/數學/社會/自然」）';
+    return;
+  }
+  let added=0,updated=0;
+  const touched=new Set();
+  entries.forEach(e=>{
+    let s=students.find(x=>x.name===e.name);
+    if(!s){ s=newStudent(e.name, e.grade||'5'); students.push(s); added++; } else updated++;
+    Object.keys(e.scores).forEach(evalKey=>{ Object.assign(s[evalKey], e.scores[evalKey]); touched.add(evalKey); });
+  });
+  touched.forEach(k=>computeRanks(k));
+  hint.innerHTML='✅ 全學年成績匯入：新增 '+added+'、更新 '+updated+' 人（'+file.name+'）';
+  renderList(); renderPreview();
 }
 
 /* ── 成績批次匯入：PDF／Excel 混合皆可，依副檔名分流解析，依檔名判斷期別 ── */

@@ -53,7 +53,7 @@ CONFLICT_IDS = [
     'leaveYear', 'leaveSport', 'leaveTableBody', 'rowCount',
     'previewCard', 'previewContent', 'pasteArea', 'pasteInput',
     'downloadBtn', 'statusMsg',
-    'importHint', 'importFile', 'previewArea', 'planYear',
+    'importHint', 'importFile', 'previewArea', 'planYear', 'lowScoreBox', 'fullYearFile',
     'checkAll', 'deleteSel', 'selCount', 'addForm', 'newName', 'newGrade',
     'studentList', 'countHint', 'customYear', 'customYearWrap', 'pdfFiles',
     'editModal', 'editModalTitle', 'mainTitle', 'planTable', 'mainChart', 'contentTable',
