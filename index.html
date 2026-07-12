@@ -189,6 +189,17 @@ MODULES.forEach(function(m){
     + '<span class="module-card-arrow" style="color:#5A3E8A;">開啟說明 →</span>';
   mc.appendChild(a);
 })();
+(function(){
+  var a = document.createElement('a');
+  a.className = 'module-card';
+  a.href = 'https://drive.google.com/drive/folders/13Dl5759Bn3ygmzjItE4L7zj4LXQoK403';
+  a.target = '_blank';
+  a.style.borderColor = '#B8860B';
+  a.innerHTML = '<span class="module-card-badge" style="background:#B8860B;">資料夾</span>'
+    + '<span class="module-card-name">競賽獎狀資料</span>'
+    + '<span class="module-card-arrow" style="color:#B8860B;">開啟資料夾 →</span>';
+  mc.appendChild(a);
+})();
 
 const DATA = [
   {
