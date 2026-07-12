@@ -5685,7 +5685,22 @@ function m6_renderPreview(){
   el.innerHTML=html+'</tbody></table>';
 }
 
-/* ── PDF import ── */
+/* ── 成績檔欄位比對（座號/姓名/年級/國文/英文/數學/社會/自然，欄位順序不拘、允許欄名帶「-1」等後綴，依標題文字比對） ── */
+const SCORE_XLSX_PATTERNS = { name:/姓名/, grade:/年級/, ch:/國文/, en:/英文/, math:/數學/, soc:/社會/, sci:/自然/ };
+
+function matchScoreHeaderRow(rows){
+  for(let i=0;i<Math.min(5,rows.length);i++){
+    const row=rows[i], testMap={};
+    row.forEach((text,ci)=>{
+      const s=String(text||'').trim();
+      Object.keys(SCORE_XLSX_PATTERNS).forEach(k=>{ if(testMap[k]===undefined && SCORE_XLSX_PATTERNS[k].test(s)) testMap[k]=ci; });
+    });
+    if(testMap.name!==undefined) return {map:testMap,headerIdx:i};
+  }
+  return null;
+}
+
+/* ── PDF import：依 y 座標分行、x 座標排序取得欄位，標題列比對邏輯與 Excel 共用 ── */
 async function parsePdfFile(file){
   pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   const ab=await file.arrayBuffer();
@@ -5701,34 +5716,32 @@ async function parsePdfFile(file){
       if(!rowMap.has(y)) rowMap.set(y,[]);
       rowMap.get(y).push({text,x:item.transform[4]});
     });
-    [...rowMap.entries()].sort((a,b)=>b[0]-a[0]).forEach(([,items])=>{
-      const texts=items.sort((a,b)=>a.x-b.x).map(i=>i.text);
-      if(texts.length>=8&&/^\d{3}$/.test(texts[0])&&/^\d{2}$/.test(texts[1])&&/^\d+\.\d+$/.test(texts[3])){
-        parsed.push({name:texts[2],grade:texts[0].charAt(0),ch:texts[3],soc:texts[4],sci:texts[5],math:texts[6],cr:texts[texts.length-2]});
-      }
+    const rows=[...rowMap.entries()].sort((a,b)=>b[0]-a[0]).map(([,items])=>items.sort((a,b)=>a.x-b.x).map(i=>i.text));
+    const found=matchScoreHeaderRow(rows);
+    if(!found) continue;
+    const {map,headerIdx}=found;
+    const pick=(row,k)=> map[k]!==undefined && row[map[k]]!==undefined ? String(row[map[k]]).trim() : '';
+    rows.slice(headerIdx+1).forEach(row=>{
+      const name=pick(row,'name');
+      if(!name) return;
+      parsed.push({
+        name, grade: pick(row,'grade').replace(/[^0-9]/g,'') || '5',
+        ch:pick(row,'ch'), en:pick(row,'en'), math:pick(row,'math'), soc:pick(row,'soc'), sci:pick(row,'sci'),
+      });
     });
   }
   return parsed;
 }
-
-/* ── Excel 成績檔解析（座號/姓名/年級/國文/英文/數學/社會/自然，欄位順序不拘，依標題文字比對） ── */
-const SCORE_XLSX_PATTERNS = { name:/姓名/, grade:/年級/, ch:/國文/, en:/英文/, math:/數學/, soc:/社會/, sci:/自然/ };
 async function parseExcelScoreFile(file){
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, {type:'array'});
   const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1, defval:''});
-  let map = null;
-  for(let i=0;i<Math.min(5,rows.length);i++){
-    const row=rows[i], testMap={};
-    row.forEach((cell,ci)=>{
-      const s=String(cell||'').trim();
-      Object.keys(SCORE_XLSX_PATTERNS).forEach(k=>{ if(testMap[k]===undefined && SCORE_XLSX_PATTERNS[k].test(s)) testMap[k]=ci; });
-    });
-    if(testMap.name!==undefined){ map=testMap; rows.splice(0,i+1); break; }
-  }
-  if(!map) return [];
+  const found = matchScoreHeaderRow(rows);
+  if(!found) return [];
+  const {map,headerIdx}=found;
   const pick=(row,k)=> map[k]!==undefined ? String(row[map[k]]||'').trim() : '';
   return rows
+    .slice(headerIdx+1)
     .map(row=>({
       name: pick(row,'name'),
       grade: pick(row,'grade').replace(/[^0-9]/g,'') || '5',
@@ -5762,14 +5775,13 @@ async function importScoreFiles(fileList){
   results.forEach(r=>{
     if(!r.ok){lines.push('❌ '+r.file+'：'+r.err);return;}
     if(!r.evalKey){lines.push('⚠️ '+r.file+'：無法判斷期別（檔名需含上/下+期中/期末）');return;}
-    if(!r.parsed.length){lines.push('⚠️ '+r.file+'：未找到成績資料'+(r.isExcel?'（請確認第一列含「姓名」等欄位標題）':''));return;}
+    if(!r.parsed.length){lines.push('⚠️ '+r.file+'：未找到成績資料（請確認檔案內含「姓名」等欄位標題列）');return;}
     let added=0,updated=0;
     r.parsed.forEach(p=>{
       let s=students_m6.find(x=>x.name===p.name);
       if(!s){s=newStudent(p.name,p.grade);students_m6.push(s);added++;}
       else updated++;
-      if(r.isExcel) Object.assign(s[r.evalKey],{ch:p.ch,en:p.en,math:p.math,soc:p.soc,sci:p.sci});
-      else Object.assign(s[r.evalKey],{ch:p.ch,soc:p.soc,sci:p.sci,math:p.math,cr:p.cr});
+      Object.assign(s[r.evalKey],{ch:p.ch,en:p.en,math:p.math,soc:p.soc,sci:p.sci});
     });
     const eLabel=EVALS_m6.find(e=>e.key===r.evalKey).label;
     lines.push('✅ '+eLabel+'：新增 '+added+'、更新 '+updated+' 人（'+r.file+'　'+(r.isExcel?'Excel':'PDF')+'）');
