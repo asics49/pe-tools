@@ -1313,7 +1313,13 @@ h2{font-size:16px;font-weight:bold;margin-bottom:12px;color:#333;}
     </label>
     <span style="font-size:12px;color:var(--ink-soft);margin-left:8px;">照片匯入：多選依序填入區塊；Word 匯入：讀取檔內照片與說明（含本工具或同格式產出的 .docx），再用上方版面重新排版微調</span>
     <div id="m1_blocksContainer"></div>
-    <button class="add-block-btn" onclick="m1_addBlock()">＋ 新增照片區塊</button>
+    <div style="display:flex;gap:8px;align-items:stretch;">
+      <button class="add-block-btn" style="flex:1;" onclick="addBlocks()">＋ 新增照片區塊</button>
+      <input type="number" id="addCount" min="1" max="30" value="1"
+        style="width:70px;border:1.5px solid var(--navy-soft);border-radius:8px;text-align:center;font-size:14px;font-family:inherit;color:var(--navy);background:#EEF2F6;"
+        title="一次新增幾個區塊">
+      <span style="align-self:center;font-size:13px;color:var(--ink-soft);">個</span>
+    </div>
   </div>
 
   <div class="card">
@@ -2341,6 +2347,25 @@ function m1_addBlock(){
   m1_renderPreview();
 }
 
+// 在指定區塊「下方」插入一個新區塊
+function insertBlockAfter(id){
+  const idx = blocks_m1.findIndex(b=>b.id===id);
+  if(idx < 0) return;
+  blocks_m1.splice(idx+1, 0, {id: nextId_m1++, file:null, dataUrl:null, width:0, height:0, caption:''});
+  m1_renderBlocks();
+  m1_renderPreview();
+}
+
+// 底部按鈕：一次新增 N 個區塊
+function addBlocks(){
+  const n = Math.max(1, Math.min(30, parseInt(document.getElementById('addCount').value) || 1));
+  for(let i=0;i<n;i++){
+    blocks_m1.push({id: nextId_m1++, file:null, dataUrl:null, width:0, height:0, caption:''});
+  }
+  m1_renderBlocks();
+  m1_renderPreview();
+}
+
 function m1_removeBlock(id){
   blocks_m1 = blocks_m1.filter(b=>b.id!==id);
   m1_renderBlocks();
@@ -2569,6 +2594,7 @@ function m1_renderBlocks(){
           </span>
           <span class="m1-icon-btn" onclick="m1_moveBlock(${b.id},-1)" title="上移">↑</span>
           <span class="m1-icon-btn" onclick="m1_moveBlock(${b.id},1)" title="下移">↓</span>
+          <span class="m1-icon-btn" onclick="insertBlockAfter(${b.id})" title="在此區塊下方插入新區塊">＋</span>
           <span class="m1-icon-btn danger" onclick="m1_removeBlock(${b.id})" title="刪除">✕</span>
         </div>
       </div>

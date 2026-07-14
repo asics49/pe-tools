@@ -270,7 +270,13 @@
     </label>
     <span style="font-size:12px;color:var(--ink-soft);margin-left:8px;">照片匯入：多選依序填入區塊；Word 匯入：讀取檔內照片與說明（含本工具或同格式產出的 .docx），再用上方版面重新排版微調</span>
     <div id="blocksContainer"></div>
-    <button class="add-block-btn" onclick="addBlock()">＋ 新增照片區塊</button>
+    <div style="display:flex;gap:8px;align-items:stretch;">
+      <button class="add-block-btn" style="flex:1;" onclick="addBlocks()">＋ 新增照片區塊</button>
+      <input type="number" id="addCount" min="1" max="30" value="1"
+        style="width:70px;border:1.5px solid var(--navy-soft);border-radius:8px;text-align:center;font-size:14px;font-family:inherit;color:var(--navy);background:#EEF2F6;"
+        title="一次新增幾個區塊">
+      <span style="align-self:center;font-size:13px;color:var(--ink-soft);">個</span>
+    </div>
   </div>
 
   <div class="card">
@@ -366,6 +372,25 @@ function clearLogo(){
 
 function addBlock(){
   blocks.push({id: nextId++, file:null, dataUrl:null, width:0, height:0, caption:''});
+  renderBlocks();
+  renderPreview();
+}
+
+// 在指定區塊「下方」插入一個新區塊
+function insertBlockAfter(id){
+  const idx = blocks.findIndex(b=>b.id===id);
+  if(idx < 0) return;
+  blocks.splice(idx+1, 0, {id: nextId++, file:null, dataUrl:null, width:0, height:0, caption:''});
+  renderBlocks();
+  renderPreview();
+}
+
+// 底部按鈕：一次新增 N 個區塊
+function addBlocks(){
+  const n = Math.max(1, Math.min(30, parseInt(document.getElementById('addCount').value) || 1));
+  for(let i=0;i<n;i++){
+    blocks.push({id: nextId++, file:null, dataUrl:null, width:0, height:0, caption:''});
+  }
   renderBlocks();
   renderPreview();
 }
@@ -598,6 +623,7 @@ function renderBlocks(){
           </span>
           <span class="m1-icon-btn" onclick="moveBlock(${b.id},-1)" title="上移">↑</span>
           <span class="m1-icon-btn" onclick="moveBlock(${b.id},1)" title="下移">↓</span>
+          <span class="m1-icon-btn" onclick="insertBlockAfter(${b.id})" title="在此區塊下方插入新區塊">＋</span>
           <span class="m1-icon-btn danger" onclick="removeBlock(${b.id})" title="刪除">✕</span>
         </div>
       </div>
