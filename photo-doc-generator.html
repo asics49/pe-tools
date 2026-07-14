@@ -253,6 +253,11 @@
 
   <div class="card">
     <h2><span class="num">3</span>照片與說明</h2>
+    <label class="upload-btn" style="display:inline-block;margin-bottom:12px;">
+      📥 一次匯入多張照片
+      <input type="file" accept="image/*" multiple style="display:none" onchange="onBatchPhotos(this)">
+    </label>
+    <span style="font-size:12px;color:var(--ink-soft);margin-left:8px;">可一次選擇多張，依序填入區塊（不足自動新增），並依上方選擇的版面排版</span>
     <div id="blocksContainer"></div>
     <button class="add-block-btn" onclick="addBlock()">＋ 新增照片區塊</button>
   </div>
@@ -386,6 +391,37 @@ function onPhotoChange(id, input){
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+// 一次匯入多張照片：先同步保留目標區塊（維持選檔順序），再各自非同步載入
+function onBatchPhotos(input){
+  const files = Array.from(input.files || []).filter(f => /^image\//.test(f.type));
+  if(!files.length){ input.value=''; return; }
+  const targets = files.map(()=>{
+    let b = blocks.find(x => !x.dataUrl && !x._reserved);
+    if(!b){ b = {id: nextId++, file:null, dataUrl:null, width:0, height:0, caption:''}; blocks.push(b); }
+    b._reserved = true;
+    return b;
+  });
+  let pending = files.length;
+  files.forEach((file, i)=>{
+    const b = targets[i];
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const img = new Image();
+      img.onload = function(){
+        b.file = file;
+        b.dataUrl = e.target.result;
+        b.width = img.naturalWidth;
+        b.height = img.naturalHeight;
+        delete b._reserved;
+        if(--pending === 0){ renderBlocks(); renderPreview(); }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
 }
 
 function onCaptionChange(id, val){
@@ -586,7 +622,8 @@ async function generateDocx(){
     const zip = new JSZip();
     const mediaFiles = [];
     const rels = [];
-    let cellsXml = [];
+    let photoCells = [];
+    let captionCells = [];
     let rowsXmlParts = [];
     let picId = 1;
 
@@ -633,15 +670,16 @@ async function generateDocx(){
       }
       captionInner = captionParagraphXml(b.caption);
 
+      const cellMar = `<w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar>`;
       if(splitCaption){
         // 說明獨立成一個儲存格，放在照片格「下方」（另一列），而非同一格或側邊並排
-        const photoCell = `<w:tc><w:tcPr><w:tcW w:w="${PAGE_CONTENT_WIDTH_DXA}" w:type="dxa"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar></w:tcPr>${photoInner}</w:tc>`;
-        const captionCell = `<w:tc><w:tcPr><w:tcW w:w="${PAGE_CONTENT_WIDTH_DXA}" w:type="dxa"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar></w:tcPr>${captionInner}</w:tc>`;
+        const photoCell = `<w:tc><w:tcPr><w:tcW w:w="${PAGE_CONTENT_WIDTH_DXA}" w:type="dxa"/>${cellMar}</w:tcPr>${photoInner}</w:tc>`;
+        const captionCell = `<w:tc><w:tcPr><w:tcW w:w="${PAGE_CONTENT_WIDTH_DXA}" w:type="dxa"/>${cellMar}</w:tcPr>${captionInner}</w:tc>`;
         rowsXmlParts.push(`<w:tr>${photoCell}</w:tr>`, `<w:tr>${captionCell}</w:tr>`);
       } else {
-        cellsXml.push(
-          `<w:tc><w:tcPr><w:tcW w:w="${colWidth}" w:type="dxa"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar></w:tcPr>${photoInner}${captionInner}</w:tc>`
-        );
+        // 照片格與說明格分列：照片一列、說明在其正下方一列（不再擠同一格）
+        photoCells.push(`<w:tc><w:tcPr><w:tcW w:w="${colWidth}" w:type="dxa"/>${cellMar}</w:tcPr>${photoInner}</w:tc>`);
+        captionCells.push(`<w:tc><w:tcPr><w:tcW w:w="${colWidth}" w:type="dxa"/>${cellMar}</w:tcPr>${captionInner}</w:tc>`);
       }
     }
 
@@ -651,13 +689,15 @@ async function generateDocx(){
       gridCols = `<w:gridCol w:w="${PAGE_CONTENT_WIDTH_DXA}"/>`;
     } else {
       // pad to full rows
-      while(cellsXml.length % cols !== 0){
-        const colIdx = cellsXml.length % cols;
-        cellsXml.push(`<w:tc><w:tcPr><w:tcW w:w="${colWidths[colIdx]}" w:type="dxa"/></w:tcPr><w:p/></w:tc>`);
+      while(photoCells.length % cols !== 0){
+        const colIdx = photoCells.length % cols;
+        photoCells.push(`<w:tc><w:tcPr><w:tcW w:w="${colWidths[colIdx]}" w:type="dxa"/></w:tcPr><w:p/></w:tc>`);
+        captionCells.push(`<w:tc><w:tcPr><w:tcW w:w="${colWidths[colIdx]}" w:type="dxa"/></w:tcPr><w:p/></w:tc>`);
       }
       rowsXml = '';
-      for(let i=0;i<cellsXml.length;i+=cols){
-        rowsXml += `<w:tr>${cellsXml.slice(i,i+cols).join('')}</w:tr>`;
+      for(let i=0;i<photoCells.length;i+=cols){
+        rowsXml += `<w:tr>${photoCells.slice(i,i+cols).join('')}</w:tr>`;
+        rowsXml += `<w:tr>${captionCells.slice(i,i+cols).join('')}</w:tr>`;
       }
       gridCols = colWidths.map(w=>`<w:gridCol w:w="${w}"/>`).join('');
     }
@@ -686,9 +726,9 @@ async function generateDocx(){
 
       let leftColWidth = Math.round(cx/EMU_PER_DXA) + 300;
       leftColWidth = Math.max(1400, Math.min(leftColWidth, 3000));
-      const rightColWidth = PAGE_CONTENT_WIDTH_DXA - leftColWidth;
-
-      const midColWidth = PAGE_CONTENT_WIDTH_DXA - 2 * leftColWidth;
+      // 右側留白欄用小固定寬度（不鏡射 LOGO 欄寬），寬度盡量留給標題欄，長標題才不會被擠成兩行
+      const rightColWidth = 500;
+      const midColWidth = PAGE_CONTENT_WIDTH_DXA - leftColWidth - rightColWidth;
 
       const logoCell = `<w:tc><w:tcPr><w:tcW w:w="${leftColWidth}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>` +
         `<w:p><w:pPr><w:spacing w:after="0"/><w:jc w:val="left"/></w:pPr><w:r><w:drawing>` +
@@ -703,14 +743,14 @@ async function generateDocx(){
       const titleCell = `<w:tc><w:tcPr><w:tcW w:w="${midColWidth}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>` +
         `<w:p><w:pPr><w:spacing w:after="0"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t xml:space="preserve">${escapeXml(title)}</w:t></w:r></w:p></w:tc>`;
 
-      const spacerCell = `<w:tc><w:tcPr><w:tcW w:w="${leftColWidth}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>` +
+      const spacerCell = `<w:tc><w:tcPr><w:tcW w:w="${rightColWidth}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>` +
         `<w:p><w:pPr><w:spacing w:after="0"/></w:pPr></w:p></w:tc>`;
 
       headerContentXml =
         `<w:tbl><w:tblPr><w:tblW w:w="${PAGE_CONTENT_WIDTH_DXA}" w:type="dxa"/>` +
         `<w:tblBorders><w:top w:val="none" w:sz="0" w:color="auto"/><w:left w:val="none" w:sz="0" w:color="auto"/><w:bottom w:val="single" w:sz="12" w:color="8B2E2E"/><w:right w:val="none" w:sz="0" w:color="auto"/><w:insideH w:val="none" w:sz="0" w:color="auto"/><w:insideV w:val="none" w:sz="0" w:color="auto"/></w:tblBorders>` +
         `<w:tblLayout w:type="fixed"/></w:tblPr>` +
-        `<w:tblGrid><w:gridCol w:w="${leftColWidth}"/><w:gridCol w:w="${midColWidth}"/><w:gridCol w:w="${leftColWidth}"/></w:tblGrid>` +
+        `<w:tblGrid><w:gridCol w:w="${leftColWidth}"/><w:gridCol w:w="${midColWidth}"/><w:gridCol w:w="${rightColWidth}"/></w:tblGrid>` +
         `<w:tr>${logoCell}${titleCell}${spacerCell}</w:tr></w:tbl>`;
     } else {
       headerContentXml = `<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="6" w:color="8B2E2E"/></w:pBdr><w:spacing w:after="0"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="32"/></w:rPr><w:t xml:space="preserve">${escapeXml(title)}</w:t></w:r></w:p>`;
