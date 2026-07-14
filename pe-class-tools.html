@@ -1292,6 +1292,13 @@ h2{font-size:16px;font-weight:bold;margin-bottom:12px;color:#333;}
         每頁 2 張（大圖）
       </div>
     </div>
+    <div style="margin-top:14px;display:flex;align-items:center;gap:10px;">
+      <label class="field-label" style="margin:0;flex-shrink:0;">照片大小</label>
+      <input type="range" id="photoScaleRange" min="50" max="100" step="5" value="100"
+        style="flex:1;" oninput="onPhotoScaleChange(this.value)">
+      <span id="photoScaleLabel" style="font-size:13px;color:var(--ink-soft);min-width:44px;text-align:right;">100%</span>
+    </div>
+    <p style="font-size:12px;color:var(--ink-soft);margin:6px 0 0;">縮小照片可在同一頁塞進更多列；預覽與 Word 輸出都會套用。</p>
   </div>
 
   <div class="card">
@@ -1300,7 +1307,11 @@ h2{font-size:16px;font-weight:bold;margin-bottom:12px;color:#333;}
       📥 一次匯入多張照片
       <input type="file" accept="image/*" multiple style="display:none" onchange="onBatchPhotos(this)">
     </label>
-    <span style="font-size:12px;color:var(--ink-soft);margin-left:8px;">可一次選擇多張，依序填入區塊（不足自動新增），並依上方選擇的版面排版</span>
+    <label class="upload-btn" style="display:inline-block;margin-bottom:12px;margin-left:6px;">
+      📄 匯入 Word 檔
+      <input type="file" accept=".docx" style="display:none" onchange="importDocxFile(this)">
+    </label>
+    <span style="font-size:12px;color:var(--ink-soft);margin-left:8px;">照片匯入：多選依序填入區塊；Word 匯入：讀取檔內照片與說明（含本工具或同格式產出的 .docx），再用上方版面重新排版微調</span>
     <div id="m1_blocksContainer"></div>
     <button class="add-block-btn" onclick="m1_addBlock()">＋ 新增照片區塊</button>
   </div>
@@ -2261,6 +2272,7 @@ const DEFAULT_LOGO_HEIGHT = 193;
 
 let cols_m1 = 1;
 let targetBlocks_m1 = 1;
+let photoScale = 100; // 照片縮放百分比（50~100），預覽與 Word 輸出共用
 let blocks_m1 = []; // {id, file, dataUrl, width, height, caption}
 let nextId_m1 = 1;
 let logo_m1 = null; // {file, dataUrl, width, height}
@@ -2395,6 +2407,101 @@ function onBatchPhotos(input){
   input.value = '';
 }
 
+function onPhotoScaleChange(v){
+  photoScale = parseInt(v) || 100;
+  document.getElementById('photoScaleLabel').textContent = photoScale + '%';
+  m1_renderPreview();
+}
+
+// 匯入 Word 檔（本工具或同格式產出的 .docx）：解析表格內照片與「說明：」文字，回填成區塊
+async function importDocxFile(input){
+  const file = input.files && input.files[0];
+  input.value = '';
+  if(!file) return;
+  m1_setStatus('讀取 Word 檔中…');
+  try{
+    const zip = await JSZip.loadAsync(file);
+    const docFile = zip.file('word/document.xml');
+    if(!docFile) throw new Error('不是有效的 .docx 檔');
+    const doc = await docFile.async('string');
+    const relsFile = zip.file('word/_rels/document.xml.rels');
+    const relsXml = relsFile ? await relsFile.async('string') : '';
+    const relMap = {};
+    [...relsXml.matchAll(/Id="(rId\d+)"[^>]*Target="([^"]+)"/g)].forEach(m=>{ relMap[m[1]] = m[2]; });
+
+    // 依 <w:tc> 儲存格順序走訪：圖片格 → 新區塊；文字格 → 依序補上尚無說明的區塊（FIFO）；
+    // 同格含圖+文（舊版同格式）也能處理
+    const cellChunks = doc.split(/<w:tc(?:\s[^>]*)?>/).slice(1).map(c=>c.split('</w:tc>')[0]);
+    const newBlocks = [];
+    let captionPtr = 0;
+    cellChunks.forEach(chunk=>{
+      const embeds = [...chunk.matchAll(/r:embed="(rId\d+)"/g)].map(m=>m[1]);
+      const text = [...chunk.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)].map(m=>m[1]).join('').trim();
+      embeds.forEach(relId=>{
+        newBlocks.push({id: nextId_m1++, file:null, dataUrl:null, width:0, height:0, caption:'', _relId: relId});
+      });
+      if(text){
+        const cap = text.replace(/^說明[:：]\s*/, '');
+        if(embeds.length){
+          newBlocks[newBlocks.length-1].caption = cap; // 同格圖+文
+          captionPtr = newBlocks.length;
+        } else {
+          while(captionPtr < newBlocks.length && newBlocks[captionPtr].caption) captionPtr++;
+          if(captionPtr < newBlocks.length) newBlocks[captionPtr++].caption = cap;
+        }
+      }
+    });
+    if(!newBlocks.length) throw new Error('檔案內未找到照片（需為表格排版的照片文件）');
+
+    // 讀出每張照片的二進位 → dataURL + 尺寸
+    let loaded = 0;
+    for(const b of newBlocks){
+      const target = relMap[b._relId];
+      delete b._relId;
+      if(!target) continue;
+      const path = 'word/' + target.replace(/^\//,'').replace(/^word\//,'');
+      const mf = zip.file(path) || zip.file('word/' + target);
+      if(!mf) continue;
+      const base64 = await mf.async('base64');
+      const ext = (target.split('.').pop()||'').toLowerCase();
+      const mime = ext==='png' ? 'image/png' : 'image/jpeg';
+      const dataUrl = 'data:' + mime + ';base64,' + base64;
+      await new Promise(res=>{
+        const img = new Image();
+        img.onload = function(){
+          b.file = {name: target.split('/').pop(), type: mime};
+          b.dataUrl = dataUrl;
+          b.width = img.naturalWidth;
+          b.height = img.naturalHeight;
+          loaded++;
+          res();
+        };
+        img.onerror = res;
+        img.src = dataUrl;
+      });
+    }
+
+    // 帶入頁首標題（若目前標題欄是空的）
+    const titleInput = document.getElementById('m1_docTitle');
+    if(!titleInput.value.trim()){
+      const hdrFile = zip.file(/word\/header\d+\.xml/)[0];
+      if(hdrFile){
+        const hdr = await hdrFile.async('string');
+        const t = [...hdr.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)].map(m=>m[1]).join('').trim();
+        if(t) titleInput.value = t;
+      }
+    }
+
+    blocks_m1 = newBlocks;
+    m1_renderBlocks();
+    m1_renderPreview();
+    m1_setStatus('已匯入 ' + loaded + ' 張照片（共 ' + newBlocks.length + ' 個區塊），可用上方版面選項重新排版', 'ok');
+  }catch(err){
+    console.error(err);
+    m1_setStatus('匯入失敗：' + err.message, 'error');
+  }
+}
+
 function onCaptionChange(id, val){
   const b = blocks_m1.find(x=>x.id===id);
   b.caption = val;
@@ -2481,10 +2588,11 @@ function m1_renderPreview(){
     return;
   }
 
+  const scaleStyle = photoScale < 100 ? ` style="width:${photoScale}%;height:${photoScale}%;margin:auto;"` : '';
   grid.innerHTML = blocks_m1.map(b=>`
     <div class="preview-cell">
       <div class="preview-photo">
-        ${b.dataUrl ? `<img src="${b.dataUrl}">` : '請點選此處文字後，貼上照片'}
+        ${b.dataUrl ? `<img src="${b.dataUrl}"${scaleStyle}>` : '請點選此處文字後，貼上照片'}
       </div>
       <div class="preview-caption">說明：${m1_escapeHtml(b.caption)}</div>
     </div>
@@ -2630,8 +2738,8 @@ async function m1_generateDocx(){
           const cropFrac = 1 - imgRatio / TARGET_RATIO;
           srcT = srcB = Math.round(cropFrac / 2 * 100000);
         }
-        // 直向模式：cx 受 maxImgWidthEmu 限制，cy 受 maxImgHeightEmu 限制
-        const cx = Math.round(Math.min(maxImgWidthEmu, maxImgHeightEmu * TARGET_RATIO));
+        // 直向模式：cx 受 maxImgWidthEmu 限制，cy 受 maxImgHeightEmu 限制；再套用使用者選的照片大小
+        const cx = Math.round(Math.min(maxImgWidthEmu, maxImgHeightEmu * TARGET_RATIO) * photoScale / 100);
         const cy = Math.round(cx / TARGET_RATIO);
         const srcRect = {l: srcL, t: srcT, r: srcR, b: srcB};
 
