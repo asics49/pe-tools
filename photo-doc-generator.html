@@ -385,24 +385,48 @@ function moveBlock(id, dir){
   renderPreview();
 }
 
+// 照片一律縮到長邊 MAX_IMG_EDGE 內再存（Word 版面最寬約 17cm，1600px 已達列印品質），
+// 否則手機原圖（4~8MB/張）幾十張全塞記憶體會讓頁面卡死
+const MAX_IMG_EDGE = 1600;
+function resizeDataUrl(dataUrl, mime){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = function(){
+      const w = img.naturalWidth, h = img.naturalHeight;
+      const scale = MAX_IMG_EDGE / Math.max(w, h);
+      if(scale >= 1){ resolve({dataUrl, width: w, height: h}); return; }
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(w * scale);
+      canvas.height = Math.round(h * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      const outMime = mime === 'image/png' ? 'image/png' : 'image/jpeg';
+      resolve({dataUrl: canvas.toDataURL(outMime, 0.87), width: canvas.width, height: canvas.height});
+    };
+    img.onerror = ()=>reject(new Error('圖片載入失敗'));
+    img.src = dataUrl;
+  });
+}
+function fileToResizedImage(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = e => resizeDataUrl(e.target.result, file.type).then(resolve, reject);
+    reader.onerror = ()=>reject(new Error('讀檔失敗'));
+    reader.readAsDataURL(file);
+  });
+}
+
 function onPhotoChange(id, input){
   const file = input.files && input.files[0];
   if(!file) return;
   const b = blocks.find(x=>x.id===id);
-  const reader = new FileReader();
-  reader.onload = function(e){
-    const img = new Image();
-    img.onload = function(){
-      b.file = file;
-      b.dataUrl = e.target.result;
-      b.width = img.naturalWidth;
-      b.height = img.naturalHeight;
-      renderBlocks();
-      renderPreview();
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+  fileToResizedImage(file).then(r=>{
+    b.file = file;
+    b.dataUrl = r.dataUrl;
+    b.width = r.width;
+    b.height = r.height;
+    renderBlocks();
+    renderPreview();
+  }).catch(err=>setStatus('照片載入失敗：'+err.message, 'error'));
 }
 
 // 一次匯入多張照片：先同步保留目標區塊（維持選檔順序），再各自非同步載入
@@ -415,23 +439,20 @@ function onBatchPhotos(input){
     b._reserved = true;
     return b;
   });
+  setStatus('照片載入中（0/' + files.length + '）…');
   let pending = files.length;
   files.forEach((file, i)=>{
     const b = targets[i];
-    const reader = new FileReader();
-    reader.onload = function(e){
-      const img = new Image();
-      img.onload = function(){
-        b.file = file;
-        b.dataUrl = e.target.result;
-        b.width = img.naturalWidth;
-        b.height = img.naturalHeight;
-        delete b._reserved;
-        if(--pending === 0){ renderBlocks(); renderPreview(); }
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
+    fileToResizedImage(file).then(r=>{
+      b.file = file;
+      b.dataUrl = r.dataUrl;
+      b.width = r.width;
+      b.height = r.height;
+    }).catch(()=>{}).then(()=>{
+      delete b._reserved;
+      setStatus('照片載入中（' + (files.length - pending + 1) + '/' + files.length + '）…');
+      if(--pending === 0){ renderBlocks(); renderPreview(); setStatus('已載入 ' + files.length + ' 張照片', 'ok'); }
+    });
   });
   input.value = '';
 }
@@ -495,19 +516,14 @@ async function importDocxFile(input){
       const ext = (target.split('.').pop()||'').toLowerCase();
       const mime = ext==='png' ? 'image/png' : 'image/jpeg';
       const dataUrl = 'data:' + mime + ';base64,' + base64;
-      await new Promise(res=>{
-        const img = new Image();
-        img.onload = function(){
-          b.file = {name: target.split('/').pop(), type: mime};
-          b.dataUrl = dataUrl;
-          b.width = img.naturalWidth;
-          b.height = img.naturalHeight;
-          loaded++;
-          res();
-        };
-        img.onerror = res;
-        img.src = dataUrl;
-      });
+      try{
+        const r = await resizeDataUrl(dataUrl, mime); // 過大的照片一樣縮到上限內
+        b.file = {name: target.split('/').pop(), type: mime};
+        b.dataUrl = r.dataUrl;
+        b.width = r.width;
+        b.height = r.height;
+        loaded++;
+      }catch(e){ /* 單張壞圖跳過，不中斷整份匯入 */ }
     }
 
     // 帶入頁首標題（若目前標題欄是空的）
@@ -531,10 +547,16 @@ async function importDocxFile(input){
   }
 }
 
+// 說明輸入時預覽延遲重繪（照片多時每個按鍵都整份重畫會卡）
+let _previewTimer = null;
+function schedulePreview(){
+  clearTimeout(_previewTimer);
+  _previewTimer = setTimeout(renderPreview, 300);
+}
 function onCaptionChange(id, val){
   const b = blocks.find(x=>x.id===id);
   b.caption = val;
-  renderPreview();
+  schedulePreview();
 }
 
 // 順時針旋轉 90 度（相機拍照方向跟內容方向不一致時手動校正用）
