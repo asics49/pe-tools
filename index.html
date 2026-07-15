@@ -55,8 +55,21 @@ body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;background:#F0ED
 /* ── Module Cards ── */
 .module-bar{background:#F7F5F0;border-bottom:2px solid #E1DCCF;padding:12px 16px;}
 .module-bar-label{font-size:11px;color:#6B675F;font-weight:700;margin-bottom:8px;letter-spacing:.05em;}
-.module-cards{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
-.module-cards::-webkit-scrollbar{display:none;}
+.module-cards-wrap{position:relative;}
+.module-cards{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;
+  scrollbar-width:thin;scrollbar-color:#C9A24B #E7E2D7;}
+.module-cards::-webkit-scrollbar{height:9px;}
+.module-cards::-webkit-scrollbar-track{background:#E7E2D7;border-radius:6px;}
+.module-cards::-webkit-scrollbar-thumb{background:#C9A24B;border-radius:6px;}
+.module-cards::-webkit-scrollbar-thumb:hover{background:#B8913A;}
+.scroll-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:5;
+  width:34px;height:34px;border-radius:50%;border:1.5px solid #D8D3CB;background:rgba(255,255,255,.96);
+  color:#223A52;font-size:18px;font-weight:700;line-height:1;cursor:pointer;
+  display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.14);padding:0;}
+.scroll-arrow:hover{border-color:#C9A24B;color:#8B2E2E;}
+.scroll-arrow.left{left:-4px;}
+.scroll-arrow.right{right:-4px;}
+.module-cards-wrap.overflowing .scroll-arrow{display:flex;}
 .module-card{flex-shrink:0;background:#fff;border:1.5px solid #D8D3CB;border-radius:10px;padding:10px 14px;text-decoration:none;display:flex;flex-direction:column;gap:3px;min-width:130px;transition:all .15s;cursor:pointer;}
 .module-card:hover{border-color:#C9A24B;box-shadow:0 2px 8px rgba(201,162,75,.2);transform:translateY(-1px);}
 .module-card-badge{font-size:10px;font-weight:700;color:#8B2E2E;}
@@ -113,7 +126,11 @@ tr.row-done:hover td{background:#EAF4EA !important;}
 
 <div class="module-bar">
   <div class="module-bar-label">快速開啟工具</div>
-  <div class="module-cards" id="moduleCards"></div>
+  <div class="module-cards-wrap" id="moduleCardsWrap">
+    <button class="scroll-arrow left" id="scrollLeft" onclick="scrollModules(-1)" title="往左" aria-label="往左捲動">‹</button>
+    <div class="module-cards" id="moduleCards"></div>
+    <button class="scroll-arrow right" id="scrollRight" onclick="scrollModules(1)" title="往右" aria-label="往右捲動">›</button>
+  </div>
 </div>
 
 <div class="filter-bar" id="filterBar">
@@ -200,6 +217,24 @@ MODULES.forEach(function(m){
     + '<span class="module-card-arrow" style="color:#B8860B;">開啟資料夾 →</span>';
   mc.appendChild(a);
 })();
+
+// ── 模組卡片列橫向捲動（卡片超出畫面時顯示左右箭頭與捲軸） ──
+function scrollModules(dir){
+  mc.scrollBy({left: dir * Math.max(240, mc.clientWidth * 0.7), behavior:'smooth'});
+}
+function updateModuleArrows(){
+  var wrap = document.getElementById('moduleCardsWrap');
+  var overflowing = mc.scrollWidth > mc.clientWidth + 4;
+  wrap.classList.toggle('overflowing', overflowing);
+  if(overflowing){
+    document.getElementById('scrollLeft').style.visibility = mc.scrollLeft > 4 ? 'visible' : 'hidden';
+    document.getElementById('scrollRight').style.visibility =
+      (mc.scrollLeft + mc.clientWidth < mc.scrollWidth - 4) ? 'visible' : 'hidden';
+  }
+}
+mc.addEventListener('scroll', updateModuleArrows);
+window.addEventListener('resize', updateModuleArrows);
+updateModuleArrows();
 
 const DATA = [
   {
