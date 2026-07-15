@@ -213,6 +213,17 @@ MODULES.forEach(function(m){
     + '<span class="module-card-arrow" style="color:#B8860B;">開啟資料夾 →</span>';
   mc.appendChild(a);
 })();
+(function(){
+  var a = document.createElement('a');
+  a.className = 'module-card';
+  a.href = 'file-size-check.html';
+  a.target = '_blank';
+  a.style.borderColor = '#B23A3A';
+  a.innerHTML = '<span class="module-card-badge" style="background:#B23A3A;">檢查</span>'
+    + '<span class="module-card-name">檔案大小檢查</span>'
+    + '<span class="module-card-arrow" style="color:#B23A3A;">開啟檢查 →</span>';
+  mc.appendChild(a);
+})();
 // ── 工具使用說明：一律放在最後一張卡片（新增模組時仍維持在最末） ──
 (function(){
   var a = document.createElement('a');

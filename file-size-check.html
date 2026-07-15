@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>檔案大小檢查｜體育班評鑑</title>
+<style>
+  :root{
+    --paper:#F6F4EE; --card:#FFFFFF; --ink:#2B2B28; --ink-soft:#6B675F;
+    --navy:#223A52; --navy-soft:#3E5872; --maroon:#8B2E2E; --gold:#C9A24B;
+    --line:#E1DCCF; --line-strong:#C8C2B2;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",-apple-system,sans-serif;
+    background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:960px;margin:0 auto;padding:24px 18px 80px;}
+  .app-header{margin-bottom:18px;}
+  .eyebrow{font-size:12px;letter-spacing:.18em;color:var(--maroon);font-weight:700;margin:0 0 6px;}
+  .app-header h1{font-size:23px;margin:0 0 8px;color:var(--navy);border-bottom:3px solid var(--maroon);padding-bottom:10px;}
+  .app-header p{margin:8px 0 0;color:var(--ink-soft);font-size:14px;line-height:1.7;}
+  .app-header a{color:var(--navy-soft);}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px;}
+  .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
+  .pick-btn{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--navy-soft);color:#fff;
+    background:var(--navy);border-radius:8px;padding:11px 18px;font-size:14px;cursor:pointer;font-weight:700;}
+  .pick-btn:hover{background:var(--navy-soft);}
+  .threshold-box{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft);}
+  .threshold-box input{width:64px;border:1px solid var(--line-strong);border-radius:7px;padding:7px 9px;
+    font-size:14px;font-family:inherit;text-align:center;background:#FCFBF8;color:var(--ink);}
+  .hint{font-size:12px;color:var(--ink-soft);line-height:1.7;margin-top:10px;}
+
+  .summary{display:none;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+  .summary.show{display:flex;}
+  .stat{flex:1;min-width:130px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
+  .stat .n{font-size:24px;font-weight:800;color:var(--navy);}
+  .stat.over .n{color:var(--maroon);}
+  .stat .l{font-size:12px;color:var(--ink-soft);margin-top:2px;}
+
+  .filter-row{display:none;align-items:center;gap:10px;margin-bottom:12px;}
+  .filter-row.show{display:flex;}
+  .toggle-btn{border:1.5px solid var(--maroon);background:#fff;color:var(--maroon);border-radius:20px;
+    padding:5px 14px;font-size:13px;font-family:inherit;cursor:pointer;}
+  .toggle-btn.active{background:var(--maroon);color:#fff;font-weight:700;}
+
+  .group{border:1px solid var(--line);border-radius:10px;margin-bottom:12px;overflow:hidden;background:var(--card);}
+  .group-head{display:flex;justify-content:space-between;align-items:center;gap:10px;
+    padding:11px 14px;background:#F5F2EC;cursor:pointer;user-select:none;}
+  .group-head:hover{background:#ECE8DF;}
+  .group-path{font-size:13px;font-weight:700;color:var(--navy);word-break:break-all;line-height:1.4;}
+  .group-meta{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .badge-over{background:var(--maroon);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:11px;white-space:nowrap;}
+  .badge-ok{background:#2E7A2E;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:11px;white-space:nowrap;}
+  .group-size{font-size:12px;color:var(--ink-soft);white-space:nowrap;}
+  .group-body{display:none;}
+  .group-body.open{display:block;}
+  table.files{width:100%;border-collapse:collapse;font-size:13px;}
+  table.files td{padding:8px 14px;border-top:1px solid var(--line);vertical-align:top;}
+  table.files td.name{word-break:break-all;}
+  table.files td.size{text-align:right;white-space:nowrap;color:var(--ink-soft);width:110px;}
+  table.files tr.over td{background:#FBECEC;}
+  table.files tr.over td.name{color:var(--maroon);font-weight:700;}
+  table.files tr.over td.size{color:var(--maroon);font-weight:700;}
+  .over-note{display:inline-block;margin-left:8px;font-size:11px;color:#fff;background:var(--maroon);
+    padding:1px 7px;border-radius:9px;font-weight:700;}
+
+  .empty{text-align:center;color:var(--ink-soft);font-size:14px;padding:40px 10px;}
+  .working{text-align:center;color:var(--navy);font-size:14px;padding:20px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="app-header">
+    <p class="eyebrow">體育班評鑑文件工具・檔案大小檢查</p>
+    <h1>評鑑檔案大小檢查</h1>
+    <p>選擇評鑑資料夾（例如同步在電腦上的 Google 雲端硬碟資料夾），系統會就地掃描每個資料夾內的檔案大小，
+      把<strong>超過上限（預設 5MB）</strong>的檔案標紅提醒——這些檔案無法直接上傳評鑑系統，需改用
+      <a href="pe-class-tools.html#m9" target="_blank">模組九（雲端連結頁產生器）</a>的方式，用雲端硬碟連結取代。
+      檔案完全在您的瀏覽器內讀取，<strong>不會上傳到任何地方</strong>。</p>
+  </div>
+
+  <div class="card">
+    <div class="controls">
+      <label class="pick-btn">
+        📂 選擇評鑑資料夾
+        <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none">
+      </label>
+      <div class="threshold-box">
+        上限
+        <input type="number" id="threshold" min="0.1" step="0.5" value="5">
+        MB（超過此大小標紅）
+      </div>
+    </div>
+    <div class="hint">
+      💡 建議選取評鑑的最上層資料夾（如「115年度體育班評鑑」），可一次檢查所有指標。
+      支援 Chrome / Edge / Firefox；手機瀏覽器可能無法選整個資料夾。
+    </div>
+  </div>
+
+  <div class="summary" id="summary">
+    <div class="stat"><div class="n" id="statFolders">0</div><div class="l">資料夾數</div></div>
+    <div class="stat"><div class="n" id="statFiles">0</div><div class="l">檔案總數</div></div>
+    <div class="stat over"><div class="n" id="statOver">0</div><div class="l">超過上限（需用雲端連結）</div></div>
+    <div class="stat"><div class="n" id="statTotalSize">0</div><div class="l">總容量</div></div>
+  </div>
+
+  <div class="filter-row" id="filterRow">
+    <button class="toggle-btn" id="onlyOverBtn" onclick="toggleOnlyOver()">只顯示有超過的資料夾</button>
+    <span style="font-size:12px;color:var(--ink-soft);">點資料夾標題可展開/收合檔案清單</span>
+  </div>
+
+  <div id="result"><div class="empty">尚未選擇資料夾。點上方「📂 選擇評鑑資料夾」開始檢查。</div></div>
+</div>
+
+<script>
+var LIMIT_BYTES = 5 * 1024 * 1024;
+var groups = [];       // [{path, files:[{name,size,over}], total, overCount}]
+var onlyOver = false;
+
+function fmtSize(bytes){
+  if(bytes >= 1024*1024) return (bytes/1048576).toFixed(2) + ' MB';
+  if(bytes >= 1024) return (bytes/1024).toFixed(1) + ' KB';
+  return bytes + ' B';
+}
+
+document.getElementById('threshold').addEventListener('input', function(){
+  var v = parseFloat(this.value);
+  if(!isNaN(v) && v > 0){ LIMIT_BYTES = v * 1024 * 1024; if(groups.length) recompute(); }
+});
+
+document.getElementById('folderInput').addEventListener('change', function(e){
+  var files = Array.from(e.target.files || []);
+  if(!files.length) return;
+  document.getElementById('result').innerHTML = '<div class="working">掃描中…（' + files.length + ' 個檔案）</div>';
+  // 分組：依檔案所在資料夾（webkitRelativePath 去掉檔名）
+  var map = {};
+  files.forEach(function(f){
+    var rel = f.webkitRelativePath || f.name;
+    var parts = rel.split('/');
+    parts.pop(); // 移除檔名
+    var folder = parts.join('/') || '（根目錄）';
+    if(!map[folder]) map[folder] = [];
+    map[folder].push({name: f.name, size: f.size});
+  });
+  groups = Object.keys(map).sort().map(function(folder){
+    return {path: folder, rawFiles: map[folder]};
+  });
+  recompute();
+});
+
+function recompute(){
+  var totalFiles = 0, totalOver = 0, totalBytes = 0;
+  groups.forEach(function(g){
+    g.files = g.rawFiles.map(function(f){
+      var over = f.size > LIMIT_BYTES;
+      return {name: f.name, size: f.size, over: over};
+    });
+    g.total = g.files.reduce(function(s,f){ return s + f.size; }, 0);
+    g.overCount = g.files.filter(function(f){ return f.over; }).length;
+    totalFiles += g.files.length;
+    totalOver += g.overCount;
+    totalBytes += g.total;
+  });
+  document.getElementById('statFolders').textContent = groups.length;
+  document.getElementById('statFiles').textContent = totalFiles;
+  document.getElementById('statOver').textContent = totalOver;
+  document.getElementById('statTotalSize').textContent = fmtSize(totalBytes);
+  document.getElementById('summary').classList.add('show');
+  document.getElementById('filterRow').classList.add('show');
+  render();
+}
+
+function render(){
+  var shown = groups.filter(function(g){ return onlyOver ? g.overCount > 0 : true; });
+  if(!shown.length){
+    document.getElementById('result').innerHTML =
+      '<div class="empty">' + (onlyOver ? '沒有任何資料夾含超過上限的檔案 🎉' : '這個資料夾裡沒有檔案。') + '</div>';
+    return;
+  }
+  // 有超過的排前面
+  shown.sort(function(a,b){ return (b.overCount>0) - (a.overCount>0); });
+  var html = shown.map(function(g, i){
+    var rows = g.files.slice().sort(function(a,b){ return b.size - a.size; }).map(function(f){
+      return '<tr class="' + (f.over ? 'over' : '') + '">' +
+        '<td class="name">' + escapeHtml(f.name) + (f.over ? '<span class="over-note">需用雲端連結</span>' : '') + '</td>' +
+        '<td class="size">' + fmtSize(f.size) + '</td></tr>';
+    }).join('');
+    var badge = g.overCount > 0
+      ? '<span class="badge-over">' + g.overCount + ' 個超過</span>'
+      : '<span class="badge-ok">全部符合</span>';
+    var openClass = g.overCount > 0 ? ' open' : '';
+    return '<div class="group">' +
+      '<div class="group-head" onclick="toggleGroup(this)">' +
+        '<div class="group-path">' + escapeHtml(g.path) + '</div>' +
+        '<div class="group-meta">' + badge +
+          '<span class="group-size">' + g.files.length + ' 檔・' + fmtSize(g.total) + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="group-body' + openClass + '"><table class="files"><tbody>' + rows + '</tbody></table></div>' +
+    '</div>';
+  }).join('');
+  document.getElementById('result').innerHTML = html;
+}
+
+function toggleGroup(head){
+  head.nextElementSibling.classList.toggle('open');
+}
+function toggleOnlyOver(){
+  onlyOver = !onlyOver;
+  document.getElementById('onlyOverBtn').classList.toggle('active', onlyOver);
+  render();
+}
+function escapeHtml(s){
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>
