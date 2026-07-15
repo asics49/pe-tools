@@ -111,8 +111,12 @@ tr.row-done:hover td{background:#EAF4EA !important;}
 .only-missing-btn.active{background:#B23A3A;color:#fff;font-weight:700;}
 
 /* ── Backup buttons ── */
+.backup-group{display:inline-flex;align-items:center;gap:6px;padding:3px 8px 3px 10px;border:1.5px dashed #C9A24B;border-radius:22px;background:#FBF7EE;}
+.backup-hint{font-size:11px;color:#8A6D2F;font-weight:700;white-space:nowrap;}
 .backup-btn{border:1.5px solid #223A52;background:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-family:inherit;cursor:pointer;color:#223A52;transition:all .15s;white-space:nowrap;}
 .backup-btn:hover{background:#223A52;color:#fff;}
+.backup-btn.accent{background:#C9A24B;border-color:#C9A24B;color:#fff;font-weight:700;}
+.backup-btn.accent:hover{background:#B8913A;border-color:#B8913A;}
 .backup-import-label{position:relative;display:inline-flex;align-items:center;}
 .backup-import-label input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
 </style>
@@ -145,10 +149,13 @@ tr.row-done:hover td{background:#EAF4EA !important;}
   <div>已完成：<span class="stat-num done" id="statDone">—</span></div>
   <div>未完成：<span class="stat-num missing" id="statMissing">—</span></div>
   <button class="only-missing-btn" id="onlyMissingBtn" onclick="toggleOnlyMissing()">只顯示未完成</button>
-  <button class="backup-btn" onclick="exportBackup()">匯出進度備份</button>
-  <label class="backup-btn backup-import-label">匯入進度備份
-    <input type="file" accept="application/json" id="backupFileInput" onchange="importBackup(this)">
-  </label>
+  <span class="backup-group" title="追蹤勾選與備忘只存在這台電腦的瀏覽器，換電腦或換瀏覽器不會自動同步。換電腦前先按「匯出」存成檔案，到另一台按「匯入」還原。">
+    <span class="backup-hint">換電腦記得備份 →</span>
+    <button class="backup-btn accent" onclick="exportBackup()" title="把目前的已完成勾選與備忘打包成一個 JSON 檔下載，可搬到其他電腦">📤 匯出進度</button>
+    <label class="backup-btn backup-import-label" title="選擇之前匯出的 JSON 備份檔，還原已完成勾選與備忘（會覆蓋目前這台的內容）">📥 匯入進度
+      <input type="file" accept="application/json" id="backupFileInput" onchange="importBackup(this)">
+    </label>
+  </span>
 </div>
 
 <div class="main" id="mainContent"></div>
