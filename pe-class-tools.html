@@ -2522,15 +2522,13 @@ async function importDocxFile(input){
       }catch(e){ /* 單張壞圖跳過，不中斷整份匯入 */ }
     }
 
-    // 帶入頁首標題（若目前標題欄是空的）
+    // 帶入頁首標題（一律以匯入檔的頁首標題為準，覆蓋目前欄位）
     const titleInput = document.getElementById('m1_docTitle');
-    if(!titleInput.value.trim()){
-      const hdrFile = zip.file(/word\/header\d+\.xml/)[0];
-      if(hdrFile){
-        const hdr = await hdrFile.async('string');
-        const t = [...hdr.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)].map(m=>m[1]).join('').trim();
-        if(t) titleInput.value = t;
-      }
+    const hdrFile = zip.file(/word\/header\d+\.xml/)[0];
+    if(hdrFile){
+      const hdr = await hdrFile.async('string');
+      const t = [...hdr.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)].map(m=>m[1]).join('').trim();
+      if(t) titleInput.value = t;
     }
 
     blocks_m1 = newBlocks;
