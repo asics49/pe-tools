@@ -73,9 +73,10 @@
   <div class="app-header">
     <p class="eyebrow">體育班評鑑文件工具・檔案大小檢查</p>
     <h1>評鑑檔案大小檢查</h1>
-    <p>選擇評鑑資料夾（例如同步在電腦上的 Google 雲端硬碟資料夾），系統會就地掃描每個資料夾內的檔案大小，
-      把<strong>超過上限（預設 5MB）</strong>的檔案標紅提醒——這些檔案無法直接上傳評鑑系統，需改用
-      <a href="pe-class-tools.html#m9" target="_blank">模組九（雲端連結頁產生器）</a>的方式，用雲端硬碟連結取代。
+    <p>選一次評鑑的<strong>最上層資料夾</strong>（同步在電腦上的 Google 雲端硬碟資料夾），系統會就地掃描
+      <strong>每個子標資料夾內的檔案</strong>並加總大小，把<strong>總計超過上限（預設 5MB）</strong>的子標標紅提醒——
+      這些需改用<a href="pe-class-tools.html#m9" target="_blank">模組九（雲端連結頁產生器）</a>用雲端硬碟連結取代。
+      加總時<strong>不含「文件上傳」「參考資料」等子資料夾裡的檔案</strong>（只算子標資料夾最外層要上傳的檔案）。
       檔案完全在您的瀏覽器內讀取，<strong>不會上傳到任何地方</strong>。</p>
   </div>
 
@@ -98,14 +99,14 @@
   </div>
 
   <div class="summary" id="summary">
-    <div class="stat"><div class="n" id="statFolders">0</div><div class="l">資料夾數</div></div>
-    <div class="stat"><div class="n" id="statFiles">0</div><div class="l">檔案總數</div></div>
-    <div class="stat over"><div class="n" id="statOver">0</div><div class="l">超過上限（需用雲端連結）</div></div>
+    <div class="stat"><div class="n" id="statFolders">0</div><div class="l">子標資料夾數</div></div>
+    <div class="stat"><div class="n" id="statFiles">0</div><div class="l">檔案總數（不含子資料夾）</div></div>
+    <div class="stat over"><div class="n" id="statOver">0</div><div class="l">總計超過上限（需用雲端連結）</div></div>
     <div class="stat"><div class="n" id="statTotalSize">0</div><div class="l">總容量</div></div>
   </div>
 
   <div class="filter-row" id="filterRow">
-    <button class="toggle-btn" id="onlyOverBtn" onclick="toggleOnlyOver()">只顯示有超過的資料夾</button>
+    <button class="toggle-btn" id="onlyOverBtn" onclick="toggleOnlyOver()">只顯示總計超過的子標</button>
     <span style="font-size:12px;color:var(--ink-soft);">點資料夾標題可展開/收合檔案清單</span>
   </div>
 
@@ -128,42 +129,49 @@ document.getElementById('threshold').addEventListener('input', function(){
   if(!isNaN(v) && v > 0){ LIMIT_BYTES = v * 1024 * 1024; if(groups.length) recompute(); }
 });
 
+// 要排除的子資料夾名稱（其內檔案不列入子標上傳大小）
+var EXCLUDE_SUBFOLDERS = ['文件上傳', '上傳文件', '參考資料', '參考檔案'];
+
 document.getElementById('folderInput').addEventListener('change', function(e){
   var files = Array.from(e.target.files || []);
   if(!files.length) return;
   document.getElementById('result').innerHTML = '<div class="working">掃描中…（' + files.length + ' 個檔案）</div>';
-  // 分組：依檔案所在資料夾（webkitRelativePath 去掉檔名）
+  // 分組：以「檔案所在資料夾」為子標資料夾；若檔案位於「文件上傳／參考資料」等子資料夾內則整批排除
   var map = {};
   files.forEach(function(f){
     var rel = f.webkitRelativePath || f.name;
     var parts = rel.split('/');
-    parts.pop(); // 移除檔名
+    var fname = parts.pop(); // 檔名
+    // 只要路徑任一層是被排除的子資料夾，就跳過此檔
+    var inExcluded = parts.some(function(seg){ return EXCLUDE_SUBFOLDERS.indexOf(seg) !== -1; });
+    if(inExcluded) return;
     var folder = parts.join('/') || '（根目錄）';
     if(!map[folder]) map[folder] = [];
-    map[folder].push({name: f.name, size: f.size});
+    map[folder].push({name: fname, size: f.size});
   });
   groups = Object.keys(map).sort().map(function(folder){
-    return {path: folder, rawFiles: map[folder]};
+    var segs = folder.split('/');
+    return {path: folder, leaf: segs[segs.length-1], rawFiles: map[folder]};
   });
   recompute();
 });
 
 function recompute(){
-  var totalFiles = 0, totalOver = 0, totalBytes = 0;
+  var totalFiles = 0, overFolders = 0, totalBytes = 0;
   groups.forEach(function(g){
     g.files = g.rawFiles.map(function(f){
-      var over = f.size > LIMIT_BYTES;
-      return {name: f.name, size: f.size, over: over};
+      return {name: f.name, size: f.size, over: f.size > LIMIT_BYTES};
     });
     g.total = g.files.reduce(function(s,f){ return s + f.size; }, 0);
-    g.overCount = g.files.filter(function(f){ return f.over; }).length;
+    g.over = g.total > LIMIT_BYTES;       // 子標「總計」超過上限（決定要不要改用雲端連結）
+    g.overCount = g.files.filter(function(f){ return f.over; }).length; // 個別超過的檔案數（附帶提示）
     totalFiles += g.files.length;
-    totalOver += g.overCount;
     totalBytes += g.total;
+    if(g.over) overFolders++;
   });
   document.getElementById('statFolders').textContent = groups.length;
   document.getElementById('statFiles').textContent = totalFiles;
-  document.getElementById('statOver').textContent = totalOver;
+  document.getElementById('statOver').textContent = overFolders;
   document.getElementById('statTotalSize').textContent = fmtSize(totalBytes);
   document.getElementById('summary').classList.add('show');
   document.getElementById('filterRow').classList.add('show');
@@ -171,29 +179,29 @@ function recompute(){
 }
 
 function render(){
-  var shown = groups.filter(function(g){ return onlyOver ? g.overCount > 0 : true; });
+  var shown = groups.filter(function(g){ return onlyOver ? g.over : true; });
   if(!shown.length){
     document.getElementById('result').innerHTML =
-      '<div class="empty">' + (onlyOver ? '沒有任何資料夾含超過上限的檔案 🎉' : '這個資料夾裡沒有檔案。') + '</div>';
+      '<div class="empty">' + (onlyOver ? '沒有任何子標資料夾的檔案總計超過上限 🎉' : '這個資料夾裡沒有檔案（或都在文件上傳／參考資料子資料夾內）。') + '</div>';
     return;
   }
-  // 有超過的排前面
-  shown.sort(function(a,b){ return (b.overCount>0) - (a.overCount>0); });
-  var html = shown.map(function(g, i){
+  // 超過的排前面，其次依總大小由大到小
+  shown.sort(function(a,b){ return (b.over - a.over) || (b.total - a.total); });
+  var html = shown.map(function(g){
     var rows = g.files.slice().sort(function(a,b){ return b.size - a.size; }).map(function(f){
       return '<tr class="' + (f.over ? 'over' : '') + '">' +
-        '<td class="name">' + escapeHtml(f.name) + (f.over ? '<span class="over-note">需用雲端連結</span>' : '') + '</td>' +
+        '<td class="name">' + escapeHtml(f.name) + (f.over ? '<span class="over-note">單檔就超過5MB</span>' : '') + '</td>' +
         '<td class="size">' + fmtSize(f.size) + '</td></tr>';
     }).join('');
-    var badge = g.overCount > 0
-      ? '<span class="badge-over">' + g.overCount + ' 個超過</span>'
-      : '<span class="badge-ok">全部符合</span>';
-    var openClass = g.overCount > 0 ? ' open' : '';
+    var badge = g.over
+      ? '<span class="badge-over">總計超過，需用雲端連結</span>'
+      : '<span class="badge-ok">符合</span>';
+    var openClass = g.over ? ' open' : '';
     return '<div class="group">' +
       '<div class="group-head" onclick="toggleGroup(this)">' +
-        '<div class="group-path">' + escapeHtml(g.path) + '</div>' +
+        '<div class="group-path"><strong>' + escapeHtml(g.leaf) + '</strong><br><span style="font-weight:400;color:var(--ink-soft);font-size:11px;">' + escapeHtml(g.path) + '</span></div>' +
         '<div class="group-meta">' + badge +
-          '<span class="group-size">' + g.files.length + ' 檔・' + fmtSize(g.total) + '</span>' +
+          '<span class="group-size">' + g.files.length + ' 檔・共 ' + fmtSize(g.total) + '</span>' +
         '</div>' +
       '</div>' +
       '<div class="group-body' + openClass + '"><table class="files"><tbody>' + rows + '</tbody></table></div>' +
