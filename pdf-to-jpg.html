@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'微軟正黑體',Arial,sans-serif;font-size:13px;background:#f5f5f5;}
+.wrap{max-width:1100px;margin:0 auto;padding:16px;}
+h2{font-size:16px;font-weight:bold;margin-bottom:12px;color:#333;}
+
+.toolbar{background:#fff;border:1px solid #ddd;border-radius:6px;padding:14px 16px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;}
+.toolbar label{font-weight:bold;font-size:12px;color:#555;margin-right:4px;}
+.toolbar select,.toolbar input[type=number]{border:1px solid #ccc;border-radius:4px;padding:4px 8px;font-size:13px;}
+.toolbar .field{display:flex;align-items:center;gap:6px;}
+.toolbar .hint{font-size:11px;color:#888;}
+
+.drop-zone{background:#fff;border:2px dashed #bbb;border-radius:6px;padding:30px 16px;text-align:center;color:#888;font-size:13px;cursor:pointer;margin-bottom:12px;transition:border-color .15s,background .15s;}
+.drop-zone.drag{border-color:#1565c0;background:#f0f7ff;color:#1565c0;}
+.drop-zone input{display:none;}
+
+.file-list{margin-bottom:12px;}
+.file-card{background:#fff;border:1px solid #ddd;border-radius:6px;padding:12px 14px;margin-bottom:10px;}
+.file-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.file-card-head b{font-size:13px;color:#1565c0;word-break:break-all;}
+.file-card-head .meta{font-size:11px;color:#888;white-space:nowrap;margin-left:10px;}
+.file-del{background:#e57373;color:#fff;border:none;border-radius:4px;padding:3px 10px;cursor:pointer;font-size:12px;margin-left:8px;flex-shrink:0;}
+.file-del:hover{background:#c62828;}
+.file-status{font-size:12px;color:#666;}
+.file-progress{height:4px;background:#eee;border-radius:2px;overflow:hidden;margin-top:6px;}
+.file-progress-bar{height:100%;background:#1565c0;width:0%;transition:width .2s;}
+
+.page-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.page-thumb{width:90px;text-align:center;}
+.page-thumb img{width:90px;height:auto;border:1px solid #ccc;border-radius:3px;display:block;background:#f0f0f0;}
+.page-thumb .pname{font-size:10px;color:#666;margin-top:2px;}
+.page-thumb .psize{font-size:10px;color:#999;}
+
+.btn-row{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+.btn{padding:9px 22px;border:none;border-radius:4px;cursor:pointer;font-size:13px;font-weight:bold;}
+.btn-main{background:#1565c0;color:#fff;}
+.btn-main:hover{background:#0d47a1;}
+.btn[disabled]{opacity:.6;cursor:not-allowed;}
+
+.summary{font-size:12px;color:#555;margin-top:10px;}
+.note{font-size:11px;color:#666;margin-top:10px;line-height:1.6;}
+.empty-hint{color:#999;font-size:13px;padding:20px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h2>PDF 轉 JPG／壓縮工具</h2>
+
+<div class="toolbar">
+  <div class="field">
+    <label>輸出解析度</label>
+    <select id="scaleSel" onchange="onSettingChange()">
+      <option value="1">低（快速）</option>
+      <option value="1.5" selected>中</option>
+      <option value="2">高</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>JPG 品質</label>
+    <input type="number" id="qualityInput" min="10" max="100" value="75" style="width:60px;" oninput="onSettingChange()">%
+  </div>
+  <div class="field">
+    <label>目標單檔大小上限</label>
+    <input type="number" id="targetSizeInput" min="0" value="0" style="width:70px;">MB
+    <span class="hint">0＝不限制（僅依品質壓縮）</span>
+  </div>
+</div>
+
+<div class="drop-zone" id="dropZone" onclick="document.getElementById('pdfInput').click()">
+  將 PDF 檔案拖放到這裡，或點擊選擇檔案（可多選）
+  <input type="file" id="pdfInput" accept="application/pdf" multiple onchange="onFilesPicked(this.files)">
+</div>
+
+<div class="file-list" id="fileList"></div>
+<div class="empty-hint" id="emptyHint">尚未加入任何 PDF 檔案</div>
+
+<div class="btn-row">
+  <button class="btn btn-main" id="convertBtn" onclick="convertAll()">開始轉換</button>
+  <button class="btn btn-main" id="zipBtn" onclick="downloadZip()" disabled>打包下載 JPG（ZIP）</button>
+  <button class="btn btn-main" id="pdfBtn" onclick="downloadCompressedPdf()" disabled>下載壓縮 PDF</button>
+</div>
+<div class="summary" id="summaryBox"></div>
+
+<div class="note">
+使用說明：完全在瀏覽器內轉換，不會上傳任何檔案。每頁 PDF 轉成一張 JPG 圖片，可調整解析度與壓縮品質；
+若設定「目標單檔大小上限」，系統會自動降低品質反覆嘗試，直到單張圖片符合大小（最低品質 10%）。<br>
+「下載壓縮 PDF」會把每頁重新壓縮後的圖片組回一份 PDF（原檔名多一個 PDF 檔加總體積通常大幅縮小，
+適合掃描件／圖片型公文）；若多於 1 個檔案會打包成 ZIP。<b>注意：此方式會將文字轉成圖片，
+壓縮後的 PDF 內文字將無法反白複製或搜尋</b>，純文字 PDF 建議改用「打包下載 JPG」保留原檔另行處理。
+</div>
+</div>
+
+<script>
+let pdfFilesList = [];
+let nextPdfId = 1;
+
+function onSettingChange(){
+  pdfFilesList.forEach(f => { f.pages = null; f.status = 'pending'; });
+  renderFileList();
+  document.getElementById('zipBtn').disabled = true;
+  document.getElementById('pdfBtn').disabled = true;
+}
+
+function onFilesPicked(fileListObj){
+  const files = Array.from(fileListObj || []);
+  files.forEach(file => {
+    if (file.type !== 'application/pdf') return;
+    pdfFilesList.push({ id: nextPdfId++, file, status: 'pending', pages: null, progress: 0 });
+  });
+  document.getElementById('pdfInput').value = '';
+  renderFileList();
+}
+
+function removeFile(id){
+  pdfFilesList = pdfFilesList.filter(f => f.id !== id);
+  renderFileList();
+}
+
+function renderFileList(){
+  const box = document.getElementById('fileList');
+  const empty = document.getElementById('emptyHint');
+  empty.style.display = pdfFilesList.length ? 'none' : 'block';
+  box.innerHTML = pdfFilesList.map(f => {
+    const sizeKb = (f.file.size / 1024).toFixed(0);
+    let statusText = '尚未轉換';
+    if (f.status === 'working') statusText = '轉換中…';
+    if (f.status === 'done') statusText = `完成，共 ${f.pages.length} 頁`;
+    if (f.status === 'error') statusText = '轉換失敗：' + (f.errorMsg || '');
+    let pagesHtml = '';
+    if (f.pages && f.pages.length) {
+      pagesHtml = '<div class="page-grid">' + f.pages.map((p, i) =>
+        `<div class="page-thumb"><img src="${p.dataUrl}"><div class="pname">第 ${i+1} 頁</div><div class="psize">${(p.blob.size/1024).toFixed(0)} KB</div></div>`
+      ).join('') + '</div>';
+    }
+    return `<div class="file-card">
+      <div class="file-card-head">
+        <b>${f.file.name}</b>
+        <span class="meta">${sizeKb} KB</span>
+        <button class="file-del" onclick="removeFile(${f.id})">移除</button>
+      </div>
+      <div class="file-status">${statusText}</div>
+      ${f.status === 'working' ? `<div class="file-progress"><div class="file-progress-bar" style="width:${f.progress}%"></div></div>` : ''}
+      ${pagesHtml}
+    </div>`;
+  }).join('');
+}
+
+async function canvasToBlobUnderSize(canvas, quality, targetBytes){
+  let q = quality;
+  let blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', q));
+  if (!targetBytes) return blob;
+  while (blob.size > targetBytes && q > 0.1){
+    q -= 0.1;
+    blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', q));
+  }
+  return blob;
+}
+
+async function convertAll(){
+  const scale = parseFloat(document.getElementById('scaleSel').value);
+  const quality = Math.min(100, Math.max(10, parseInt(document.getElementById('qualityInput').value, 10) || 75)) / 100;
+  const targetMb = parseFloat(document.getElementById('targetSizeInput').value) || 0;
+  const targetBytes = targetMb > 0 ? targetMb * 1024 * 1024 : 0;
+
+  const btn = document.getElementById('convertBtn');
+  btn.disabled = true;
+  document.getElementById('zipBtn').disabled = true;
+
+  for (const f of pdfFilesList){
+    if (f.status === 'done') continue;
+    f.status = 'working';
+    f.progress = 0;
+    renderFileList();
+    try {
+      const ab = await f.file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(ab) }).promise;
+      const pages = [];
+      for (let pn = 1; pn <= pdf.numPages; pn++){
+        const page = await pdf.getPage(pn);
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        const blob = await canvasToBlobUnderSize(canvas, quality, targetBytes);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        const unscaled = page.getViewport({ scale: 1 });
+        pages.push({ blob, dataUrl, ptW: unscaled.width, ptH: unscaled.height });
+        f.progress = Math.round(pn / pdf.numPages * 100);
+        renderFileList();
+      }
+      f.pages = pages;
+      f.status = 'done';
+    } catch (err){
+      f.status = 'error';
+      f.errorMsg = err && err.message ? err.message : String(err);
+    }
+    renderFileList();
+  }
+
+  btn.disabled = false;
+  const anyDone = pdfFilesList.some(f => f.status === 'done' && f.pages && f.pages.length);
+  document.getElementById('zipBtn').disabled = !anyDone;
+  document.getElementById('pdfBtn').disabled = !anyDone;
+  updateSummary();
+}
+
+function updateSummary(){
+  const box = document.getElementById('summaryBox');
+  const doneFiles = pdfFilesList.filter(f => f.status === 'done' && f.pages);
+  if (!doneFiles.length){ box.textContent = ''; return; }
+  const totalPages = doneFiles.reduce((s, f) => s + f.pages.length, 0);
+  const totalBytes = doneFiles.reduce((s, f) => s + f.pages.reduce((s2, p) => s2 + p.blob.size, 0), 0);
+  box.textContent = `已轉換 ${doneFiles.length} 個檔案，共 ${totalPages} 張圖片，總計約 ${(totalBytes/1024/1024).toFixed(2)} MB`;
+}
+
+async function downloadZip(){
+  const zip = new JSZip();
+  pdfFilesList.forEach(f => {
+    if (f.status !== 'done' || !f.pages) return;
+    const baseName = f.file.name.replace(/\.pdf$/i, '');
+    f.pages.forEach((p, i) => {
+      const pageNum = String(i + 1).padStart(String(f.pages.length).length, '0');
+      zip.file(`${baseName}_${pageNum}.jpg`, p.blob);
+    });
+  });
+  const content = await zip.generateAsync({ type: 'blob' });
+  saveAs(content, 'PDF轉JPG.zip');
+}
+
+function buildCompressedPdfBlob(pages){
+  const { jsPDF } = window.jspdf;
+  const first = pages[0];
+  const doc = new jsPDF({ unit: 'pt', format: [first.ptW, first.ptH], compress: true });
+  pages.forEach((p, i) => {
+    if (i > 0) doc.addPage([p.ptW, p.ptH]);
+    doc.addImage(p.dataUrl, 'JPEG', 0, 0, p.ptW, p.ptH);
+  });
+  return doc.output('blob');
+}
+
+async function downloadCompressedPdf(){
+  const doneFiles = pdfFilesList.filter(f => f.status === 'done' && f.pages && f.pages.length);
+  if (!doneFiles.length) return;
+
+  if (doneFiles.length === 1){
+    const f = doneFiles[0];
+    const blob = buildCompressedPdfBlob(f.pages);
+    const baseName = f.file.name.replace(/\.pdf$/i, '');
+    saveAs(blob, `${baseName}_壓縮.pdf`);
+    return;
+  }
+
+  const zip = new JSZip();
+  doneFiles.forEach(f => {
+    const blob = buildCompressedPdfBlob(f.pages);
+    const baseName = f.file.name.replace(/\.pdf$/i, '');
+    zip.file(`${baseName}_壓縮.pdf`, blob);
+  });
+  const content = await zip.generateAsync({ type: 'blob' });
+  saveAs(content, 'PDF壓縮.zip');
+}
+
+// ── init ──
+document.addEventListener('dragover', function(e){
+  if (e.target.closest && e.target.closest('#dropZone')) e.preventDefault();
+});
+const dz = document.getElementById('dropZone');
+if (dz){
+  dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('drag'); });
+  dz.addEventListener('dragleave', function(){ dz.classList.remove('drag'); });
+  dz.addEventListener('drop', function(e){
+    e.preventDefault();
+    dz.classList.remove('drag');
+    onFilesPicked(e.dataTransfer.files);
+  });
+}
+if (typeof pdfjsLib !== 'undefined'){
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+renderFileList();
+</script>
+</body>
+</html>

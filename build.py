@@ -30,6 +30,7 @@ FILES = [
     ('m7',  '模組七',  '年度訓練計畫',   '年度訓練計畫表.html'),
     ('m8',  '模組八',  '器材檢核表',     '器材檢核表.html'),
     ('m9',  '模組九',  '雲端連結頁產生器', 'cloud-link-page.html'),
+    ('m10', '模組十',  'PDF轉JPG壓縮',   'pdf-to-jpg.html'),
 ]
 
 OUTPUT = 'pe-class-tools.html'
