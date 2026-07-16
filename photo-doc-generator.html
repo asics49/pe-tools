@@ -831,21 +831,31 @@ async function generateDocx(){
       captionInner = captionParagraphXml(b.caption);
 
       const cellMar = `<w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar>`;
+      // 照片格垂直置中：搭配照片列最小列高，把頁面剩餘空白平均分散到每排，
+      // 不會全部堆在頁尾（照片受欄寬限制時，實際高度常遠小於每排可用高度）
+      const vAlign = `<w:vAlign w:val="center"/>`;
       if(splitCaption){
         // 說明獨立成一個儲存格，放在照片格「下方」（另一列），而非同一格或側邊並排
-        const photoCell = `<w:tc><w:tcPr><w:tcW w:w="${PAGE_CONTENT_WIDTH_DXA}" w:type="dxa"/>${cellMar}</w:tcPr>${photoInner}</w:tc>`;
+        const photoCell = `<w:tc><w:tcPr><w:tcW w:w="${PAGE_CONTENT_WIDTH_DXA}" w:type="dxa"/>${cellMar}${vAlign}</w:tcPr>${photoInner}</w:tc>`;
         const captionCell = `<w:tc><w:tcPr><w:tcW w:w="${PAGE_CONTENT_WIDTH_DXA}" w:type="dxa"/>${cellMar}</w:tcPr>${captionInner}</w:tc>`;
         rowsXmlParts.push(`<w:tr>${photoCell}</w:tr>`, `<w:tr>${captionCell}</w:tr>`);
       } else {
         // 照片格與說明格分列：照片一列、說明在其正下方一列（不再擠同一格）
-        photoCells.push(`<w:tc><w:tcPr><w:tcW w:w="${colWidth}" w:type="dxa"/>${cellMar}</w:tcPr>${photoInner}</w:tc>`);
+        photoCells.push(`<w:tc><w:tcPr><w:tcW w:w="${colWidth}" w:type="dxa"/>${cellMar}${vAlign}</w:tcPr>${photoInner}</w:tc>`);
         captionCells.push(`<w:tc><w:tcPr><w:tcW w:w="${colWidth}" w:type="dxa"/>${cellMar}</w:tcPr>${captionInner}</w:tc>`);
       }
     }
 
+    // 照片列最小列高＝每排可用高度（同 getMaxImgHeightEmu 的預算），讓每頁版面撐滿、
+    // 空白平均分配到各排之間；hRule=atLeast 保留超出時自動加高的彈性
+    const photoRowHeightDxa = Math.floor(maxImgHeightEmu / EMU_PER_DXA);
+    const photoTrPr = `<w:trPr><w:trHeight w:val="${photoRowHeightDxa}" w:hRule="atLeast"/></w:trPr>`;
+
     let rowsXml, gridCols;
     if(splitCaption){
-      rowsXml = rowsXmlParts.join('');
+      rowsXml = rowsXmlParts.map((tr, i) =>
+        i % 2 === 0 ? tr.replace('<w:tr>', `<w:tr>${photoTrPr}`) : tr
+      ).join('');
       gridCols = `<w:gridCol w:w="${PAGE_CONTENT_WIDTH_DXA}"/>`;
     } else {
       // pad to full rows
@@ -856,7 +866,7 @@ async function generateDocx(){
       }
       rowsXml = '';
       for(let i=0;i<photoCells.length;i+=cols){
-        rowsXml += `<w:tr>${photoCells.slice(i,i+cols).join('')}</w:tr>`;
+        rowsXml += `<w:tr>${photoTrPr}${photoCells.slice(i,i+cols).join('')}</w:tr>`;
         rowsXml += `<w:tr>${captionCells.slice(i,i+cols).join('')}</w:tr>`;
       }
       gridCols = colWidths.map(w=>`<w:gridCol w:w="${w}"/>`).join('');
