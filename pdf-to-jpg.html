@@ -262,7 +262,28 @@ async function downloadZip(){
     });
   });
   const content = await zip.generateAsync({ type: 'blob' });
-  saveAs(content, 'PDF轉JPG.zip');
+  await saveBlobAs(content, 'PDF轉JPG.zip', 'ZIP 壓縮檔', '.zip', 'application/zip');
+}
+
+// 另存新檔：支援 File System Access API 的瀏覽器（Chrome/Edge）會跳出
+// 「另存新檔」視窗讓使用者自選資料夾；其他瀏覽器退回直接下載到預設下載資料夾
+async function saveBlobAs(blob, filename, desc, ext, mime){
+  if (window.showSaveFilePicker){
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: desc, accept: { [mime]: [ext] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    } catch (err){
+      if (err && err.name === 'AbortError') return; // 使用者取消，不再另外下載
+      // 其他錯誤（如權限）退回一般下載
+    }
+  }
+  saveAs(blob, filename);
 }
 
 function buildCompressedPdfBlob(pages){
@@ -284,7 +305,7 @@ async function downloadCompressedPdf(){
     const f = doneFiles[0];
     const blob = buildCompressedPdfBlob(f.pages);
     const baseName = f.file.name.replace(/\.pdf$/i, '');
-    saveAs(blob, `${baseName}_壓縮.pdf`);
+    await saveBlobAs(blob, `${baseName}_壓縮.pdf`, 'PDF 文件', '.pdf', 'application/pdf');
     return;
   }
 
@@ -295,7 +316,7 @@ async function downloadCompressedPdf(){
     zip.file(`${baseName}_壓縮.pdf`, blob);
   });
   const content = await zip.generateAsync({ type: 'blob' });
-  saveAs(content, 'PDF壓縮.zip');
+  await saveBlobAs(content, 'PDF壓縮.zip', 'ZIP 壓縮檔', '.zip', 'application/zip');
 }
 
 // ── init ──
