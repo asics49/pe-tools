@@ -268,6 +268,7 @@
       📄 匯入 Word 檔
       <input type="file" accept=".docx" style="display:none" onchange="importDocxFile(this)">
     </label>
+    <button class="upload-btn" style="margin-bottom:12px;margin-left:6px;background:#FBEDED;border-color:#C97B7B;color:#8B2E2E;" onclick="resetAllBlocks()">🗑 清除全部</button>
     <span style="font-size:12px;color:var(--ink-soft);margin-left:8px;">照片匯入：多選依序填入區塊；Word 匯入：讀取檔內照片與說明（含本工具或同格式產出的 .docx），再用上方版面重新排版微調</span>
     <div id="blocksContainer"></div>
     <div style="display:flex;gap:8px;align-items:stretch;">
@@ -397,6 +398,21 @@ function addBlocks(){
 
 function removeBlock(id){
   blocks = blocks.filter(b=>b.id!==id);
+  renderBlocks();
+  renderPreview();
+}
+
+// 清除全部：照片、說明、文件標題全部歸零，回到目前版面的初始空區塊數
+function resetAllBlocks(){
+  const hasContent = blocks.some(b => b.file || (b.caption && b.caption.trim())) ||
+    document.getElementById('docTitle').value.trim();
+  if(hasContent && !confirm('確定要清除全部照片、說明與文件標題嗎？')) return;
+  blocks = [];
+  for(let i=0;i<targetBlocks;i++){
+    blocks.push({id: nextId++, file:null, dataUrl:null, width:0, height:0, caption:''});
+  }
+  document.getElementById('docTitle').value = '';
+  setStatus('');
   renderBlocks();
   renderPreview();
 }
