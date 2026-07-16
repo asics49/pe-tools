@@ -726,15 +726,17 @@ function captionParagraphXml(text){
   return `<w:p><w:pPr><w:spacing w:after="120"/></w:pPr>${runs}</w:p>`;
 }
 
-function placeholderParagraphXml(){
-  return `<w:p><w:pPr><w:spacing w:before="600" w:after="600"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:color w:val="999999"/><w:i/></w:rPr><w:t>（尚未上傳照片）</w:t></w:r></w:p>`;
+function placeholderParagraphXml(pageBreak){
+  const pb = pageBreak ? '<w:pageBreakBefore/>' : '';
+  return `<w:p><w:pPr>${pb}<w:spacing w:before="600" w:after="600"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:color w:val="999999"/><w:i/></w:rPr><w:t>（尚未上傳照片）</w:t></w:r></w:p>`;
 }
 
-function imageParagraphXml(relId, cx, cy, docPrId, srcRect){
+function imageParagraphXml(relId, cx, cy, docPrId, srcRect, pageBreak){
   const srcRectXml = srcRect
     ? `<a:srcRect l="${srcRect.l}" t="${srcRect.t}" r="${srcRect.r}" b="${srcRect.b}"/>`
     : '';
-  return `<w:p><w:pPr><w:spacing w:after="80"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>` +
+  const pb = pageBreak ? '<w:pageBreakBefore/>' : '';
+  return `<w:p><w:pPr>${pb}<w:spacing w:after="80"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>` +
     `<wp:inline distT="0" distB="0" distL="0" distR="0">` +
     `<wp:extent cx="${cx}" cy="${cy}"/>` +
     `<wp:docPr id="${docPrId}" name="Picture ${docPrId}"/>` +
@@ -791,6 +793,10 @@ async function generateDocx(){
       const colIdx = i % cols;
       const colWidth = splitCaption ? PAGE_CONTENT_WIDTH_DXA : colWidths[colIdx];
       const maxImgWidthEmu = (colWidth - cellPaddingDxa) * EMU_PER_DXA;
+      // 每頁固定放 targetBlocks 張：每滿一頁的張數就讓下一張從新頁開始，
+      // 確保「每列2張2排（4張/頁）」與「每列2張3排（6張/頁）」實際張數不同
+      // （否則橫向照片受欄寬限制、高度差異被吃掉，兩種版面會長得一樣）
+      const pageBreak = i > 0 && (i % targetBlocks === 0);
       let photoInner, captionInner;
       if(b.file && b.dataUrl){
         const ext = (b.file.type === 'image/png') ? 'png' : 'jpeg';
@@ -818,9 +824,9 @@ async function generateDocx(){
         const cy = Math.round(cx / TARGET_RATIO);
         const srcRect = {l: srcL, t: srcT, r: srcR, b: srcB};
 
-        photoInner = imageParagraphXml(relId, cx, cy, picId++, srcRect);
+        photoInner = imageParagraphXml(relId, cx, cy, picId++, srcRect, pageBreak);
       } else {
-        photoInner = placeholderParagraphXml();
+        photoInner = placeholderParagraphXml(pageBreak);
       }
       captionInner = captionParagraphXml(b.caption);
 
