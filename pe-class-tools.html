@@ -2208,7 +2208,7 @@ h2{font-size:16px;font-weight:bold;margin-bottom:12px;color:#333;}
   </div>
 </div>
 
-<div class="drop-zone" id="dropZone" onclick="document.getElementById('pdfInput').click()">
+<div class="drop-zone" id="m10PdfDropZone" onclick="document.getElementById('pdfInput').click()">
   將 PDF 檔案拖放到這裡，或點擊選擇檔案（可多選）
   <input type="file" id="pdfInput" accept="application/pdf" multiple onchange="onFilesPicked(this.files)">
 </div>
@@ -2362,9 +2362,9 @@ renderEntryList();
   'm10': function() {
 // ── init ──
 document.addEventListener('dragover', function(e){
-  if (e.target.closest && e.target.closest('#dropZone')) e.preventDefault();
+  if (e.target.closest && e.target.closest('#m10PdfDropZone')) e.preventDefault();
 });
-const dz = document.getElementById('dropZone');
+const dz = document.getElementById('m10PdfDropZone');
 if (dz){
   dz.addEventListener('dragover', function(e){ e.preventDefault(); dz.classList.add('drag'); });
   dz.addEventListener('dragleave', function(){ dz.classList.remove('drag'); });
