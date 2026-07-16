@@ -49,7 +49,8 @@ CONFLICT_IDS = [
     'fundTable', 'fundNote',
     'reportDate', 'reportDateRoc', 'schoolName', 'classCount', 'studentCount',
     'rosterUploaded', 'noInsurance', 'hostSchool', 'audience',
-    'reportTypeGroup', 'eduStageGroup', 'hsCourseTypeGroup', 'hsCheckTypeGroup',
+    # 注意：m3a 的 reportTypeGroup/eduStageGroup/hsCourseTypeGroup/hsCheckTypeGroup 是唯一 id，
+    # 且以「字串參數」傳入 renderRadioGroup()（prefix_ids 改不到），不可列入本清單
     'approvedTotal',
     'leaveYear', 'leaveSport', 'leaveTableBody', 'rowCount',
     'previewCard', 'previewContent', 'pasteArea', 'pasteInput',

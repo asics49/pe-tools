@@ -419,7 +419,9 @@ function calcRate(approved, spent){
 }
 
 function renderFundTable(){
-  const tbody = document.querySelector('#fundTable tbody');
+  // 注意：不能用 querySelector('#fundTable tbody') 複合選擇器——build.py 的 prefix_ids 改不到，
+  // 合併版中 id 會變成 m3a_fundTable 而對不上；一律先 getElementById 再相對查詢
+  const tbody = document.getElementById('fundTable').querySelector('tbody');
   const f = state.fund;
   const approvedMakeup   = f.makeup.approved   || '0';
   const approvedTutoring = f.tutoring.approved || '0';

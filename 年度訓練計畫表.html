@@ -68,13 +68,14 @@
   overflow: auto;
   min-height: 220px;
 }
-#planTable {
+/* 注意：CSS 的 #id 選擇器在合併版會失效（id 被 prefix_ids 改名成 m7_planTable），一律用 class */
+.m7-plan-table {
   width: 100%;
   table-layout: fixed;
   border-collapse: collapse;
   white-space: nowrap;
 }
-#planTable td {
+.m7-plan-table td {
   border: 1px solid #666;
   padding: 0 2px;
   text-align: center;
@@ -141,13 +142,13 @@
   padding: 3px 8px 5px;
   min-height: 160px;
 }
-#contentTable {
+.m7-content-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 11px;
 }
-#contentTable tr { height: 40px; }
-#contentTable td { border: 1px solid #888; padding: 3px 8px; vertical-align: middle; }
+.m7-content-table tr { height: 40px; }
+.m7-content-table td { border: 1px solid #888; padding: 3px 8px; vertical-align: middle; }
 .m7-ct-lv    { background: #cfd8dc; font-weight: bold; writing-mode: vertical-rl; width: 16px; text-align: center; }
 .m7-ct-label { background: #eceff1; font-weight: bold; white-space: nowrap; width: 64px; }
 
@@ -249,7 +250,7 @@
     <div class="m7-card-title" id="mainTitle">高雄縣/市 右昌學校 足球代表隊 115 學年度訓練計畫表</div>
     <div class="m7-table-scroll">
       <!-- 55欄: 3%+3%+4%+52×1.731% ≈ 100%，與圖表等寬 -->
-      <table id="planTable">
+      <table id="planTable" class="m7-plan-table">
         <colgroup>
           <col style="width:3%">
           <col style="width:3%">
@@ -285,7 +286,7 @@
   <div class="m7-card">
     <div class="m7-card-title">訓練內容與手段</div>
     <div class="m7-content-inner">
-      <table id="contentTable">
+      <table id="contentTable" class="m7-content-table">
         <colgroup>
           <col style="width:16px">
           <col style="width:64px">
@@ -686,8 +687,12 @@ function closeEditModal() {
 }
 
 function updateEditSum() {
-  const s = ['em_ty','em_js','em_zs','em_xl']
-    .reduce((a,id) => a + (parseInt(document.getElementById(id).value)||0), 0);
+  // 注意：不能用 ['em_ty',...].map(id=>getElementById(id)) 動態 id——prefix_ids 只改寫字面字串，
+  // 合併版中 id 會變成 m7_em_ty 而對不上；一律逐一明確呼叫
+  const s = (parseInt(document.getElementById('em_ty').value)||0)
+          + (parseInt(document.getElementById('em_js').value)||0)
+          + (parseInt(document.getElementById('em_zs').value)||0)
+          + (parseInt(document.getElementById('em_xl').value)||0);
   const el = document.getElementById('em_sum');
   el.textContent = s;
   el.style.color = (s===100) ? '#388e3c' : '#c62828';
@@ -852,7 +857,8 @@ function exportWord() {
   const planHTML = document.getElementById('planTable').outerHTML;
 
   // 取得訓練內容與手段各列文字
-  const ctRows = Array.from(document.querySelectorAll('#contentTable tr')).map((tr,i) => {
+  // 注意：不能用 querySelectorAll('#contentTable tr') 複合選擇器（合併版 id 已改名 m7_contentTable）
+  const ctRows = Array.from(document.getElementById('contentTable').querySelectorAll('tr')).map((tr,i) => {
     const tds = tr.querySelectorAll('td');
     // i=0: rowspan垂直欄(skip) + label + content；i>0: label + content
     const label   = i===0 ? (tds[1]?.innerText||'') : (tds[0]?.innerText||'');
