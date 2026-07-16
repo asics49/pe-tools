@@ -39,6 +39,8 @@ h2{font-size:16px;font-weight:bold;margin-bottom:12px;color:#333;}
 .btn{padding:9px 22px;border:none;border-radius:4px;cursor:pointer;font-size:13px;font-weight:bold;}
 .btn-main{background:#1565c0;color:#fff;}
 .btn-main:hover{background:#0d47a1;}
+.btn-reset{background:#eee;color:#666;border:1px solid #ccc;}
+.btn-reset:hover{background:#e0e0e0;}
 .btn[disabled]{opacity:.6;cursor:not-allowed;}
 
 .summary{font-size:12px;color:#555;margin-top:10px;}
@@ -91,6 +93,7 @@ h2{font-size:16px;font-weight:bold;margin-bottom:12px;color:#333;}
   <button class="btn btn-main" id="convertBtn" onclick="convertAll()">開始轉換</button>
   <button class="btn btn-main" id="zipBtn" onclick="downloadZip()" disabled>打包下載 JPG（ZIP）</button>
   <button class="btn btn-main" id="pdfBtn" onclick="downloadCompressedPdf()" disabled>下載壓縮 PDF</button>
+  <button class="btn btn-reset" id="resetBtn" onclick="resetAll()" disabled>清除全部</button>
 </div>
 <div class="summary" id="summaryBox"></div>
 
@@ -150,10 +153,21 @@ function removeFile(id){
   renderFileList();
 }
 
+function resetAll(){
+  if (pdfFilesList.some(f => f.status === 'done') &&
+      !confirm('確定要清除全部檔案與轉換結果嗎？')) return;
+  pdfFilesList = [];
+  document.getElementById('zipBtn').disabled = true;
+  document.getElementById('pdfBtn').disabled = true;
+  document.getElementById('summaryBox').textContent = '';
+  renderFileList();
+}
+
 function renderFileList(){
   const box = document.getElementById('fileList');
   const empty = document.getElementById('emptyHint');
   empty.style.display = pdfFilesList.length ? 'none' : 'block';
+  document.getElementById('resetBtn').disabled = !pdfFilesList.length;
   box.innerHTML = pdfFilesList.map(f => {
     const sizeKb = (f.file.size / 1024).toFixed(0);
     let statusText = '尚未轉換';
