@@ -257,9 +257,9 @@ SHARED_CONSTS: DEFAULT_LOGO_DATAURL, DEFAULT_LOGO_WIDTH, DEFAULT_LOGO_HEIGHT
 - **成績預警通知單 Word 下載**（2026-07-17 新增，`downloadWarningNotices`／`collectWarningNotices`）：
   掃描全部學生×4期別，任一科（國英數社自）<60 即產生一份獨立通知單（**單次評量獨立發放、
   不跨考次合併**），文字比照「體育班成績預警通知單」範例（參賽基準說明／輔導機制3項／
-  導師+教練簽章欄），同頁下方含 ✂ 家長回執聯（勾選意願、意見欄、家長簽章）；考次名稱比照
-  範例用 `EXAM_LABEL` 對照（上學期→「114學年度**第一學期**期中/期末評量」、下學期沿用
-  「下學期」，與 m6 分頁上顯示的 EVALS 標籤「上學期…」不同）；.doc（HTML 格式）
+  導師+教練簽章欄），同頁下方含 ✂ 家長回執聯（勾選意願、意見欄、家長簽章）；考次名稱用 `EXAM_LABEL`
+  對照（上學期→「114學年度**第一學期**期中/期末評量」、下學期→「**第二學期**」，
+  與 m6 分頁上顯示的 EVALS 標籤「上學期／下學期」不同）；.doc（HTML 格式）
   標楷體 A4，每份一頁 `page-break-after`，年級自動轉中文（六年級體育班），檔名含學年度與
   「N生M份」；用原生 anchor 下載——**單機版 grade-record.html 沒載 FileSaver，不能用 saveAs**
 - **自動儲存**（2026-07-18 新增，key `peGradeRecordData`）：讓老師**每次段考匯入即累積、不必年底

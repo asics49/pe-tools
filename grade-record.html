@@ -711,8 +711,8 @@ function downloadWarningNotices(){
   const y=getYear();
   const CN={'1':'一','2':'二','3':'三','4':'四','5':'五','6':'六'};
   const uline=n=>'＿'.repeat(n);
-  // 通知單考次名稱比照校方範例：上學期→「第一學期」、下學期沿用「下學期」
-  const EXAM_LABEL={s1m:'第一學期期中評量',s1f:'第一學期期末評量',s2m:'下學期期中評量',s2f:'下學期期末評量'};
+  // 通知單考次名稱：上學期→「第一學期」、下學期→「第二學期」（與 m6 分頁顯示的 EVALS 標籤不同）
+  const EXAM_LABEL={s1m:'第一學期期中評量',s1f:'第一學期期末評量',s2m:'第二學期期中評量',s2f:'第二學期期末評量'};
 
   const pages=notices.map((n,i)=>{
     const exam=y+'學年度'+(EXAM_LABEL[n.e.key]||n.e.label);
