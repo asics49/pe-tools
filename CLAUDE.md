@@ -254,6 +254,21 @@ SHARED_CONSTS: DEFAULT_LOGO_DATAURL, DEFAULT_LOGO_WIDTH, DEFAULT_LOGO_HEIGHT
   並在表格上方 `#lowScoreBox` 列出所有未達 60 分紀錄（姓名＋期別＋科目＋分數），方便掌握需輔導名單
 - **即時預覽**：輸入後表格即時更新
 - **Excel 輸出**（SheetJS）：3 列標題（學年度合併、4 期別分組、科目）+ 資料列
+- **成績預警通知單 Word 下載**（2026-07-17 新增，`downloadWarningNotices`／`collectWarningNotices`）：
+  掃描全部學生×4期別，任一科（國英數社自）<60 即產生一份獨立通知單（**單次評量獨立發放、
+  不跨考次合併**），文字比照「體育班成績預警通知單」範例（參賽基準說明／輔導機制3項／
+  導師+教練簽章欄），同頁下方含 ✂ 家長回執聯（勾選意願、意見欄、家長簽章）；考次名稱比照
+  範例用 `EXAM_LABEL` 對照（上學期→「114學年度**第一學期**期中/期末評量」、下學期沿用
+  「下學期」，與 m6 分頁上顯示的 EVALS 標籤「上學期…」不同）；.doc（HTML 格式）
+  標楷體 A4，每份一頁 `page-break-after`，年級自動轉中文（六年級體育班），檔名含學年度與
+  「N生M份」；用原生 anchor 下載——**單機版 grade-record.html 沒載 FileSaver，不能用 saveAs**
+- **自動儲存**（2026-07-18 新增，key `peGradeRecordData`）：讓老師**每次段考匯入即累積、不必年底
+  一次彙整**。`saveGradeState()` 掛在 `renderPreview()` 開頭（所有資料異動的匯流點，含 customYear
+  oninput），debounce 400ms 寫 localStorage；重開頁面 `loadGradeState()`（script 尾端頂層呼叫）自動
+  還原學年度＋學生成績；名單清空時改為移除 key（不存空資料）。`_gradeLoaded` 旗標防止「還原完成前
+  的 render 把舊資料蓋成空」。基本設定卡片有儲存狀態提示（含時間）＋「📤 匯出備份／📥 匯入備份
+  （JSON，覆蓋前 confirm）／🗑 清除全部資料」；跨電腦搬移用備份檔（localStorage 依網址+瀏覽器隔離，
+  同 index.html 追蹤功能的已知特性）
 
 ### 設計決策
 - 所有學生統一顯示 4 期別欄位（不區分前後測新舊生）

@@ -121,6 +121,11 @@ table.prev td.low{background:#FADDDD;color:#B00020;font-weight:700;}
 .bottom-bar .inner{max-width:1100px;margin:0 auto;display:flex;gap:10px;align-items:center;}
 .primary-btn{flex:1;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
 .primary-btn:hover{background:var(--navy-s);}
+.warn-btn{background:#FDF0F0;color:var(--maroon);border:1.5px solid var(--maroon);border-radius:8px;padding:12px 16px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
+.warn-btn:hover{background:#FADDDD;}
+.save-bar{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line-s);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.save-bar .save-hint{font-size:12px;color:var(--ink-soft);margin-right:auto;}
+.save-bar .save-hint.on{color:#2C7A3D;font-weight:700;}
 .hint{font-size:12px;color:var(--ink-soft);}
 </style>
 </head>
@@ -149,6 +154,13 @@ table.prev td.low{background:#FADDDD;color:#B00020;font-weight:700;}
       <label class="fl">自填學年度</label>
       <input type="text" id="customYear" placeholder="例：113" style="max-width:100px" oninput="renderPreview()">
     </div>
+  </div>
+  <div class="save-bar">
+    <span class="save-hint" id="m6SaveHint">💾 自動儲存：尚無資料</span>
+    <button class="ibtn outline" onclick="exportGradeBackup()">📤 匯出備份</button>
+    <button class="ibtn outline" onclick="document.getElementById('m6BackupFile').click()">📥 匯入備份</button>
+    <input type="file" id="m6BackupFile" accept=".json" style="display:none" onchange="importGradeBackup(this)">
+    <button class="danger-btn" onclick="clearGradeData()">🗑 清除全部資料</button>
   </div>
   <div style="margin-top:10px;font-size:12px;color:var(--ink-soft);line-height:2;">
     匯出欄位：
@@ -239,6 +251,7 @@ table.prev td.low{background:#FADDDD;color:#B00020;font-weight:700;}
 <div class="bottom-bar">
   <div class="inner">
     <span class="hint" id="countHint">共 0 位學生</span>
+    <button class="warn-btn" onclick="downloadWarningNotices()">⚠️ 下載預警通知單 (Word)</button>
     <button class="primary-btn" onclick="downloadExcel()">⬇ 下載 Excel</button>
   </div>
 </div>
@@ -386,6 +399,7 @@ function renderList(){
 const LOW_SCORE_FIELDS=['ch','en','math','soc','sci'];
 const LOW_SCORE_THRESHOLD=60;
 function renderPreview(){
+  saveGradeState(); // 所有資料異動最後都會經過這裡 → 自動儲存
   const el=document.getElementById('previewArea');
   const box=document.getElementById('lowScoreBox');
   if(!students.length){el.innerHTML='<p style="color:var(--ink-soft);font-size:13px;">尚無資料</p>';box.innerHTML='';return;}
@@ -672,6 +686,201 @@ function downloadExcel(){
   XLSX.utils.book_append_sheet(wb,ws,'成績列冊');
   XLSX.writeFile(wb,'學習輔導補助成績登錄_'+y+'學年度.xlsx');
 }
+
+/* ── 成績預警通知單（Word .doc）──
+   每位學生每次評量若有任一科 <60 即產生一份獨立通知單（不跨考次合併），
+   同頁含家長回執聯，比照「體育班成績預警通知單」範例格式 */
+function collectWarningNotices(){
+  const SUBJ=FIELDS.slice(0,5); // 國英數社自（排除名次欄）
+  const list=[];
+  students.forEach(s=>{
+    EVALS.forEach(e=>{
+      const fails=SUBJ.filter(({f})=>{
+        const v=s[e.key][f];
+        return v!==''&&v!==undefined&&!isNaN(+v)&&+v<60;
+      }).map(({f,label})=>({label,score:+s[e.key][f]}));
+      if(fails.length) list.push({s,e,fails});
+    });
+  });
+  return list;
+}
+function downloadWarningNotices(){
+  if(!students.length){alert('請先新增學生');return;}
+  const notices=collectWarningNotices();
+  if(!notices.length){alert('目前沒有任何科目低於 60 分，不需產生通知單');return;}
+  const y=getYear();
+  const CN={'1':'一','2':'二','3':'三','4':'四','5':'五','6':'六'};
+  const uline=n=>'＿'.repeat(n);
+  // 通知單考次名稱比照校方範例：上學期→「第一學期」、下學期沿用「下學期」
+  const EXAM_LABEL={s1m:'第一學期期中評量',s1f:'第一學期期末評量',s2m:'下學期期中評量',s2f:'下學期期末評量'};
+
+  const pages=notices.map((n,i)=>{
+    const exam=y+'學年度'+(EXAM_LABEL[n.e.key]||n.e.label);
+    const gradeCn=(CN[String(n.s.grade)]||n.s.grade)+'年級體育班';
+    const failRows=n.fails.map(f=>
+      `<tr><td class="fs">${f.label}</td><td class="fv">${f.score} 分</td></tr>`).join('');
+    return `
+<div class="notice"${i<notices.length-1?' style="page-break-after:always"':''}>
+  <p class="t1">高雄市立右昌國民小學體育班</p>
+  <p class="t2">學力支持與輔導專案預警通知單</p>
+  <table class="info"><tr>
+    <td>【通知考次】${exam}</td>
+  </tr><tr>
+    <td>【學生姓名】${n.s.name}　　【班級年級】${gradeCn}</td>
+  </tr></table>
+  <p class="sec">【說明】</p>
+  <p class="body">依據《高雄市右昌國小體育班學生參賽基準》規定，體育班學生對外代表學校參賽之學業標準為「各領域／核心科目單科成績需達 60 分（含）以上」。若於定期評量中任一學科未達標者，學校將啟動課業輔導與警示機制，以利親師教練協作支持學業。</p>
+  <p class="sec">【⚠️ 該次評量未達基準（低於60分）學科明細】</p>
+  <table class="fail">${failRows}</table>
+  <p class="sec">【💡 學校同步啟動之學力輔導與支持機制】</p>
+  <p class="body">1. 學業課後支持：由教務處安排課業輔導班，針對落後學科進行觀念與運算／閱讀強化。<br>
+  2. 賽後實補節數：落實公假參賽缺課學科「應補與實補」機制，補足國、數等關鍵節數。<br>
+  3. 學力診斷追蹤：結合學習扶助評量，針對特定學習弱點實施精準補救教學。</p>
+  <p class="sec">【🤝 輔導團隊與指導教練聯合簽署】</p>
+  <p class="body">導師簽章：${uline(10)}　　專任教練簽章：${uline(10)}<br>
+  教務處／體育組：已登錄追蹤</p>
+  <p class="cut">－－－－－－－－－ ✂ 請　撕　下　回　執　聯　交　回 －－－－－－－－－</p>
+  <div class="receipt">
+    <p class="rt">右昌國小體育班學力支持專案　家長回執聯（${exam}）</p>
+    <p class="body">本人已詳閱 <b>${n.s.name}</b> 同學於本次評量之未達標警示。我願意與學校輔導團隊及指導教練密切配合，共同協助孩子提升學業表現。</p>
+    <p class="body">【家長勾選意願項目】<br>
+    □ 同意配合參與學校課後學業支持輔導。<br>
+    □ 配合減少非必要之賽外訓練時間，優先進行學科學力補強。</p>
+    <p class="body">家長意見回饋欄：${uline(24)}</p>
+    <p class="body">家長簽章：${uline(8)}　聯絡電話：${uline(8)}　日期：${uline(2)}年${uline(2)}月${uline(2)}日</p>
+  </div>
+</div>`;
+  }).join('\n');
+
+  const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
+<head><meta charset="utf-8"><title>體育班成績預警通知單</title>
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->
+<style>
+@page WarnSect{size:210mm 297mm;margin:16mm 18mm;}
+div.WarnSect{page:WarnSect;}
+body{font-family:"標楷體","DFKai-SB",serif;font-size:12pt;color:#000;}
+.notice{}
+.t1{text-align:center;font-size:15pt;font-weight:bold;margin:0;}
+.t2{text-align:center;font-size:16pt;font-weight:bold;margin:2pt 0 8pt;letter-spacing:2pt;}
+.info{width:100%;border-collapse:collapse;margin:0 0 4pt;}
+.info td{border-top:1.5pt solid #000;border-bottom:1.5pt solid #000;padding:4pt 2pt;font-size:12pt;}
+.info tr+tr td{border-top:none;}
+.sec{font-weight:bold;margin:8pt 0 2pt;font-size:12pt;}
+.body{margin:0 0 2pt;font-size:11.5pt;line-height:1.55;text-align:justify;}
+.fail{border-collapse:collapse;margin:2pt 0;}
+.fail td{border:1pt solid #000;padding:2pt 14pt;font-size:12pt;}
+.fail .fv{color:#C00000;font-weight:bold;}
+.cut{text-align:center;font-size:10.5pt;margin:10pt 0 6pt;color:#444;}
+.receipt{border:1.5pt solid #000;padding:6pt 10pt;}
+.rt{text-align:center;font-weight:bold;font-size:12.5pt;margin:0 0 4pt;}
+</style></head><body><div class="WarnSect">${pages}</div></body></html>`;
+
+  const blob=new Blob(['﻿'+html],{type:'application/msword'});
+  const stuCount=new Set(notices.map(n=>n.s.id)).size;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`體育班成績預警通知單_${y}學年度_${stuCount}生${notices.length}份.doc`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+}
+
+/* ── 自動儲存（localStorage）──
+   每次資料異動（renderPreview 為所有異動的匯流點）自動存進瀏覽器本機，
+   重新開頁自動還原；換電腦/瀏覽器用「匯出/匯入備份」JSON 搬移
+   （同 index.html 追蹤功能的模式；注意 localStorage 依網址+瀏覽器隔離） */
+const M6_STORE_KEY='peGradeRecordData';
+let _gradeLoaded=false, _gradeSaveTimer=null;
+
+function snapshotGradeState(){
+  return {
+    v:1,
+    year:document.getElementById('planYear').value,
+    customYear:document.getElementById('customYear').value,
+    students:students.map(s=>({name:s.name, grade:s.grade,
+      s1m:s.s1m, s1f:s.s1f, s2m:s.s2m, s2f:s.s2f})),
+    savedAt:Date.now()
+  };
+}
+function saveGradeState(){
+  if(!_gradeLoaded) return; // 還原完成前不寫入，避免載入時把舊資料蓋成空
+  clearTimeout(_gradeSaveTimer);
+  _gradeSaveTimer=setTimeout(()=>{
+    try{
+      if(!students.length){ localStorage.removeItem(M6_STORE_KEY); updateGradeSaveHint(null); return; }
+      localStorage.setItem(M6_STORE_KEY, JSON.stringify(snapshotGradeState()));
+      updateGradeSaveHint(Date.now());
+    }catch(e){/* 隱私模式等寫入失敗，不中斷操作 */}
+  },400);
+}
+function updateGradeSaveHint(ts){
+  const el=document.getElementById('m6SaveHint'); if(!el) return;
+  if(!ts){ el.textContent='💾 自動儲存：尚無資料'; el.classList.remove('on'); return; }
+  const d=new Date(ts);
+  const pad=n=>String(n).padStart(2,'0');
+  el.textContent=`💾 已自動儲存於此瀏覽器（${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}）`;
+  el.classList.add('on');
+}
+function applyGradeState(d){
+  const sel=document.getElementById('planYear');
+  if(d.year){
+    sel.value=d.year;
+    if(sel.value!==d.year){ sel.value='__other__'; d.customYear=d.year; }
+  }
+  document.getElementById('customYearWrap').style.display = sel.value==='__other__' ? '' : 'none';
+  document.getElementById('customYear').value = d.customYear||'';
+  students=(d.students||[]).map(s=>{
+    const st=newStudent(s.name, s.grade);
+    ['s1m','s1f','s2m','s2f'].forEach(k=>{ st[k]=Object.assign(emptyScores(), s[k]||{}); });
+    return st;
+  });
+  renderList(); renderPreview();
+}
+function loadGradeState(){
+  try{
+    const d=JSON.parse(localStorage.getItem(M6_STORE_KEY)||'null');
+    if(d&&d.students&&d.students.length){
+      applyGradeState(d);
+      updateGradeSaveHint(d.savedAt);
+    }
+  }catch(e){}
+  _gradeLoaded=true;
+}
+function exportGradeBackup(){
+  if(!students.length){alert('目前沒有資料可匯出');return;}
+  const y=getYear();
+  const d=new Date();
+  const blob=new Blob([JSON.stringify(snapshotGradeState(),null,1)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`成績登錄備份_${y}學年度_${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}.json`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),3000);
+}
+function importGradeBackup(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(!d||!Array.isArray(d.students)) throw 0;
+      if(students.length && !confirm(`匯入備份將覆蓋目前的 ${students.length} 位學生資料，確定繼續？`)){ input.value=''; return; }
+      applyGradeState(d); // renderPreview 內會觸發自動儲存
+      alert(`已匯入 ${students.length} 位學生的成績資料`);
+    }catch(err){ alert('備份檔格式不正確，請確認是本工具匯出的 JSON 檔'); }
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+function clearGradeData(){
+  if(!students.length && !localStorage.getItem(M6_STORE_KEY)){ return; }
+  if(!confirm('確定清除全部學生與成績資料？（本機儲存的紀錄也會一併刪除）')) return;
+  students=[]; nextId=1;
+  try{ localStorage.removeItem(M6_STORE_KEY); }catch(e){}
+  renderList(); renderPreview(); updateBulk();
+  updateGradeSaveHint(null);
+}
+
+loadGradeState(); // 頁面載入即還原上次資料
 </script>
 </body>
 </html>
