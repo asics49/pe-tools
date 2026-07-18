@@ -235,6 +235,11 @@ SHARED_CONSTS: DEFAULT_LOGO_DATAURL, DEFAULT_LOGO_WIDTH, DEFAULT_LOGO_HEIGHT
   期別（上/下 + 期中/期末，`detectEvalKey`）；兩種格式共用 `matchScoreHeaderRow()` 標題列比對邏輯——
   掃描前幾列找出含「姓名」的標題列，依標題文字（姓名/年級/國文/英文/數學/社會/自然）定位各欄，
   欄位順序不拘、欄名可帶「-1」等後綴（用 `.test()` 子字串比對）
+- **拖放區自動辨識全學年檔**（2026-07-18 新增）：拖放的 Excel 若檔名判斷不出期別
+  （`detectEvalKey` 回 null），`importScoreFiles` 自動改走 `parseFullYearExcel` 全學年格式解析
+  （合併邏輯抽成共用 `applyFullYearEntries`），成功即匯入、失敗才警告「無法判斷期別…也不符合
+  全學年成績檔格式」。緣起：使用者把本工具匯出的「114學年度6年級成績登錄.xlsx」拖進拖放區被拒收
+  （檔名無上/下+期中/期末），又誤按「Excel 匯入名單」（只讀姓名年級）以為成績匯入壞掉
 - **全學年成績檔匯入**（`importFullYearFile`／`parseFullYearExcel`，2026-07-12 新增）：可直接匯入已含
   四期成績的整年度 Excel（格式同本工具匯出檔：學生姓名/年級 + 四期×國文英文數學社會自然/班名次/年名次
   寬表格）。解析邏輯：先找出含「姓名」的標題列（該列同時含合併儲存格的期別名稱，如「上學期期中評量」），

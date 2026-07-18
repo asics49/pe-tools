@@ -1910,6 +1910,7 @@ h2{font-size:16px;font-weight:bold;margin-bottom:12px;color:#333;}
         <span class="tag e3">下+期中</span>→下學期期中
         <span class="tag e4">下+期末</span>→下學期期末
         <br>Excel 成績檔需含欄位：姓名、國文、英文、數學、社會、自然（座號/年級可有可無）
+        <br>檔名判斷不出期別的 Excel（如本工具匯出的整年度檔）會自動以「全學年成績檔」格式匯入
       </div>
     </div>
     <input type="file" id="m6_pdfFiles" accept=".pdf,.xlsx,.xls" multiple style="display:none" onchange="importScoreFiles(this.files);this.value=''">
@@ -6263,6 +6264,16 @@ async function parseFullYearExcel(file){
   }
   return result;
 }
+function applyFullYearEntries(entries){
+  let added=0,updated=0;
+  const touched=new Set();
+  entries.forEach(e=>{
+    let s=students_m6.find(x=>x.name===e.name);
+    if(!s){ s=newStudent(e.name, e.grade||'5'); students_m6.push(s); added++; } else updated++;
+    Object.keys(e.scores).forEach(evalKey=>{ Object.assign(s[evalKey], e.scores[evalKey]); touched.add(evalKey); });
+  });
+  return {added,updated,touched};
+}
 async function importFullYearFile(fileList){
   if(!fileList||!fileList.length) return;
   const file=fileList[0];
@@ -6275,13 +6286,7 @@ async function importFullYearFile(fileList){
     hint.textContent='⚠️ '+file.name+'：未能辨識全學年成績格式（需含「學生姓名」標題列，及各期別欄位「國文/英文/數學/社會/自然」）';
     return;
   }
-  let added=0,updated=0;
-  const touched=new Set();
-  entries.forEach(e=>{
-    let s=students_m6.find(x=>x.name===e.name);
-    if(!s){ s=newStudent(e.name, e.grade||'5'); students_m6.push(s); added++; } else updated++;
-    Object.keys(e.scores).forEach(evalKey=>{ Object.assign(s[evalKey], e.scores[evalKey]); touched.add(evalKey); });
-  });
+  const {added,updated,touched}=applyFullYearEntries(entries);
   touched.forEach(k=>computeRanks(k));
   hint.innerHTML='✅ 全學年成績匯入：新增 '+added+'、更新 '+updated+' 人（'+file.name+'）';
   renderList(); m6_renderPreview();
@@ -6301,6 +6306,12 @@ async function importScoreFiles(fileList){
     const isExcel=/\.xlsx?$/i.test(file.name);
     hint.textContent='解析中（'+(i+1)+'/'+files.length+'）：'+file.name;
     try{
+      if(isExcel && !evalKey){
+        // 檔名判斷不出期別的 Excel → 自動嘗試以「全學年成績檔」格式解析
+        const entries=await parseFullYearExcel(file);
+        results.push({file:file.name,evalKey:null,fullYear:(entries&&entries.length)?entries:null,parsed:[],ok:true,isExcel});
+        continue;
+      }
       const parsed = isExcel ? await parseExcelScoreFile(file) : await parsePdfFile(file);
       results.push({file:file.name,evalKey,parsed,ok:true,isExcel});
     }catch(e){
@@ -6309,9 +6320,17 @@ async function importScoreFiles(fileList){
   }
   let totalAdded=0,totalUpdated=0;
   const lines=[];
+  const fullYearTouched=new Set();
   results.forEach(r=>{
     if(!r.ok){lines.push('❌ '+r.file+'：'+r.err);return;}
-    if(!r.evalKey){lines.push('⚠️ '+r.file+'：無法判斷期別（檔名需含上/下+期中/期末）');return;}
+    if(!r.evalKey && r.fullYear){
+      const {added,updated,touched}=applyFullYearEntries(r.fullYear);
+      touched.forEach(k=>fullYearTouched.add(k));
+      lines.push('✅ 全學年成績匯入：新增 '+added+'、更新 '+updated+' 人（'+r.file+'）');
+      totalAdded+=added; totalUpdated+=updated;
+      return;
+    }
+    if(!r.evalKey){lines.push('⚠️ '+r.file+'：無法判斷期別（檔名需含上/下+期中/期末），也不符合全學年成績檔格式');return;}
     if(!r.parsed.length){lines.push('⚠️ '+r.file+'：未找到成績資料（請確認檔案內含「姓名」等欄位標題列）');return;}
     let added=0,updated=0;
     r.parsed.forEach(p=>{
@@ -6325,6 +6344,7 @@ async function importScoreFiles(fileList){
     totalAdded+=added; totalUpdated+=updated;
   });
   const touchedKeys=new Set(results.filter(r=>r.ok&&r.evalKey&&r.parsed.length).map(r=>r.evalKey));
+  fullYearTouched.forEach(k=>touchedKeys.add(k));
   touchedKeys.forEach(k=>computeRanks(k));
   hint.innerHTML=lines.join('<br>');
   renderList(); m6_renderPreview();
