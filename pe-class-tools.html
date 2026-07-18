@@ -929,14 +929,17 @@ div.WarnSect{page:WarnSect;}
 .info{width:100%;border-collapse:collapse;margin:0 0 5pt;}
 .info td{border-top:1.5pt solid #000;border-bottom:1.5pt solid #000;padding:5pt 2pt;font-size:12pt;}
 .info tr+tr td{border-top:none;}
-.sec{font-weight:bold;margin:10pt 0 3pt;font-size:12.5pt;}
-.body{margin:0 0 3pt;font-size:12pt;line-height:1.65;text-align:justify;}
+.sec{font-weight:bold;margin:8pt 0 3pt;font-size:12.5pt;}
+.body{margin:0 0 3pt;font-size:12pt;line-height:1.6;text-align:justify;}
 .fail{border-collapse:collapse;margin:3pt 0;}
-.fail td{border:1pt solid #000;padding:3pt 16pt;font-size:12pt;}
+.fail td{border:1pt solid #000;padding:2pt 16pt;font-size:12pt;}
 .fail .fv{color:#C00000;font-weight:bold;}
 .cut{text-align:center;font-size:11pt;margin:12pt 0 8pt;color:#444;}
 .receipt{border:1.5pt solid #000;padding:8pt 12pt;}
 .rt{text-align:center;font-weight:bold;font-size:13pt;margin:0 0 5pt;}
+.opt{margin:0 0 3pt;font-size:12pt;line-height:1.65;text-align:left;}
+.write{margin:4pt 0 0;font-size:12pt;line-height:2.4;text-align:left;}
+.sign{margin:8pt 0 0;font-size:12pt;line-height:1.65;text-align:left;}
 
 
 /* ══════════════════════════════════════════════════
@@ -6472,12 +6475,12 @@ function downloadWarningNotices(){
   <div class="receipt">
     <p class="rt">家長回執聯（${exam}）</p>
     <p class="body">本人已詳閱 <b>${n.s.name}</b> 同學於本次評量之未達標警示，願與學校輔導團隊及指導教練密切配合，共同協助孩子提升學業表現。</p>
-    <p class="body">【家長勾選意願項目】<br>
+    <p class="opt">【家長勾選意願項目】<br>
     □ 同意配合參與學校課後學業支持輔導。<br>
     □ 配合減少非必要之賽外訓練時間，優先進行學科學力補強。<br>
     □ 無法配合，擬自行補救加強。</p>
-    <p class="body">家長意見回饋欄：${uline(28)}<br>${uline(38)}</p>
-    <p class="body">家長簽章：${uline(8)}　聯絡電話：${uline(8)}　日期：${uline(2)}年${uline(2)}月${uline(2)}日</p>
+    <p class="write">家長意見回饋欄：${uline(28)}<br>${uline(38)}</p>
+    <p class="sign">家長簽章：${uline(8)}　聯絡電話：${uline(8)}　日期：${uline(2)}年${uline(2)}月${uline(2)}日</p>
   </div>
 </div>`;
   }).join(`\n<br clear=all style='mso-special-character:line-break;page-break-before:always'>\n`);
@@ -6495,14 +6498,17 @@ body{font-family:"標楷體","DFKai-SB",serif;font-size:12pt;color:#000;}
 .info{width:100%;border-collapse:collapse;margin:0 0 5pt;}
 .info td{border-top:1.5pt solid #000;border-bottom:1.5pt solid #000;padding:5pt 2pt;font-size:12pt;}
 .info tr+tr td{border-top:none;}
-.sec{font-weight:bold;margin:10pt 0 3pt;font-size:12.5pt;}
-.body{margin:0 0 3pt;font-size:12pt;line-height:1.65;text-align:justify;}
+.sec{font-weight:bold;margin:8pt 0 3pt;font-size:12.5pt;}
+.body{margin:0 0 3pt;font-size:12pt;line-height:1.6;text-align:justify;}
 .fail{border-collapse:collapse;margin:3pt 0;}
-.fail td{border:1pt solid #000;padding:3pt 16pt;font-size:12pt;}
+.fail td{border:1pt solid #000;padding:2pt 16pt;font-size:12pt;}
 .fail .fv{color:#C00000;font-weight:bold;}
 .cut{text-align:center;font-size:11pt;margin:12pt 0 8pt;color:#444;}
 .receipt{border:1.5pt solid #000;padding:8pt 12pt;}
 .rt{text-align:center;font-weight:bold;font-size:13pt;margin:0 0 5pt;}
+.opt{margin:0 0 3pt;font-size:12pt;line-height:1.65;text-align:left;}
+.write{margin:4pt 0 0;font-size:12pt;line-height:2.4;text-align:left;}
+.sign{margin:8pt 0 0;font-size:12pt;line-height:1.65;text-align:left;}
 </style></head><body><div class="WarnSect">${pages}</div></body></html>`;
 
   const blob=new Blob(['﻿'+html],{type:'application/msword'});
