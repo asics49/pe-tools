@@ -262,11 +262,17 @@ SHARED_CONSTS: DEFAULT_LOGO_DATAURL, DEFAULT_LOGO_WIDTH, DEFAULT_LOGO_HEIGHT
 - **成績預警通知單 Word 下載**（2026-07-17 新增，`downloadWarningNotices`／`collectWarningNotices`）：
   掃描全部學生×4期別，任一科（國英數社自）<60 即產生一份獨立通知單（**單次評量獨立發放、
   不跨考次合併**），文字比照「體育班成績預警通知單」範例（參賽基準說明／輔導機制3項／
-  導師+教練簽章欄），同頁下方含 ✂ 家長回執聯（勾選意願、意見欄、家長簽章）；考次名稱用 `EXAM_LABEL`
-  對照（上學期→「114學年度**第一學期**期中/期末評量」、下學期→「**第二學期**」，
-  與 m6 分頁上顯示的 EVALS 標籤「上學期／下學期」不同）；.doc（HTML 格式）
-  標楷體 A4，每份一頁 `page-break-after`，年級自動轉中文（六年級體育班），檔名含學年度與
-  「N生M份」；用原生 anchor 下載——**單機版 grade-record.html 沒載 FileSaver，不能用 saveAs**
+  導師+教練簽章欄），同頁下方含 ✂ 家長回執聯（勾選意願、意見欄、家長簽章）；標題「**成績未達預警通知單**」
+  （2026-07-18 從原「學力支持與輔導專案預警通知單」改；`<title>`/檔名仍用「體育班成績預警通知單」）；
+  考次名稱用 `EXAM_LABEL` 對照（上學期→「114學年度**第一學期**期中/期末評量」、下學期→「**第二學期**」，
+  與 m6 分頁上顯示的 EVALS 標籤「上學期／下學期」不同）；.doc（HTML 格式）標楷體 A4，年級自動轉中文
+  （六年級體育班），檔名含學年度與「N生M份」；用原生 anchor 下載——**單機版 grade-record.html 沒載
+  FileSaver，不能用 saveAs**
+- **一份一頁不跨頁**（2026-07-18 修）：原用 `page-break-after:always` 只分隔各份，但單份內容過高
+  （尤其五科全不及格明細表最長）會溢到第二頁才接分頁線 → 一份跨兩頁。修法：①改用 `page-break-before:always`
+  （第一份除外）②`.notice{page-break-inside:avoid}` ③版面壓緊（頁邊 16→12mm、字級/行距/段距/回執聯內容
+  收斂，簽章列與意願項改單行）。以離屏 iframe 依 A4 內容寬（178mm）量測，最壞情況（五科全不及格）
+  渲染高 215mm < 可用高 273mm，約 21% 餘裕吸收 Word/瀏覽器字型度量差異
 - **自動儲存**（2026-07-18 新增，key `peGradeRecordData`）：讓老師**每次段考匯入即累積、不必年底
   一次彙整**。`saveGradeState()` 掛在 `renderPreview()` 開頭（所有資料異動的匯流點，含 customYear
   oninput），debounce 400ms 寫 localStorage；重開頁面 `loadGradeState()`（script 尾端頂層呼叫）自動

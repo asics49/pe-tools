@@ -740,9 +740,9 @@ function downloadWarningNotices(){
     const failRows=n.fails.map(f=>
       `<tr><td class="fs">${f.label}</td><td class="fv">${f.score} 分</td></tr>`).join('');
     return `
-<div class="notice"${i<notices.length-1?' style="page-break-after:always"':''}>
+<div class="notice"${i>0?' style="page-break-before:always"':''}>
   <p class="t1">高雄市立右昌國民小學體育班</p>
-  <p class="t2">學力支持與輔導專案預警通知單</p>
+  <p class="t2">成績未達預警通知單</p>
   <table class="info"><tr>
     <td>【通知考次】${exam}</td>
   </tr><tr>
@@ -757,16 +757,13 @@ function downloadWarningNotices(){
   2. 賽後實補節數：落實公假參賽缺課學科「應補與實補」機制，補足國、數等關鍵節數。<br>
   3. 學力診斷追蹤：結合學習扶助評量，針對特定學習弱點實施精準補救教學。</p>
   <p class="sec">【🤝 輔導團隊與指導教練聯合簽署】</p>
-  <p class="body">導師簽章：${uline(10)}　　專任教練簽章：${uline(10)}<br>
-  教務處／體育組：已登錄追蹤</p>
-  <p class="cut">－－－－－－－－－ ✂ 請　撕　下　回　執　聯　交　回 －－－－－－－－－</p>
+  <p class="body">導師簽章：${uline(10)}　　專任教練簽章：${uline(10)}　　教務處／體育組：已登錄追蹤</p>
+  <p class="cut">－－－－－－－ ✂ 請　撕　下　回　執　聯　交　回 －－－－－－－</p>
   <div class="receipt">
-    <p class="rt">右昌國小體育班學力支持專案　家長回執聯（${exam}）</p>
-    <p class="body">本人已詳閱 <b>${n.s.name}</b> 同學於本次評量之未達標警示。我願意與學校輔導團隊及指導教練密切配合，共同協助孩子提升學業表現。</p>
-    <p class="body">【家長勾選意願項目】<br>
-    □ 同意配合參與學校課後學業支持輔導。<br>
-    □ 配合減少非必要之賽外訓練時間，優先進行學科學力補強。</p>
-    <p class="body">家長意見回饋欄：${uline(24)}</p>
+    <p class="rt">家長回執聯（${exam}）</p>
+    <p class="body">本人已詳閱 <b>${n.s.name}</b> 同學於本次評量之未達標警示，願與學校輔導團隊及指導教練密切配合，共同協助孩子提升學業表現。</p>
+    <p class="body">【家長勾選意願項目】　□ 同意配合參與學校課後學業支持輔導。　□ 配合減少非必要之賽外訓練時間，優先進行學科學力補強。</p>
+    <p class="body">家長意見回饋欄：${uline(30)}</p>
     <p class="body">家長簽章：${uline(8)}　聯絡電話：${uline(8)}　日期：${uline(2)}年${uline(2)}月${uline(2)}日</p>
   </div>
 </div>`;
@@ -776,23 +773,23 @@ function downloadWarningNotices(){
 <head><meta charset="utf-8"><title>體育班成績預警通知單</title>
 <!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]-->
 <style>
-@page WarnSect{size:210mm 297mm;margin:16mm 18mm;}
+@page WarnSect{size:210mm 297mm;margin:12mm 16mm;}
 div.WarnSect{page:WarnSect;}
-body{font-family:"標楷體","DFKai-SB",serif;font-size:12pt;color:#000;}
-.notice{}
-.t1{text-align:center;font-size:15pt;font-weight:bold;margin:0;}
-.t2{text-align:center;font-size:16pt;font-weight:bold;margin:2pt 0 8pt;letter-spacing:2pt;}
-.info{width:100%;border-collapse:collapse;margin:0 0 4pt;}
-.info td{border-top:1.5pt solid #000;border-bottom:1.5pt solid #000;padding:4pt 2pt;font-size:12pt;}
+body{font-family:"標楷體","DFKai-SB",serif;font-size:11pt;color:#000;}
+.notice{page-break-inside:avoid;}
+.t1{text-align:center;font-size:14pt;font-weight:bold;margin:0;}
+.t2{text-align:center;font-size:15pt;font-weight:bold;margin:1pt 0 6pt;letter-spacing:2pt;}
+.info{width:100%;border-collapse:collapse;margin:0 0 3pt;}
+.info td{border-top:1.2pt solid #000;border-bottom:1.2pt solid #000;padding:3pt 2pt;font-size:11pt;}
 .info tr+tr td{border-top:none;}
-.sec{font-weight:bold;margin:8pt 0 2pt;font-size:12pt;}
-.body{margin:0 0 2pt;font-size:11.5pt;line-height:1.55;text-align:justify;}
+.sec{font-weight:bold;margin:6pt 0 2pt;font-size:11pt;}
+.body{margin:0 0 2pt;font-size:11pt;line-height:1.4;text-align:justify;}
 .fail{border-collapse:collapse;margin:2pt 0;}
-.fail td{border:1pt solid #000;padding:2pt 14pt;font-size:12pt;}
+.fail td{border:1pt solid #000;padding:2pt 14pt;font-size:11pt;}
 .fail .fv{color:#C00000;font-weight:bold;}
-.cut{text-align:center;font-size:10.5pt;margin:10pt 0 6pt;color:#444;}
-.receipt{border:1.5pt solid #000;padding:6pt 10pt;}
-.rt{text-align:center;font-weight:bold;font-size:12.5pt;margin:0 0 4pt;}
+.cut{text-align:center;font-size:10pt;margin:7pt 0 4pt;color:#444;}
+.receipt{border:1.2pt solid #000;padding:5pt 9pt;}
+.rt{text-align:center;font-weight:bold;font-size:12pt;margin:0 0 3pt;}
 </style></head><body><div class="WarnSect">${pages}</div></body></html>`;
 
   const blob=new Blob(['﻿'+html],{type:'application/msword'});
