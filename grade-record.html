@@ -740,7 +740,7 @@ function downloadWarningNotices(){
     const failRows=n.fails.map(f=>
       `<tr><td class="fs">${f.label}</td><td class="fv">${f.score} 分</td></tr>`).join('');
     return `
-<div class="notice"${i>0?' style="page-break-before:always"':''}>
+<div class="notice">
   <p class="t1">高雄市立右昌國民小學體育班</p>
   <p class="t2">成績未達預警通知單</p>
   <table class="info"><tr>
@@ -767,7 +767,7 @@ function downloadWarningNotices(){
     <p class="body">家長簽章：${uline(8)}　聯絡電話：${uline(8)}　日期：${uline(2)}年${uline(2)}月${uline(2)}日</p>
   </div>
 </div>`;
-  }).join('\n');
+  }).join(`\n<br clear=all style='mso-special-character:line-break;page-break-before:always'>\n`);
 
   const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
 <head><meta charset="utf-8"><title>體育班成績預警通知單</title>
@@ -776,7 +776,7 @@ function downloadWarningNotices(){
 @page WarnSect{size:210mm 297mm;margin:12mm 16mm;}
 div.WarnSect{page:WarnSect;}
 body{font-family:"標楷體","DFKai-SB",serif;font-size:11pt;color:#000;}
-.notice{page-break-inside:avoid;}
+.notice{}
 .t1{text-align:center;font-size:14pt;font-weight:bold;margin:0;}
 .t2{text-align:center;font-size:15pt;font-weight:bold;margin:1pt 0 6pt;letter-spacing:2pt;}
 .info{width:100%;border-collapse:collapse;margin:0 0 3pt;}

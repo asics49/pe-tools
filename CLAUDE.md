@@ -268,11 +268,14 @@ SHARED_CONSTS: DEFAULT_LOGO_DATAURL, DEFAULT_LOGO_WIDTH, DEFAULT_LOGO_HEIGHT
   與 m6 分頁上顯示的 EVALS 標籤「上學期／下學期」不同）；.doc（HTML 格式）標楷體 A4，年級自動轉中文
   （六年級體育班），檔名含學年度與「N生M份」；用原生 anchor 下載——**單機版 grade-record.html 沒載
   FileSaver，不能用 saveAs**
-- **一份一頁不跨頁**（2026-07-18 修）：原用 `page-break-after:always` 只分隔各份，但單份內容過高
-  （尤其五科全不及格明細表最長）會溢到第二頁才接分頁線 → 一份跨兩頁。修法：①改用 `page-break-before:always`
-  （第一份除外）②`.notice{page-break-inside:avoid}` ③版面壓緊（頁邊 16→12mm、字級/行距/段距/回執聯內容
-  收斂，簽章列與意願項改單行）。以離屏 iframe 依 A4 內容寬（178mm）量測，最壞情況（五科全不及格）
-  渲染高 215mm < 可用高 273mm，約 21% 餘裕吸收 Word/瀏覽器字型度量差異
+- **一份一頁不跨頁**（2026-07-18 修，兩階段）：①單份內容過高溢頁 → 版面壓緊（頁邊 16→12mm、
+  字級/行距/段距/回執聯收斂、簽章列與意願項改單行），離屏 iframe 依 A4 內容寬（178mm）量測最壞情況
+  （五科全不及格）渲染高 215mm < 可用高 273mm；②**div 上的 page-break CSS 在 Word 會把整份拆散**
+  （`<div style="page-break-before:always">` + `page-break-inside:avoid` 實測：Word 把 break 錯套到
+  div 內多個段落，第二份起變成標題一頁、考次表一頁、說明又一頁）→ 改用 Word 標準換頁寫法：份與份
+  之間插 `<br clear=all style='mso-special-character:line-break;page-break-before:always'>`，
+  div 完全不掛 page-break。**教訓：.doc（HTML）要換頁只能用 mso br 或 `<p>` 層級的
+  page-break-before，千萬別放在 `<div>` 容器上**
 - **自動儲存**（2026-07-18 新增，key `peGradeRecordData`）：讓老師**每次段考匯入即累積、不必年底
   一次彙整**。`saveGradeState()` 掛在 `renderPreview()` 開頭（所有資料異動的匯流點，含 customYear
   oninput），debounce 400ms 寫 localStorage；重開頁面 `loadGradeState()`（script 尾端頂層呼叫）自動
