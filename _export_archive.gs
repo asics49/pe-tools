@@ -21,11 +21,16 @@
 const CONFIG = {
   SOURCE_FOLDER_NAME: '體育班評鑑模組平台',        // 要匯出的來源資料夾名稱
   DEST_PARENT_FOLDER_NAME: '',                     // 目的地父資料夾名稱，''=直接放我的雲端硬碟根目錄
-  DEST_FOLDER_NAME: '115學年度體育班評鑑歸檔',      // 歸檔後的資料夾名稱（建議含學年度，避免明年搞混）
+  ACADEMIC_YEAR: '115',                            // 學年度，換年度只要改這裡（例如明年改成 '116'）
+  DEST_FOLDER_NAME_PREFIX: '體育班評鑑歸檔',        // 固定字樣，會自動組成「115學年度體育班評鑑歸檔」
   TIME_BUDGET_MS: 4.5 * 60 * 1000,                 // 每輪執行的時間預算，留給 6 分鐘上限一些緩衝
   SKIP_FILENAMES: ['desktop.ini'],                 // 這些檔名不複製（Windows 同步產生的雜訊檔）
   PROP_KEY: 'EXPORT_STATE'
 };
+
+function getDestFolderName() {
+  return CONFIG.ACADEMIC_YEAR + '學年度' + CONFIG.DEST_FOLDER_NAME_PREFIX;
+}
 
 function startExport() {
   const props = PropertiesService.getScriptProperties();
@@ -48,7 +53,7 @@ function startExport() {
   } else {
     destParent = DriveApp.getRootFolder();
   }
-  const destFolder = destParent.createFolder(CONFIG.DEST_FOLDER_NAME);
+  const destFolder = destParent.createFolder(getDestFolderName());
 
   const state = {
     queue: [{ srcId: sourceFolder.getId(), destId: destFolder.getId(), fileIds: [], folderIndex: 0, filesDone: false, foldersDone: false }],
