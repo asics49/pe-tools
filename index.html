@@ -261,10 +261,17 @@ const DATA = [
     major: '壹、設班現況',
     subs: [
       {
-        id: '1-1', name: '體育班發展委員會設立與運作',
+        id: '1a-1', name: '體育班發展委員會設立',
+        docs: [
+          { name: '體發會委員組織辦法', person: '學務主任/體育組長', type: '既有公文', module: null, driveUrl: 'https://drive.google.com/drive/folders/1ivl6OTNuDMxlyWKy_-3TXDi6LpeCLgad', refUrl: 'https://drive.google.com/drive/folders/1XmFy7IWNUBdHExNu7V3vNoT7WVC69RH2', uploadSystemUrl: UPLOAD_URL + '#year=115%E5%AD%B8%E5%B9%B4%E5%BA%A6&type=%E6%96%87%E4%BB%B6&sport=%E8%A9%95%E9%91%91%E9%A0%85%E7%9B%AE&subCat=1-1%E9%AB%94%E8%82%B2%E7%8F%AD%E7%99%BC%E5%B1%95%E5%A7%94%E5%93%A1%E6%9C%83%E8%A8%AD%E7%AB%8B%E8%88%87%E9%81%8B%E4%BD%9C' },
+        ]
+      },
+      {
+        id: '1a-2', name: '體育班發展委員會運作',
         docs: [
           { name: '體育班發展委員會會議紀錄', person: '學務主任/體育組長', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1ivl6OTNuDMxlyWKy_-3TXDi6LpeCLgad', refUrl: 'https://drive.google.com/drive/folders/1XmFy7IWNUBdHExNu7V3vNoT7WVC69RH2', uploadSystemUrl: UPLOAD_URL + '#year=115%E5%AD%B8%E5%B9%B4%E5%BA%A6&type=%E6%96%87%E4%BB%B6&sport=%E8%A9%95%E9%91%91%E9%A0%85%E7%9B%AE&subCat=1-1%E9%AB%94%E8%82%B2%E7%8F%AD%E7%99%BC%E5%B1%95%E5%A7%94%E5%93%A1%E6%9C%83%E8%A8%AD%E7%AB%8B%E8%88%87%E9%81%8B%E4%BD%9C' },
-          { name: '體發會委員組織辦法', person: '學務主任/體育組長', type: '既有公文', module: null, driveUrl: 'https://drive.google.com/drive/folders/1ivl6OTNuDMxlyWKy_-3TXDi6LpeCLgad', refUrl: 'https://drive.google.com/drive/folders/1XmFy7IWNUBdHExNu7V3vNoT7WVC69RH2', uploadSystemUrl: UPLOAD_URL + '#year=115%E5%AD%B8%E5%B9%B4%E5%BA%A6&type=%E6%96%87%E4%BB%B6&sport=%E8%A9%95%E9%91%91%E9%A0%85%E7%9B%AE&subCat=1-1%E9%AB%94%E8%82%B2%E7%8F%AD%E7%99%BC%E5%B1%95%E5%A7%94%E5%93%A1%E6%9C%83%E8%A8%AD%E7%AB%8B%E8%88%87%E9%81%8B%E4%BD%9C' },
+          { name: '體育班參賽基準', person: '學務主任/體育組長', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1R64hkSB1zp3F6sXugg2V4v7kw1-RDAYF', refUrl: 'https://drive.google.com/drive/folders/1E4gJ0SmBC0GEch8bwrHIdaROtVpijhZn' },
+          { name: '第一次體發會通過紀錄', person: '學務主任/體育組長', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1R64hkSB1zp3F6sXugg2V4v7kw1-RDAYF', refUrl: 'https://drive.google.com/drive/folders/1E4gJ0SmBC0GEch8bwrHIdaROtVpijhZn' },
         ]
       },
       {
@@ -278,13 +285,6 @@ const DATA = [
         ]
       },
       {
-        id: '1-1-3', name: '課業成績出賽基準之訂定情形',
-        docs: [
-          { name: '體育班參賽基準', person: '學務主任/體育組長', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1R64hkSB1zp3F6sXugg2V4v7kw1-RDAYF', refUrl: 'https://drive.google.com/drive/folders/1E4gJ0SmBC0GEch8bwrHIdaROtVpijhZn' },
-          { name: '第一次體發會通過紀錄', person: '學務主任/體育組長', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1R64hkSB1zp3F6sXugg2V4v7kw1-RDAYF', refUrl: 'https://drive.google.com/drive/folders/1E4gJ0SmBC0GEch8bwrHIdaROtVpijhZn' },
-        ]
-      },
-      {
         id: '1-1-4', name: '體育班設班運動種類、招生人數、方式',
         docs: [
           { name: '招生簡章', person: '學務主任/體育組長', type: '既有公文', module: null, driveUrl: 'https://drive.google.com/drive/folders/1U7OLUlZlo_Hv6VDg_fGOyJuooewJAey7', refUrl: 'https://drive.google.com/drive/folders/1gsF93O2q8XVpZWeDBS6yzZT8X7BPuH4X' },
@@ -292,32 +292,32 @@ const DATA = [
         ]
       },
       {
-        id: '2-1-1', name: '一般學科及體育專業學科課程師資聘任',
+        id: '1b-1', name: '一般學科課程師資聘任情形',
         docs: [
           { name: '體育班專科授課師資一覽表', person: '學務主任/體育組長/人事室', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1oXvo9Vu3yWkjOkDGBuCTh1sRTeP0QGSj', refUrl: 'https://drive.google.com/drive/folders/1WXVu4bPtYe9rs0M0TnCDCI4viW8Uml7b' },
           { name: '師資證明文件（掃描件）', person: '人事室', type: '既有公文', module: null, driveUrl: 'https://drive.google.com/drive/folders/1oXvo9Vu3yWkjOkDGBuCTh1sRTeP0QGSj', refUrl: 'https://drive.google.com/drive/folders/1WXVu4bPtYe9rs0M0TnCDCI4viW8Uml7b' },
+        ]
+      },
+      {
+        id: '1b-2', name: '體育專業學科課程師資聘任情形',
+        docs: [
           { name: '體育專項科目授課師資一覽表', person: '體育組長', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1oXvo9Vu3yWkjOkDGBuCTh1sRTeP0QGSj', refUrl: 'https://drive.google.com/drive/folders/1WXVu4bPtYe9rs0M0TnCDCI4viW8Uml7b' },
         ]
       },
       {
-        id: '2-1-2', name: '體育專項術科師資聘任情形',
-        docs: [
-          { name: '體育班課表與授課師資名單', person: '體育組長', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1YXqHTLrvvldqk7h1owgUcCB-ispxyW75', refUrl: 'https://drive.google.com/drive/folders/1faJAe_KGbbg5d52YwQN4eLJ3SpuFCxn7' },
-          { name: '專任運動教練聘書（掃描件）', person: '人事室', type: '既有公文', module: null, driveUrl: 'https://drive.google.com/drive/folders/1YXqHTLrvvldqk7h1owgUcCB-ispxyW75', refUrl: 'https://drive.google.com/drive/folders/1faJAe_KGbbg5d52YwQN4eLJ3SpuFCxn7' },
-        ]
-      },
-      {
-        id: '2-1-3', name: '體育教師與設班種類是否相符',
+        id: '1b-3', name: '體育教師及專任運動教練之種類與設班運動種類是否相符',
         docs: [
           { name: '體育專科授課師資一覽表', person: '體育組長', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1CMFFtc7o93iPSFmdFofW8WAyzG5CAsSp', refUrl: 'https://drive.google.com/drive/folders/1_lLP6V2MkOi-uJFWo0eNxAVNoj5EKvyt' },
+          { name: '體育班課表與授課師資名單', person: '體育組長', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1YXqHTLrvvldqk7h1owgUcCB-ispxyW75', refUrl: 'https://drive.google.com/drive/folders/1faJAe_KGbbg5d52YwQN4eLJ3SpuFCxn7' },
         ]
       },
       {
-        id: '2-1-4', name: '學校聘任專任運動教練情形',
+        id: '1b-4', name: '學校聘任專任運動教練情形',
         docs: [
           { name: '田徑/足球教練專長證照（掃描件）', person: '體育組長', type: '既有公文', module: null, driveUrl: 'https://drive.google.com/drive/folders/1jNhgHvRtm3rSzQGO8WncoDV30Q7wevas', refUrl: 'https://drive.google.com/drive/folders/154L74raJgiu_v3-UvtA9sA6NuJ_oZ-D7' },
           { name: '專任運動教練聘書', person: '人事室', type: '既有公文', module: null, driveUrl: 'https://drive.google.com/drive/folders/1jNhgHvRtm3rSzQGO8WncoDV30Q7wevas', refUrl: 'https://drive.google.com/drive/folders/154L74raJgiu_v3-UvtA9sA6NuJ_oZ-D7' },
           { name: '專任運動教練審議委員會會議紀錄', person: '學務主任', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1jNhgHvRtm3rSzQGO8WncoDV30Q7wevas', refUrl: 'https://drive.google.com/drive/folders/154L74raJgiu_v3-UvtA9sA6NuJ_oZ-D7' },
+          { name: '專任運動教練聘書（掃描件）', person: '人事室', type: '既有公文', module: null, driveUrl: 'https://drive.google.com/drive/folders/1YXqHTLrvvldqk7h1owgUcCB-ispxyW75', refUrl: 'https://drive.google.com/drive/folders/1faJAe_KGbbg5d52YwQN4eLJ3SpuFCxn7' },
         ]
       },
       {
