@@ -1,166 +1,4 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>115年度體育班評鑑文件總覽｜右昌國小</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;background:#F0EDE6;color:#2B2B28;font-size:14px;}
 
-/* ── Header ── */
-.header{background:#223A52;color:#fff;padding:14px 20px 12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3);}
-.header-title{font-size:16px;font-weight:700;letter-spacing:.04em;}
-.header-title span{color:#C9A24B;}
-.header-sub{font-size:11px;color:rgba(255,255,255,.6);margin-top:3px;}
-
-/* ── Filter Bar ── */
-.filter-bar{background:#fff;border-bottom:1px solid #E1DCCF;padding:10px 16px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
-.filter-label{font-size:12px;color:#6B675F;margin-right:4px;white-space:nowrap;}
-.filter-btn{border:1.5px solid #C8C2B2;background:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-family:inherit;cursor:pointer;color:#555;transition:all .15s;}
-.filter-btn:hover{border-color:#223A52;color:#223A52;}
-.filter-btn.active{background:#223A52;border-color:#223A52;color:#fff;font-weight:700;}
-.filter-btn.all-btn{background:#223A52;border-color:#223A52;color:#fff;}
-.filter-btn.all-btn.inactive{background:#fff;color:#555;}
-
-/* ── Main ── */
-.main{max-width:960px;margin:0 auto;padding:20px 16px 80px;}
-
-/* ── Major Section ── */
-.major-section{margin-bottom:28px;}
-.major-title{background:#223A52;color:#fff;padding:10px 16px;border-radius:8px 8px 0 0;font-size:15px;font-weight:700;letter-spacing:.03em;}
-
-/* ── Sub Section ── */
-.sub-section{border:1px solid #D8D3CB;border-top:none;border-radius:0 0 4px 4px;overflow:hidden;margin-bottom:1px;}
-.sub-section:last-child{border-radius:0 0 8px 8px;}
-.sub-header{background:#E8E4DC;padding:8px 16px;display:flex;align-items:flex-start;flex-wrap:wrap;gap:8px;border-bottom:1px solid #D8D3CB;}
-.sub-header.has-note{background:#FDF4E9;}
-.sub-id{background:#8B2E2E;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;margin-top:2px;}
-.sub-name{font-size:13px;font-weight:700;color:#223A52;margin-top:3px;}
-.sub-note{flex:1;min-width:200px;margin-left:auto;border:1px solid #D8D3CB;border-radius:4px;padding:4px 8px;font-size:11px;font-family:inherit;color:#555;background:#FCFBF8;resize:vertical;min-height:26px;line-height:1.5;}
-.sub-note:focus{outline:none;border-color:#C9A24B;background:#fff;}
-.sub-note::placeholder{color:#B8B2A4;}
-
-/* ── Doc Table ── */
-.doc-table{width:100%;border-collapse:collapse;}
-.doc-table th{background:#F5F2EC;font-size:11px;color:#6B675F;font-weight:700;padding:6px 12px;text-align:left;border-bottom:1px solid #E1DCCF;}
-.doc-table td{padding:8px 12px;border-bottom:1px solid #EDE9E1;vertical-align:middle;}
-.doc-table tr:last-child td{border-bottom:none;}
-.doc-table tr.hidden-row{display:none;}
-.doc-table tr:hover td{background:#FAF8F4;}
-
-.doc-name{font-size:13px;color:#2B2B28;}
-.person-tag{display:inline-block;background:#EBF0F5;color:#223A52;border-radius:4px;padding:2px 8px;font-size:11px;margin:1px;}
-
-/* ── Module Cards ── */
-.module-bar{background:#F7F5F0;border-bottom:2px solid #E1DCCF;padding:12px 16px;}
-.module-bar-label{font-size:11px;color:#6B675F;font-weight:700;margin-bottom:8px;letter-spacing:.05em;}
-.module-cards-wrap{position:relative;}
-.module-cards{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;
-  scrollbar-width:thin;scrollbar-color:#C9A24B #E7E2D7;}
-.module-cards::-webkit-scrollbar{height:9px;}
-.module-cards::-webkit-scrollbar-track{background:#E7E2D7;border-radius:6px;}
-.module-cards::-webkit-scrollbar-thumb{background:#C9A24B;border-radius:6px;}
-.module-cards::-webkit-scrollbar-thumb:hover{background:#B8913A;}
-.scroll-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:5;
-  width:34px;height:34px;border-radius:50%;border:1.5px solid #D8D3CB;background:rgba(255,255,255,.96);
-  color:#223A52;font-size:18px;font-weight:700;line-height:1;cursor:pointer;
-  display:none;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.14);padding:0;}
-.scroll-arrow:hover{border-color:#C9A24B;color:#8B2E2E;}
-.scroll-arrow.left{left:-4px;}
-.scroll-arrow.right{right:-4px;}
-.module-cards-wrap.overflowing .scroll-arrow{display:flex;}
-.module-card{flex-shrink:0;background:#fff;border:1.5px solid #D8D3CB;border-radius:10px;padding:10px 14px;text-decoration:none;display:flex;flex-direction:column;gap:3px;min-width:130px;transition:all .15s;cursor:pointer;}
-.module-card:hover{border-color:#C9A24B;box-shadow:0 2px 8px rgba(201,162,75,.2);transform:translateY(-1px);}
-.module-card-badge{font-size:10px;font-weight:700;color:#8B2E2E;}
-.module-card-name{font-size:12px;font-weight:700;color:#223A52;line-height:1.3;}
-.module-card-arrow{font-size:11px;color:#C9A24B;margin-top:2px;}
-
-/* ── Buttons ── */
-.btn-group{display:flex;flex-direction:column;gap:4px;}
-.btn-row{display:flex;gap:5px;flex-wrap:wrap;}
-.mod-btn{display:inline-flex;align-items:center;gap:5px;background:#C9A24B;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;text-decoration:none;white-space:nowrap;transition:background .15s;}
-.mod-btn:hover{background:#B8913A;}
-.mod-btn svg{width:12px;height:12px;flex-shrink:0;}
-.upload-btn{display:inline-flex;align-items:center;gap:5px;background:#2E7A2E;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;text-decoration:none;white-space:nowrap;transition:background .15s;}
-.upload-btn:hover{background:#236023;}
-.upload-btn.disabled{background:#C8C2B2;cursor:default;pointer-events:none;}
-.upload-btn svg{width:12px;height:12px;flex-shrink:0;}
-.ref-btn{display:inline-flex;align-items:center;gap:5px;background:#2E5EA0;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;text-decoration:none;white-space:nowrap;transition:background .15s;}
-.ref-btn:hover{background:#234880;}
-.ref-btn svg{width:12px;height:12px;flex-shrink:0;}
-
-/* ── Stats ── */
-.stats{display:flex;gap:16px;padding:10px 16px;background:#fff;border-bottom:2px solid #E1DCCF;font-size:12px;color:#6B675F;align-items:center;flex-wrap:wrap;}
-.stat-num{font-weight:700;color:#223A52;font-size:15px;}
-.stat-num.done{color:#2E7A2E;}
-.stat-num.missing{color:#B23A3A;}
-
-/* ── Track column ── */
-.track-cell{white-space:nowrap;}
-.track-check{display:flex;align-items:center;gap:5px;font-size:11px;color:#555;cursor:pointer;user-select:none;}
-.track-check input{width:15px;height:15px;cursor:pointer;accent-color:#2E7A2E;}
-tr.row-done{background:#F2F8F2;}
-tr.row-done:hover td{background:#EAF4EA !important;}
-
-/* ── Sub 已完成 ── */
-.sub-done-check{display:flex;align-items:center;gap:5px;font-size:11px;color:#555;cursor:pointer;user-select:none;white-space:nowrap;margin-top:3px;}
-.sub-done-check input{width:15px;height:15px;cursor:pointer;accent-color:#2E7A2E;}
-.sub-header.sub-done{background:#E3F0E3;}
-.only-missing-btn{border:1.5px solid #B23A3A;background:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-family:inherit;cursor:pointer;color:#B23A3A;transition:all .15s;margin-left:auto;}
-.only-missing-btn.active{background:#B23A3A;color:#fff;font-weight:700;}
-
-/* ── Backup buttons ── */
-.backup-group{display:inline-flex;align-items:center;gap:6px;padding:3px 8px 3px 10px;border:1.5px dashed #C9A24B;border-radius:22px;background:#FBF7EE;}
-.backup-hint{font-size:11px;color:#8A6D2F;font-weight:700;white-space:nowrap;}
-.backup-btn{border:1.5px solid #223A52;background:#fff;border-radius:20px;padding:4px 12px;font-size:12px;font-family:inherit;cursor:pointer;color:#223A52;transition:all .15s;white-space:nowrap;}
-.backup-btn:hover{background:#223A52;color:#fff;}
-.backup-btn.accent{background:#C9A24B;border-color:#C9A24B;color:#fff;font-weight:700;}
-.backup-btn.accent:hover{background:#B8913A;border-color:#B8913A;}
-.backup-import-label{position:relative;display:inline-flex;align-items:center;}
-.backup-import-label input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;}
-</style>
-</head>
-<body>
-
-<div class="header">
-  <div class="header-title">右昌國小 <span>115年度體育班評鑑文件總覽</span></div>
-  <div class="header-sub">點選負責人員可篩選項目；綠色「上傳文件」可直接開啟對應雲端資料夾</div>
-</div>
-
-<div class="module-bar">
-  <div class="module-bar-label">快速開啟工具</div>
-  <div class="module-cards-wrap" id="moduleCardsWrap">
-    <button class="scroll-arrow left" id="scrollLeft" onclick="scrollModules(-1)" title="往左" aria-label="往左捲動">‹</button>
-    <div class="module-cards" id="moduleCards"></div>
-    <button class="scroll-arrow right" id="scrollRight" onclick="scrollModules(1)" title="往右" aria-label="往右捲動">›</button>
-  </div>
-</div>
-
-<div class="filter-bar" id="filterBar">
-  <span class="filter-label">篩選負責人員：</span>
-  <button class="filter-btn all-btn" onclick="filterPerson('all')">全部顯示</button>
-</div>
-
-<div class="stats">
-  <div>文件總數：<span class="stat-num" id="statTotal">—</span></div>
-  <div>有對應工具：<span class="stat-num" id="statModule">—</span></div>
-  <div>已設定上傳資料夾：<span class="stat-num" id="statDrive">—</span></div>
-  <div>已完成：<span class="stat-num done" id="statDone">—</span></div>
-  <div>未完成：<span class="stat-num missing" id="statMissing">—</span></div>
-  <button class="only-missing-btn" id="onlyMissingBtn" onclick="toggleOnlyMissing()">只顯示未完成</button>
-  <span class="backup-group" title="追蹤勾選與備忘只存在這台電腦的瀏覽器，換電腦或換瀏覽器不會自動同步。換電腦前先按「匯出」存成檔案，到另一台按「匯入」還原。">
-    <span class="backup-hint">換電腦記得備份 →</span>
-    <button class="backup-btn accent" onclick="exportBackup()" title="把目前的已完成勾選與備忘打包成一個 JSON 檔下載，可搬到其他電腦">📤 匯出進度</button>
-    <label class="backup-btn backup-import-label" title="選擇之前匯出的 JSON 備份檔，還原已完成勾選與備忘（會覆蓋目前這台的內容）">📥 匯入進度
-      <input type="file" accept="application/json" id="backupFileInput" onchange="importBackup(this)">
-    </label>
-  </span>
-</div>
-
-<div class="main" id="mainContent"></div>
-
-<script>
 const TOOL_URL = 'pe-class-tools.html';
 
 const MODULES = [
@@ -169,14 +7,7 @@ const MODULES = [
   { id: 'm3a', badge: '模組三A',  name: '成果報告表頭' },
   { id: 'm3b', badge: '模組三B',  name: '開課課程一覽' },
   { id: 'm4',  badge: '模組四',   name: '職業試探活動' },
-  { id: 'm5',  badge: '模組五',   name: '公假統計表' },
-  { id: 'm6',  badge: '模組六',   name: '成績登錄' },
-  { id: 'm7',  badge: '模組七',   name: '年度訓練計畫' },
-  { id: 'm8',  badge: '模組八',   name: '器材檢核表' },
-  { id: 'm9',  badge: '模組九',   name: '雲端連結頁產生器' },
-  { id: 'm10', badge: '模組十',   name: 'PDF轉JPG／壓縮' },
 ];
-const UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbyjVAz-JmkUU78HcnSMFjdsVa7FUPlAatFUhB1Yfbp2FantL5xG0dQ9cZR7qoSymHxQBw/exec';
 
 // ── Render module cards ──
 var mc = document.getElementById('moduleCards');
@@ -191,71 +22,6 @@ MODULES.forEach(function(m){
   mc.appendChild(a);
 });
 
-// ── Upload system card ──
-(function(){
-  var a = document.createElement('a');
-  a.className = 'module-card';
-  a.href = UPLOAD_URL;
-  a.target = '_blank';
-  a.style.borderColor = '#2E7A2E';
-  a.innerHTML = '<span class="module-card-badge" style="background:#2E7A2E;">上傳系統</span>'
-    + '<span class="module-card-name">體育組資料上傳</span>'
-    + '<span class="module-card-arrow" style="color:#2E7A2E;">開啟上傳 →</span>';
-  mc.appendChild(a);
-})();
-(function(){
-  var a = document.createElement('a');
-  a.className = 'module-card';
-  a.href = 'https://drive.google.com/drive/folders/13Dl5759Bn3ygmzjItE4L7zj4LXQoK403';
-  a.target = '_blank';
-  a.style.borderColor = '#B8860B';
-  a.innerHTML = '<span class="module-card-badge" style="background:#B8860B;">資料夾</span>'
-    + '<span class="module-card-name">競賽獎狀資料</span>'
-    + '<span class="module-card-arrow" style="color:#B8860B;">開啟資料夾 →</span>';
-  mc.appendChild(a);
-})();
-(function(){
-  var a = document.createElement('a');
-  a.className = 'module-card';
-  a.href = 'file-size-check.html';
-  a.target = '_blank';
-  a.style.borderColor = '#B23A3A';
-  a.innerHTML = '<span class="module-card-badge" style="background:#B23A3A;">檢查</span>'
-    + '<span class="module-card-name">檔案大小檢查</span>'
-    + '<span class="module-card-arrow" style="color:#B23A3A;">開啟檢查 →</span>';
-  mc.appendChild(a);
-})();
-// ── 工具使用說明：一律放在最後一張卡片（新增模組時仍維持在最末） ──
-(function(){
-  var a = document.createElement('a');
-  a.className = 'module-card';
-  a.href = 'guide.html';
-  a.target = '_blank';
-  a.style.borderColor = '#5A3E8A';
-  a.innerHTML = '<span class="module-card-badge" style="background:#5A3E8A;">說明</span>'
-    + '<span class="module-card-name">工具使用說明</span>'
-    + '<span class="module-card-arrow" style="color:#5A3E8A;">開啟說明 →</span>';
-  mc.appendChild(a);
-})();
-
-// ── 模組卡片列橫向捲動（卡片超出畫面時顯示左右箭頭與捲軸） ──
-function scrollModules(dir){
-  mc.scrollBy({left: dir * Math.max(240, mc.clientWidth * 0.7), behavior:'smooth'});
-}
-function updateModuleArrows(){
-  var wrap = document.getElementById('moduleCardsWrap');
-  var overflowing = mc.scrollWidth > mc.clientWidth + 4;
-  wrap.classList.toggle('overflowing', overflowing);
-  if(overflowing){
-    document.getElementById('scrollLeft').style.visibility = mc.scrollLeft > 4 ? 'visible' : 'hidden';
-    document.getElementById('scrollRight').style.visibility =
-      (mc.scrollLeft + mc.clientWidth < mc.scrollWidth - 4) ? 'visible' : 'hidden';
-  }
-}
-mc.addEventListener('scroll', updateModuleArrows);
-window.addEventListener('resize', updateModuleArrows);
-updateModuleArrows();
-
 const DATA = [
   {
     major: '壹、設班現況',
@@ -263,8 +29,8 @@ const DATA = [
       {
         id: '1-1', name: '體育班發展委員會設立與運作',
         docs: [
-          { name: '體育班發展委員會會議紀錄', person: '學務主任/體育組長', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1ivl6OTNuDMxlyWKy_-3TXDi6LpeCLgad', refUrl: 'https://drive.google.com/drive/folders/1XmFy7IWNUBdHExNu7V3vNoT7WVC69RH2', uploadSystemUrl: UPLOAD_URL + '#year=115%E5%AD%B8%E5%B9%B4%E5%BA%A6&type=%E6%96%87%E4%BB%B6&sport=%E8%A9%95%E9%91%91%E9%A0%85%E7%9B%AE&subCat=1-1%E9%AB%94%E8%82%B2%E7%8F%AD%E7%99%BC%E5%B1%95%E5%A7%94%E5%93%A1%E6%9C%83%E8%A8%AD%E7%AB%8B%E8%88%87%E9%81%8B%E4%BD%9C' },
-          { name: '體發會委員組織辦法', person: '學務主任/體育組長', type: '既有公文', module: null, driveUrl: 'https://drive.google.com/drive/folders/1ivl6OTNuDMxlyWKy_-3TXDi6LpeCLgad', refUrl: 'https://drive.google.com/drive/folders/1XmFy7IWNUBdHExNu7V3vNoT7WVC69RH2', uploadSystemUrl: UPLOAD_URL + '#year=115%E5%AD%B8%E5%B9%B4%E5%BA%A6&type=%E6%96%87%E4%BB%B6&sport=%E8%A9%95%E9%91%91%E9%A0%85%E7%9B%AE&subCat=1-1%E9%AB%94%E8%82%B2%E7%8F%AD%E7%99%BC%E5%B1%95%E5%A7%94%E5%93%A1%E6%9C%83%E8%A8%AD%E7%AB%8B%E8%88%87%E9%81%8B%E4%BD%9C' },
+          { name: '體育班發展委員會會議紀錄', person: '學務主任/體育組長', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1ivl6OTNuDMxlyWKy_-3TXDi6LpeCLgad', refUrl: 'https://drive.google.com/drive/folders/1XmFy7IWNUBdHExNu7V3vNoT7WVC69RH2' },
+          { name: '體發會委員組織辦法', person: '學務主任/體育組長', type: '既有公文', module: null, driveUrl: 'https://drive.google.com/drive/folders/1ivl6OTNuDMxlyWKy_-3TXDi6LpeCLgad', refUrl: 'https://drive.google.com/drive/folders/1XmFy7IWNUBdHExNu7V3vNoT7WVC69RH2' },
         ]
       },
       {
@@ -403,7 +169,7 @@ const DATA = [
         id: '2-1-3', name: '體育專項術科訓練規劃執行情形',
         docs: [
           { name: '田徑/足球訓練計畫', person: '田徑/足球教練', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1M_-hM7ynz2gPrgFVWhOeasSdWjm5sLEG', refUrl: 'https://drive.google.com/drive/folders/1HtVPEp2OFtBshMyjHuJW2-XKW-rGkj7k' },
-          { name: '田徑/足球團隊公假統計表', person: '田徑/足球教練', type: '需制式範本', module: 'm5', driveUrl: 'https://drive.google.com/drive/folders/1M_-hM7ynz2gPrgFVWhOeasSdWjm5sLEG', refUrl: 'https://drive.google.com/drive/folders/1HtVPEp2OFtBshMyjHuJW2-XKW-rGkj7k' },
+          { name: '田徑/足球團隊公假統計表', person: '田徑/足球教練', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1M_-hM7ynz2gPrgFVWhOeasSdWjm5sLEG', refUrl: 'https://drive.google.com/drive/folders/1HtVPEp2OFtBshMyjHuJW2-XKW-rGkj7k' },
           { name: '體育班學生參賽日數統計表', person: '體育組', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1M_-hM7ynz2gPrgFVWhOeasSdWjm5sLEG', refUrl: 'https://drive.google.com/drive/folders/1HtVPEp2OFtBshMyjHuJW2-XKW-rGkj7k' },
           { name: '體育班競賽行事曆', person: '體育組', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1M_-hM7ynz2gPrgFVWhOeasSdWjm5sLEG', refUrl: 'https://drive.google.com/drive/folders/1HtVPEp2OFtBshMyjHuJW2-XKW-rGkj7k' },
         ]
@@ -413,8 +179,8 @@ const DATA = [
         docs: [
           { name: '體育班生活輔導及課業輔導管理辦法', person: '體育組', type: '既有公文', module: null, driveUrl: 'https://drive.google.com/drive/folders/1K6LYuoAgU0Hk8imz0Z6d6UXmn8CslzNm', refUrl: 'https://drive.google.com/drive/folders/1SEL73ltF2xoOkjMda6if9ebPJoOnYQQJ' },
           { name: '課業輔導實施計畫', person: '體育組', type: '既有公文', module: null, driveUrl: 'https://drive.google.com/drive/folders/1K6LYuoAgU0Hk8imz0Z6d6UXmn8CslzNm', refUrl: 'https://drive.google.com/drive/folders/1SEL73ltF2xoOkjMda6if9ebPJoOnYQQJ' },
-          { name: '5年級賽後補課紀錄表', person: '體育班導師', type: '需制式範本', module: 'm2', driveUrl: 'https://drive.google.com/drive/folders/1K6LYuoAgU0Hk8imz0Z6d6UXmn8CslzNm', refUrl: 'https://drive.google.com/drive/folders/1SEL73ltF2xoOkjMda6if9ebPJoOnYQQJ' },
-          { name: '6年級賽後補課紀錄表', person: '體育班導師', type: '需制式範本', module: 'm2', driveUrl: 'https://drive.google.com/drive/folders/1K6LYuoAgU0Hk8imz0Z6d6UXmn8CslzNm', refUrl: 'https://drive.google.com/drive/folders/1SEL73ltF2xoOkjMda6if9ebPJoOnYQQJ' },
+          { name: '5年級賽後補課紀錄表', person: '5年級體育班導師', type: '需制式範本', module: 'm2', driveUrl: 'https://drive.google.com/drive/folders/1K6LYuoAgU0Hk8imz0Z6d6UXmn8CslzNm', refUrl: 'https://drive.google.com/drive/folders/1SEL73ltF2xoOkjMda6if9ebPJoOnYQQJ' },
+          { name: '6年級賽後補課紀錄表', person: '6年級體育班導師', type: '需制式範本', module: 'm2', driveUrl: 'https://drive.google.com/drive/folders/1K6LYuoAgU0Hk8imz0Z6d6UXmn8CslzNm', refUrl: 'https://drive.google.com/drive/folders/1SEL73ltF2xoOkjMda6if9ebPJoOnYQQJ' },
           { name: '補救教學測驗歷程記錄', person: '輔導室', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1K6LYuoAgU0Hk8imz0Z6d6UXmn8CslzNm', refUrl: 'https://drive.google.com/drive/folders/1SEL73ltF2xoOkjMda6if9ebPJoOnYQQJ' },
           { name: '課業輔導照片', person: '課輔教師', type: '照片佐證', module: 'm1', driveUrl: 'https://drive.google.com/drive/folders/1K6LYuoAgU0Hk8imz0Z6d6UXmn8CslzNm', refUrl: 'https://drive.google.com/drive/folders/1SEL73ltF2xoOkjMda6if9ebPJoOnYQQJ' },
           { name: '體育班課業輔導日誌', person: '課輔教師', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1K6LYuoAgU0Hk8imz0Z6d6UXmn8CslzNm', refUrl: 'https://drive.google.com/drive/folders/1SEL73ltF2xoOkjMda6if9ebPJoOnYQQJ' },
@@ -424,7 +190,7 @@ const DATA = [
       {
         id: '3-1-2', name: '學業成績未達參賽基準執行情形',
         docs: [
-          { name: '體育班學習輔助學生定期評量成績', person: '體育班導師', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1afEGk3w4lu2z7DdKTI0EA8eInCmABl1k', refUrl: 'https://drive.google.com/drive/folders/10u-Bn6KpRd_S8ipkVIGVeoxztC81klQj' },
+          { name: '體育班學習輔助學生定期評量成績', person: '5/6年級導師', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1afEGk3w4lu2z7DdKTI0EA8eInCmABl1k', refUrl: 'https://drive.google.com/drive/folders/10u-Bn6KpRd_S8ipkVIGVeoxztC81klQj' },
           { name: '課業輔導照片', person: '課輔教師', type: '照片佐證', module: 'm1', driveUrl: 'https://drive.google.com/drive/folders/1afEGk3w4lu2z7DdKTI0EA8eInCmABl1k', refUrl: 'https://drive.google.com/drive/folders/10u-Bn6KpRd_S8ipkVIGVeoxztC81klQj' },
         ]
       },
@@ -506,7 +272,7 @@ const DATA = [
       {
         id: '4-4', name: '其他',
         docs: [
-          { name: '競賽成績檔案（114學年度獎狀掃描）', person: '體育組', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1ViLReEtuPxSmsNZXMJj0LMaiOUawdrbm', refUrl: 'https://drive.google.com/drive/folders/13Dl5759Bn3ygmzjItE4L7zj4LXQoK403' },
+          { name: '競賽成績檔案', person: '體育組', type: '需制式範本', module: null, driveUrl: 'https://drive.google.com/drive/folders/1ViLReEtuPxSmsNZXMJj0LMaiOUawdrbm', refUrl: 'https://drive.google.com/drive/folders/1FW6TDbS3mfSbntqicOU4obUNkOkTLpMY' },
         ]
       },
     ]
@@ -574,147 +340,6 @@ function personTags(p){
   }).join('');
 }
 
-// ── 完成追蹤（存在瀏覽器 localStorage，僅本機保存）──
-var TRACK_KEY = 'peEvalTracking115';
-var TRACKING = {};
-try{
-  TRACKING = JSON.parse(localStorage.getItem(TRACK_KEY) || '{}');
-}catch(e){ TRACKING = {}; }
-
-function saveTracking(){
-  try{ localStorage.setItem(TRACK_KEY, JSON.stringify(TRACKING)); }catch(e){}
-}
-
-// 子標備忘（每個子標一則，而非每筆文件一則）
-var SUB_NOTE_KEY = 'peEvalSubNotes115';
-var SUB_NOTES = {};
-try{
-  SUB_NOTES = JSON.parse(localStorage.getItem(SUB_NOTE_KEY) || '{}');
-}catch(e){ SUB_NOTES = {}; }
-
-function saveSubNotes(){
-  try{ localStorage.setItem(SUB_NOTE_KEY, JSON.stringify(SUB_NOTES)); }catch(e){}
-}
-
-// 子標已完成（勾選後會清空該子標的備忘）
-var SUB_DONE_KEY = 'peEvalSubDone115';
-var SUB_DONE = {};
-try{
-  SUB_DONE = JSON.parse(localStorage.getItem(SUB_DONE_KEY) || '{}');
-}catch(e){ SUB_DONE = {}; }
-
-function saveSubDone(){
-  try{ localStorage.setItem(SUB_DONE_KEY, JSON.stringify(SUB_DONE)); }catch(e){}
-}
-
-function escAttr(s){
-  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-}
-
-function trackCellHtml(key){
-  var t = TRACKING[key] || {done:false};
-  var checked = t.done ? ' checked' : '';
-  return '<label class="track-check"><input type="checkbox" class="track-check-input"'+checked+'> 已完成</label>';
-}
-
-function setDone(key, val){
-  var t = TRACKING[key] || {done:false};
-  t.done = val;
-  TRACKING[key] = t;
-  saveTracking();
-}
-
-function applyRowTrackStyle(tr){
-  var key = tr.getAttribute('data-dockey');
-  var t = TRACKING[key] || {done:false};
-  tr.classList.toggle('row-done', !!t.done);
-}
-
-function setSubNote(key, val){
-  SUB_NOTES[key] = val;
-  saveSubNotes();
-}
-
-function setSubDone(key, val){
-  SUB_DONE[key] = val;
-  saveSubDone();
-  if(val){
-    SUB_NOTES[key] = '';
-    saveSubNotes();
-  }
-}
-
-function applySubHeaderStyle(header){
-  var key = header.getAttribute('data-subkey');
-  header.classList.toggle('has-note', !!(SUB_NOTES[key] && SUB_NOTES[key].trim()));
-  header.classList.toggle('sub-done', !!SUB_DONE[key]);
-}
-
-function autoGrow(el){
-  el.style.height = 'auto';
-  el.style.height = el.scrollHeight + 'px';
-}
-
-// ── 進度備份匯出／匯入（跨電腦搬移用）──
-function exportBackup(){
-  var backup = {
-    version: 1,
-    exportedAt: new Date().toISOString(),
-    tracking: TRACKING,
-    subNotes: SUB_NOTES,
-    subDone: SUB_DONE
-  };
-  var blob = new Blob([JSON.stringify(backup, null, 2)], {type:'application/json'});
-  var a = document.createElement('a');
-  var ymd = new Date().toISOString().slice(0,10).replace(/-/g,'');
-  a.href = URL.createObjectURL(blob);
-  a.download = '評鑑進度備份_'+ymd+'.json';
-  a.click();
-}
-
-function importBackup(input){
-  var file = input.files[0];
-  if(!file) return;
-  var reader = new FileReader();
-  reader.onload = function(ev){
-    try{
-      var backup = JSON.parse(ev.target.result);
-      if(!confirm('確定要匯入這份備份嗎？會覆蓋目前瀏覽器上的已完成勾選與備忘內容。')){
-        input.value = '';
-        return;
-      }
-      TRACKING = backup.tracking || {};
-      SUB_NOTES = backup.subNotes || {};
-      SUB_DONE = backup.subDone || {};
-      saveTracking();
-      saveSubNotes();
-      saveSubDone();
-      location.reload();
-    }catch(e){
-      alert('備份檔案格式錯誤，無法匯入：'+e.message);
-    }
-    input.value = '';
-  };
-  reader.readAsText(file);
-}
-
-function updateTrackStats(){
-  var doneCount = 0;
-  document.querySelectorAll('.doc-table tbody tr[data-dockey]').forEach(function(tr){
-    var key = tr.getAttribute('data-dockey');
-    if(TRACKING[key] && TRACKING[key].done) doneCount++;
-  });
-  document.getElementById('statDone').textContent = doneCount;
-  document.getElementById('statMissing').textContent = totalDocs - doneCount;
-}
-
-var onlyMissingActive = false;
-function toggleOnlyMissing(){
-  onlyMissingActive = !onlyMissingActive;
-  document.getElementById('onlyMissingBtn').classList.toggle('active', onlyMissingActive);
-  applyFilters();
-}
-
 // ── Render ──
 var main = document.getElementById('mainContent');
 var totalDocs=0, totalModule=0, totalDrive=0;
@@ -725,23 +350,15 @@ DATA.forEach(function(sec){
   var html = '<div class="major-title">'+sec.major+'</div>';
 
   sec.subs.forEach(function(sub){
-    var subKey = sec.major+'::'+sub.id;
-    var subNoteVal = SUB_NOTES[subKey] || '';
-    var subDoneChecked = SUB_DONE[subKey] ? ' checked' : '';
     html += '<div class="sub-section">';
-    html += '<div class="sub-header" data-subkey="'+escAttr(subKey)+'">'
-          + '<span class="sub-id">'+sub.id+'</span><span class="sub-name">'+sub.name+'</span>'
-          + '<textarea class="sub-note" rows="1" placeholder="子標備忘（可換行）…">'+escAttr(subNoteVal)+'</textarea>'
-          + '<label class="sub-done-check"><input type="checkbox" class="sub-done-input"'+subDoneChecked+'> 已完成</label>'
-          + '</div>';
+    html += '<div class="sub-header"><span class="sub-id">'+sub.id+'</span><span class="sub-name">'+sub.name+'</span></div>';
     html += '<table class="doc-table"><thead><tr>'
-          + '<th style="width:32%">文件名稱</th>'
-          + '<th style="width:22%">負責人員</th>'
+          + '<th style="width:38%">文件名稱</th>'
+          + '<th style="width:30%">負責人員</th>'
           + '<th>工具 / 上傳</th>'
-          + '<th style="width:90px;">追蹤</th>'
           + '</tr></thead><tbody>';
 
-    sub.docs.forEach(function(doc, docIdx){
+    sub.docs.forEach(function(doc){
       var persons = doc.person && doc.person!=='—'
         ? doc.person.split('/').map(function(x){return x.trim();})
         : [];
@@ -751,14 +368,12 @@ DATA.forEach(function(sec){
       if(doc.module) totalModule++;
       if(doc.driveUrl) totalDrive++;
 
-      var docKey = sub.id+'::'+docIdx+'::'+doc.name;
       var toolRow = doc.module ? '<div class="btn-row">'+modBtn(doc.module)+'</div>' : '';
-      var upRow = '<div class="btn-row">'+uploadBtn(doc.uploadSystemUrl || doc.driveUrl)+refBtn(doc.refUrl)+'</div>';
-      html += '<tr'+dataAttr+' data-dockey="'+docKey+'">'
+      var upRow = '<div class="btn-row">'+uploadBtn(doc.driveUrl)+refBtn(doc.refUrl)+'</div>';
+      html += '<tr'+dataAttr+'>'
             + '<td class="doc-name">'+doc.name+'</td>'
             + '<td>'+personTags(doc.person)+'</td>'
             + '<td><div class="btn-group">'+toolRow+upRow+'</div></td>'
-            + '<td class="track-cell">'+trackCellHtml(docKey)+'</td>'
             + '</tr>';
     });
 
@@ -773,51 +388,7 @@ document.getElementById('statTotal').textContent = totalDocs;
 document.getElementById('statModule').textContent = totalModule;
 document.getElementById('statDrive').textContent = totalDrive;
 
-// 套用每列已完成/備忘的樣式，並統計完成數
-document.querySelectorAll('.doc-table tbody tr[data-dockey]').forEach(function(tr){
-  applyRowTrackStyle(tr);
-});
-updateTrackStats();
-
-// 勾選/備忘變更：事件代理到 main，不用逐列綁定
-main.addEventListener('change', function(e){
-  if(e.target.classList.contains('track-check-input')){
-    var tr = e.target.closest('tr');
-    var key = tr.getAttribute('data-dockey');
-    setDone(key, e.target.checked);
-    applyRowTrackStyle(tr);
-    updateTrackStats();
-    if(onlyMissingActive) applyFilters();
-  }
-  if(e.target.classList.contains('sub-done-input')){
-    var header = e.target.closest('.sub-header');
-    var key = header.getAttribute('data-subkey');
-    setSubDone(key, e.target.checked);
-    if(e.target.checked){
-      var note = header.querySelector('.sub-note');
-      note.value = '';
-      autoGrow(note);
-    }
-    applySubHeaderStyle(header);
-  }
-});
-main.addEventListener('input', function(e){
-  if(e.target.classList.contains('sub-note')){
-    var header = e.target.closest('.sub-header');
-    var key = header.getAttribute('data-subkey');
-    setSubNote(key, e.target.value);
-    applySubHeaderStyle(header);
-    autoGrow(e.target);
-  }
-});
-
-// 子標備忘：套用初始樣式並依內容自動調整高度
-document.querySelectorAll('.sub-header').forEach(function(header){
-  applySubHeaderStyle(header);
-  autoGrow(header.querySelector('.sub-note'));
-});
-
-// ── Filter（負責人員 + 只顯示未完成，兩者可同時套用）──
+// ── Filter ──
 var currentFilter = 'all';
 function filterPerson(p){
   currentFilter = p;
@@ -831,22 +402,15 @@ function filterPerson(p){
       else if(btn.textContent==='全部顯示') btn.classList.add('all-btn','inactive');
     }
   });
-  applyFilters();
-}
 
-function applyFilters(){
-  document.querySelectorAll('.doc-table tbody tr[data-dockey]').forEach(function(tr){
-    var personMatch = true;
-    if(currentFilter !== 'all'){
+  document.querySelectorAll('.doc-table tbody tr').forEach(function(tr){
+    if(p==='all'){
+      tr.classList.remove('hidden-row');
+    } else {
       var persons = (tr.getAttribute('data-persons')||'').split(',');
-      personMatch = persons.some(function(x){ return x===currentFilter.toLowerCase(); });
+      var match = persons.some(function(x){ return x===p.toLowerCase(); });
+      tr.classList.toggle('hidden-row', !match);
     }
-    var missingMatch = true;
-    if(onlyMissingActive){
-      var key = tr.getAttribute('data-dockey');
-      missingMatch = !(TRACKING[key] && TRACKING[key].done);
-    }
-    tr.classList.toggle('hidden-row', !(personMatch && missingMatch));
   });
 
   // hide sub-sections where all rows hidden
@@ -863,6 +427,3 @@ function applyFilters(){
     sec.style.display = allHidden ? 'none' : '';
   });
 }
-</script>
-</body>
-</html>
