@@ -38,7 +38,7 @@
 
   <p style="font-size:12px;color:#888;">
     來源資料夾：體育班評鑑模組平台<br>
-    按下開始後會複製整棵資料夾到新的歸檔資料夾，過程約需十幾分鐘，關掉此頁面不影響背景執行，
+    按下開始後會複製整棵資料夾到新的歸檔資料夾，過程約需 30~90 分鐘，關掉此頁面不影響背景執行，
     之後重新打開這個網址即可繼續看到進度。
   </p>
 
@@ -85,7 +85,7 @@ function renderStatus(s){
 }
 
 function onStart(){
-  if (!confirm('確定要開始匯出整個評鑑資料夾嗎？\n\n會複製「體育班評鑑模組平台」全部檔案到新的歸檔資料夾，過程需要十幾分鐘（背景自動進行，可關閉此頁面）。')) return;
+  if (!confirm('確定要開始匯出整個評鑑資料夾嗎？\n\n會複製「體育班評鑑模組平台」全部檔案到新的歸檔資料夾，過程約需 30~90 分鐘（背景自動進行，可關閉此頁面）。')) return;
   document.getElementById('startBtn').disabled = true;
   document.getElementById('statusArea').innerHTML = '正在建立歸檔資料夾…';
   google.script.run
