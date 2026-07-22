@@ -229,6 +229,17 @@ MODULES.forEach(function(m){
     + '<span class="module-card-arrow" style="color:#B23A3A;">開啟檢查 →</span>';
   mc.appendChild(a);
 })();
+(function(){
+  var a = document.createElement('a');
+  a.className = 'module-card';
+  a.href = 'https://script.google.com/home/projects/1yDHvB-bac9b9IpkA8xArDHaAIUfo6hYkrUmHeoHG83aXWHGecq2lhqvr/edit';
+  a.target = '_blank';
+  a.style.borderColor = '#3A6B5A';
+  a.innerHTML = '<span class="module-card-badge" style="background:#3A6B5A;">歸檔</span>'
+    + '<span class="module-card-name">評鑑資料匯出歸檔</span>'
+    + '<span class="module-card-arrow" style="color:#3A6B5A;">開啟腳本 →</span>';
+  mc.appendChild(a);
+})();
 // ── 工具使用說明：一律放在最後一張卡片（新增模組時仍維持在最末） ──
 (function(){
   var a = document.createElement('a');
