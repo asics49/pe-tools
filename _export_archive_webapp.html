@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <style>
+    body { font-family: "Microsoft JhengHei", Arial, sans-serif; max-width: 520px; margin: 40px auto; padding: 0 16px; color:#222; background:#F6F4EE; }
+    h1 { font-size: 19px; color:#223A52; margin-bottom:4px; }
+    .sub { font-size:12px; color:#888; margin-bottom:20px; }
+    .card { background:#fff; border:1px solid #ddd; border-radius:8px; padding:18px; margin-bottom:16px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+    #statusArea { font-size:14px; line-height:1.7; min-height:24px; }
+    .btn { padding:11px 22px; border:none; border-radius:6px; font-size:15px; cursor:pointer; font-weight:700; font-family:inherit; }
+    .btn-start { background:#3A6B5A; color:#fff; }
+    .btn-start:hover { background:#2E5648; }
+    .btn-cancel { background:#B23A3A; color:#fff; margin-left:8px; }
+    .btn-cancel:hover { background:#8E2E2E; }
+    .btn:disabled { opacity:.5; cursor:not-allowed; }
+    .progress-bar { height:8px; background:#e5e2da; border-radius:4px; overflow:hidden; margin-top:10px; }
+    .progress-fill { height:100%; background:#3A6B5A; width:30%; animation:pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+    .ok { color:#2E7A2E; font-weight:700; }
+    .err { color:#B23A3A; }
+    a { color:#2E5A9E; }
+    .btn-row { margin-top:14px; }
+  </style>
+</head>
+<body>
+  <h1>📦 體育班評鑑資料夾匯出歸檔</h1>
+  <div class="sub">執行帳號：<?= userEmail ?></div>
+
+  <div class="card">
+    <div id="statusArea">載入中…</div>
+    <div class="btn-row">
+      <button class="btn btn-start" id="startBtn" onclick="onStart()">開始匯出歸檔</button>
+      <button class="btn btn-cancel" id="cancelBtn" onclick="onCancel()" style="display:none;">取消匯出</button>
+    </div>
+  </div>
+
+  <p style="font-size:12px;color:#888;">
+    來源資料夾：體育班評鑑模組平台<br>
+    按下開始後會複製整棵資料夾到新的歸檔資料夾，過程約需十幾分鐘，關掉此頁面不影響背景執行，
+    之後重新打開這個網址即可繼續看到進度。
+  </p>
+
+<script>
+var polling = null;
+
+function refreshStatus(){
+  google.script.run.withSuccessHandler(renderStatus).withFailureHandler(renderError).getStatusJson();
+}
+
+function renderError(err){
+  document.getElementById('statusArea').innerHTML = '<span class="err">讀取狀態失敗：' + err.message + '</span>';
+}
+
+function renderStatus(s){
+  var el = document.getElementById('statusArea');
+  var startBtn = document.getElementById('startBtn');
+  var cancelBtn = document.getElementById('cancelBtn');
+
+  if (s.running) {
+    el.innerHTML = '⏳ 匯出進行中…<br>已複製 <b>' + s.filesCopied + '</b> 個檔案、建立 ' + s.foldersCreated + ' 個資料夾，佇列剩餘 ' + s.queueLeft + ' 項'
+      + (s.errorCount > 0 ? '<br><span class="err">目前累積 ' + s.errorCount + ' 個錯誤</span>' : '')
+      + '<div class="progress-bar"><div class="progress-fill"></div></div>'
+      + (s.destFolderUrl ? '<br><a href="' + s.destFolderUrl + '" target="_blank">開啟目的地資料夾 →</a>' : '');
+    startBtn.style.display = 'none';
+    cancelBtn.style.display = '';
+    if (!polling) polling = setInterval(refreshStatus, 5000);
+  } else if (s.completed) {
+    el.innerHTML = '<span class="ok">✅ 上次匯出已完成</span>（' + s.completedAt.replace('T',' ').slice(0,16) + '）<br>'
+      + '共複製 ' + s.filesCopied + ' 個檔案、建立 ' + s.foldersCreated + ' 個資料夾'
+      + (s.errorCount > 0 ? '<br><span class="err">有 ' + s.errorCount + ' 個錯誤，請至「執行項目」查看詳情</span>' : '')
+      + (s.destFolderUrl ? '<br><a href="' + s.destFolderUrl + '" target="_blank">開啟歸檔資料夾 →</a>' : '');
+    startBtn.style.display = '';
+    startBtn.disabled = false;
+    cancelBtn.style.display = 'none';
+    if (polling) { clearInterval(polling); polling = null; }
+  } else {
+    el.innerHTML = '目前沒有進行中的匯出工作，尚未執行過。';
+    startBtn.style.display = '';
+    startBtn.disabled = false;
+    cancelBtn.style.display = 'none';
+    if (polling) { clearInterval(polling); polling = null; }
+  }
+}
+
+function onStart(){
+  if (!confirm('確定要開始匯出整個評鑑資料夾嗎？\n\n會複製「體育班評鑑模組平台」全部檔案到新的歸檔資料夾，過程需要十幾分鐘（背景自動進行，可關閉此頁面）。')) return;
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('statusArea').innerHTML = '正在建立歸檔資料夾…';
+  google.script.run
+    .withSuccessHandler(function(){ refreshStatus(); })
+    .withFailureHandler(function(err){
+      alert('無法開始匯出：' + err.message);
+      document.getElementById('startBtn').disabled = false;
+      refreshStatus();
+    })
+    .startExport();
+}
+
+function onCancel(){
+  if (!confirm('確定要取消目前的匯出工作嗎？\n\n已複製的檔案不會被自動刪除，需自行到目的地資料夾清理。')) return;
+  google.script.run.withSuccessHandler(function(){ refreshStatus(); }).cancelExport();
+}
+
+refreshStatus();
+</script>
+</body>
+</html>

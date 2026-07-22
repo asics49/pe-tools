@@ -1,6 +1,6 @@
 # 體育班評鑑模組開發 — 專案脈絡總覽
 
-> 最後更新：2026-07-20（深夜）
+> 最後更新：2026-07-20（深夜，二次更新）
 
 ---
 
@@ -84,19 +84,34 @@ Google Sheets（上傳記錄）
 | `_gen_guide.js` | 產生 Word 版使用說明 |
 | `_set_drive_permissions.gs` | 批次設定「文件上傳」資料夾權限（貼到 script.google.com 手動執行） |
 | `_set_ref_permissions.gs` | 批次設定「參考資料」資料夾權限（貼到 script.google.com 手動執行） |
-| `_export_archive.gs`（2026-07-20 新增）| 評鑑資料夾匯出歸檔工具，詳見下方說明 |
+| `_export_archive.gs`（2026-07-20 新增）| 評鑑資料夾匯出歸檔工具（伺服器端），詳見下方說明 |
+| `_export_archive_webapp.html`（2026-07-20 新增）| 上面那支工具的網頁按鈕介面，詳見下方說明 |
 
 **`_get_drive_ids.py`／`_get_ref_ids.py` 注意事項（2026-07-18 發現）**：這兩支腳本讀的本機 Google
 Drive SQLite 中繼資料快取，同一個資料夾名稱查得到好幾個歷史殘影/重複 ID，反查結果不可靠；改資料夾
 名稱請優先用本機路徑直接 `mv`（Google Drive Desktop 會自動同步），不要靠這兩支腳本反查 ID 核對。
 
-**`_export_archive.gs`**（2026-07-20 新增）：**獨立**的評鑑資料夾匯出歸檔工具，與現有上傳系統
-Code.gs 無關，貼到 script.google.com 新專案手動執行。伺服器端 `DriveApp` 直接複製整棵「體育班評鑑
-模組平台」資料夾樹到指定目的地，不下載/上傳。因應 Apps Script 單次執行 6 分鐘上限，用
-`PropertiesService` 存佇列進度＋`ScriptApp` 時間觸發器（每分鐘）自動接續，直到複製完成；每個資料夾
-內用「已複製檔案 ID 清單」＋「子資料夾索引游標」做斷點續傳，即使某輪執行到一半被中斷也不會重複
-複製；另用 `LockService` 防止手動執行與觸發器同時搶跑。入口函式：`startExport()` 開始、
-`checkExportStatus()` 查進度、`cancelExport()` 取消。
+**`_export_archive.gs`＋`_export_archive_webapp.html`**（2026-07-20 新增，同日稍晚加上網頁介面）：
+**獨立**的評鑑資料夾匯出歸檔工具，與現有上傳系統 Code.gs 無關，貼到 script.google.com 新專案手動
+執行或部署。伺服器端 `DriveApp` 直接複製整棵「體育班評鑑模組平台」資料夾樹到指定目的地，不下載/
+上傳。因應 Apps Script 單次執行 6 分鐘上限，用 `PropertiesService` 存佇列進度＋`ScriptApp` 時間
+觸發器（每分鐘）自動接續，直到複製完成；每個資料夾內用「已複製檔案 ID 清單」＋「子資料夾索引
+游標」做斷點續傳，即使某輪執行到一半被中斷也不會重複複製；另用 `LockService` 防止手動執行與
+觸發器同時搶跑。
+- **編輯器內手動執行**：`startExport()` 開始、`checkExportStatus()` 查進度、`cancelExport()` 取消
+- **網頁按鈕介面**（`_export_archive_webapp.html`，Apps Script 專案裡檔名需設為 `WebApp`）：
+  `doGet()` 用 `HtmlService.createTemplateFromFile('WebApp')` 提供按鈕頁面，`getStatusJson()`
+  給前端 `google.script.run` 輪詢目前進度（進行中/已完成/尚未執行三種狀態），按「開始匯出歸檔」
+  會先跳 `confirm()` 二次確認再呼叫 `startExport()`。**`startExport()` 改成只建立目的地資料夾＋
+  排程後就立刻回傳**（不在請求內同步跑 4.5 分鐘的批次），避免網頁按鈕點下去要卡著等好幾分鐘才有
+  回應；實際複製都交給背景觸發器的 `resumeExport()` 進行，關閉網頁分頁不影響背景執行
+- **權限控管**：不額外寫密碼/登入邏輯，改用 Apps Script 部署設定本身的存取限制——
+  部署時「執行身份」選**我**、「具有存取權的使用者」選**只有我自己**，這樣沒授權的人連網址都打不開
+  （Google 在自己的伺服器端擋掉，比自建密碼可靠）；若之後想讓其他同事也能用，可改選「YOCPS 網域
+  內的使用者」，但不要選「所有人」
+- **部署步驟**：Apps Script 編輯器內新增 HTML 檔案（檔名 `WebApp`）貼入 `_export_archive_webapp.html`
+  內容 → 右上角「部署」→「新增部署作業」→ 類型選「網頁應用程式」→ 依上述權限設定 → 部署後複製
+  網址，之後 index.html 的「評鑑資料匯出歸檔」卡片連結要從 Apps Script 編輯器網址改成這個部署網址
 
 ### Apps Script 檔案（script.google.com，asics49@gmail.com）
 | 檔案 | 說明 |
