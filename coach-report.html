@@ -1,0 +1,843 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.min.js"></script>
+<style>
+:root{
+  --paper:#F6F4EE;
+  --card:#FFFFFF;
+  --ink:#2B2B28;
+  --ink-soft:#6B675F;
+  --navy:#223A52;
+  --navy-soft:#3E5872;
+  --maroon:#8B2E2E;
+  --gold:#C9A24B;
+  --line:#E1DCCF;
+  --line-strong:#C8C2B2;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;background:var(--paper);color:var(--ink);}
+.wrap{max-width:820px;margin:0 auto;padding:28px 18px 130px;}
+
+.app-header{margin-bottom:22px;}
+.eyebrow{font-size:12px;letter-spacing:.18em;color:var(--maroon);font-weight:700;text-transform:uppercase;margin:0 0 6px;}
+.app-header h1{font-size:22px;margin:0 0 8px;color:var(--navy);border-bottom:3px solid var(--maroon);padding-bottom:10px;line-height:1.4;}
+.app-header p{margin:8px 0 0;color:var(--ink-soft);font-size:13px;line-height:1.7;}
+
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px;}
+.card h2{font-size:15px;margin:0 0 12px;color:var(--navy);display:flex;align-items:center;gap:8px;}
+.card h2 .num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--navy);color:#fff;font-size:12px;font-weight:700;flex-shrink:0;}
+
+label.field-label{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px;font-weight:600;}
+input[type="text"], textarea{width:100%;border:1px solid var(--line-strong);border-radius:8px;padding:9px 11px;font-size:14px;font-family:inherit;background:#FCFBF8;color:var(--ink);}
+input[type="text"]:focus, textarea:focus{outline:2px solid var(--navy-soft);outline-offset:1px;border-color:var(--navy-soft);}
+textarea{resize:vertical;min-height:50px;line-height:1.6;}
+
+.row-grid{display:grid;gap:10px;}
+.row-2col{grid-template-columns:1fr 1fr;}
+.field{margin-bottom:10px;}
+.field:last-child{margin-bottom:0;}
+
+.layout-options{display:flex;gap:10px;}
+.layout-opt{flex:1;border:1px solid var(--line-strong);border-radius:8px;padding:10px;text-align:center;cursor:pointer;font-size:13px;color:var(--ink-soft);transition:.15s;}
+.layout-opt.active{border-color:var(--navy);background:#EEF2F6;color:var(--navy);font-weight:700;}
+.layout-opt .mini-grid{display:grid;gap:3px;margin:0 auto 6px;width:60px;height:42px;}
+.layout-opt .mini-grid div{background:var(--line-strong);border-radius:2px;}
+.layout-opt.active .mini-grid div{background:var(--navy-soft);}
+
+.block, .record{border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:12px;background:#FCFBF8;position:relative;}
+.block-head, .record-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.block-head .tag, .record-head .tag{font-size:12px;color:#fff;background:var(--navy-soft);padding:2px 8px;border-radius:12px;font-weight:700;}
+.block-actions, .record-actions{display:flex;gap:6px;}
+.icon-btn{border:1px solid var(--line-strong);background:#fff;border-radius:6px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);font-size:14px;line-height:1;}
+.icon-btn:hover{border-color:var(--navy-soft);color:var(--navy);}
+.icon-btn.danger:hover{border-color:var(--maroon);color:var(--maroon);}
+
+.photo-row{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px;}
+.photo-preview{width:96px;height:96px;border:1px dashed var(--line-strong);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fff;flex-shrink:0;color:var(--ink-soft);font-size:11px;text-align:center;}
+.photo-preview img{width:100%;height:100%;object-fit:cover;}
+.upload-col{flex:1;}
+.upload-btn{display:inline-block;border:1px solid var(--navy-soft);color:var(--navy);background:#fff;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;font-weight:600;}
+.upload-btn:hover{background:#EEF2F6;}
+.file-name{font-size:12px;color:var(--ink-soft);margin-top:6px;word-break:break-all;}
+
+.add-block-btn{width:100%;border:1.5px dashed var(--navy-soft);color:var(--navy);background:#EEF2F6;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;}
+.add-block-btn:hover{background:#E3E9EF;}
+
+table.record-table{border-collapse:collapse;width:100%;font-size:12px;}
+table.record-table th, table.record-table td{border:1px solid var(--line);padding:4px;}
+table.record-table th{background:#EFEAE0;color:var(--navy);}
+
+/* preview */
+.preview-page{border:1px solid var(--line-strong);background:#fff;border-radius:6px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.04);overflow-x:auto;}
+.preview-header{display:flex;align-items:center;gap:12px;border-bottom:2px solid var(--maroon);padding-bottom:8px;margin-bottom:12px;}
+.preview-header img{max-height:48px;max-width:130px;object-fit:contain;flex-shrink:0;}
+.preview-title{flex:1;text-align:center;font-weight:700;font-size:15px;color:var(--navy);}
+.preview-section-title{font-weight:700;color:var(--navy);margin:16px 0 8px;font-size:14px;border-left:4px solid var(--maroon);padding-left:8px;}
+.preview-section-title:first-of-type{margin-top:0;}
+.preview-info-table{border-collapse:collapse;width:100%;font-size:13px;margin-bottom:4px;}
+.preview-info-table td{border:1px solid var(--line);padding:6px 8px;}
+.preview-info-table td.k{background:#F6F4EE;color:var(--ink-soft);width:110px;font-weight:600;}
+.preview-content-item{margin-bottom:8px;font-size:13px;}
+.preview-content-item .t{font-weight:700;color:var(--navy);}
+table.preview-table{border-collapse:collapse;width:100%;font-size:12px;min-width:480px;}
+table.preview-table th, table.preview-table td{border:1px solid var(--line-strong);padding:5px 6px;text-align:left;vertical-align:top;}
+table.preview-table th{background:#EFEAE0;color:var(--navy);text-align:center;font-weight:700;}
+.preview-grid{display:grid;gap:8px;}
+.preview-grid.grid-c1{grid-template-columns:1fr;}
+.preview-grid.grid-c2{grid-template-columns:1fr 1fr;}
+.preview-grid.grid-c3{grid-template-columns:1fr 1fr 1fr;}
+.preview-cell{border:1px solid var(--line);border-radius:4px;overflow:hidden;}
+.preview-photo{aspect-ratio:4/3;background:#F0EEE8;display:flex;align-items:center;justify-content:center;color:#B6B0A0;font-size:11px;overflow:hidden;}
+.preview-photo img{width:100%;height:100%;object-fit:cover;}
+.preview-caption{font-size:11px;color:var(--ink-soft);padding:5px 7px;border-top:1px solid var(--line);min-height:1.6em;line-height:1.5;word-break:break-all;}
+.empty-hint{text-align:center;color:var(--ink-soft);font-size:13px;padding:20px 10px;}
+
+.bottom-bar{position:fixed;left:0;right:0;bottom:0;background:rgba(246,244,238,.92);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:12px 18px;display:flex;justify-content:center;gap:10px;z-index:10;}
+.bottom-bar .inner{max-width:820px;width:100%;display:flex;gap:10px;align-items:center;}
+.primary-btn{flex:1;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:13px 20px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
+.primary-btn:hover{background:var(--navy-soft);}
+.primary-btn:disabled{background:#B9B6AD;cursor:not-allowed;}
+.status-msg{font-size:12px;color:var(--ink-soft);min-width:120px;text-align:right;}
+.status-msg.error{color:var(--maroon);}
+.status-msg.ok{color:#2E7D4F;}
+</style>
+<div class="wrap">
+
+  <div class="app-header">
+    <p class="eyebrow">體育班評鑑文件工具・模組十一</p>
+    <h1>專任運動教練成果報告匯出工具</h1>
+    <p>填寫下方欄位（實施內容／實施對象／人數／實際執行成果／照片佐證），完成後按下方「下載 Word 檔」即可產生排版好的 .docx 檔，可直接作為教練績效評量附件佐證資料使用。</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">1</span>頁首與教練基本資料</h2>
+    <div class="field">
+      <label class="field-label" for="docTitle">文件標題（會顯示在 Word 文件頁首）</label>
+      <input type="text" id="docTitle" placeholder="例如：114學年度徐銘宏教練協助推動課間活動成果報告">
+    </div>
+    <div class="field">
+      <label class="field-label">學校 LOGO（選填，會顯示在頁首左側）</label>
+      <div class="photo-row">
+        <div class="photo-preview" id="logoPreview" style="width:96px;height:64px;">尚未選擇</div>
+        <div class="upload-col">
+          <label class="upload-btn">選擇LOGO圖片
+            <input type="file" accept="image/*" style="display:none" onchange="onLogoChange(this)">
+          </label>
+          <div class="file-name" id="logoFileName">尚未上傳，標題將維持單獨置中</div>
+          <span class="icon-btn" style="display:none;margin-top:8px;width:auto;padding:4px 10px;" id="logoClearBtn" onclick="clearLogo()">移除LOGO</span>
+        </div>
+      </div>
+    </div>
+    <div class="row-grid row-2col">
+      <div class="field">
+        <label class="field-label" for="coachName">教練姓名</label>
+        <input type="text" id="coachName" placeholder="例如：徐銘宏">
+      </div>
+      <div class="field">
+        <label class="field-label" for="schoolName">服務學校</label>
+        <input type="text" id="schoolName" placeholder="例如：高雄市右昌國小">
+      </div>
+      <div class="field">
+        <label class="field-label" for="sportType">運動專長</label>
+        <input type="text" id="sportType" placeholder="例如：足球">
+      </div>
+      <div class="field">
+        <label class="field-label" for="schoolYear">學年度</label>
+        <input type="text" id="schoolYear" placeholder="例如：114學年度">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">2</span>一、實施內容</h2>
+    <div id="contentContainer"></div>
+    <button class="add-block-btn" onclick="addContent()">＋ 新增實施內容項目</button>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">3</span>二、實施對象與人數</h2>
+    <div class="field">
+      <label class="field-label" for="targetObject">實施對象</label>
+      <textarea id="targetObject" placeholder="例如：全校學生（含普通班、體育班）" oninput="renderPreview()"></textarea>
+    </div>
+    <div class="field">
+      <label class="field-label" for="targetCount">人數</label>
+      <input type="text" id="targetCount" placeholder="例如：1,900人" oninput="renderPreview()">
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">4</span>三、實際執行成果</h2>
+    <div id="resultContainer"></div>
+    <button class="add-block-btn" onclick="addResult()">＋ 新增一筆執行成果紀錄</button>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">5</span>四、照片佐證資料</h2>
+    <div class="field">
+      <label class="field-label">每列照片數量</label>
+      <div class="layout-options">
+        <div class="layout-opt" data-cols="1" onclick="setPhotoCols(1)"><div class="mini-grid" style="grid-template-columns:1fr;"><div style="height:38px;"></div></div>每列 1 張</div>
+        <div class="layout-opt active" data-cols="2" onclick="setPhotoCols(2)"><div class="mini-grid" style="grid-template-columns:1fr 1fr;"><div style="height:38px;"></div><div style="height:38px;"></div></div>每列 2 張</div>
+        <div class="layout-opt" data-cols="3" onclick="setPhotoCols(3)"><div class="mini-grid" style="grid-template-columns:1fr 1fr 1fr;"><div style="height:38px;"></div><div style="height:38px;"></div><div style="height:38px;"></div></div>每列 3 張</div>
+      </div>
+    </div>
+    <div style="margin:12px 0 4px;">
+      <label class="upload-btn" style="cursor:pointer;">📥 一次匯入多張照片
+        <input type="file" accept="image/*" multiple style="display:none" onchange="onBatchPhotos(this)">
+      </label>
+      <span class="icon-btn" style="width:auto;padding:6px 12px;display:inline-flex;margin-left:6px;" onclick="clearAllPhotos()">🗑 清除全部照片</span>
+    </div>
+    <div id="photoContainer"></div>
+    <button class="add-block-btn" onclick="addPhotoBlock()">＋ 新增照片區塊</button>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">6</span>預覽</h2>
+    <div class="preview-page">
+      <div class="preview-header">
+        <img id="previewLogo" style="display:none;">
+        <div class="preview-title" id="previewTitle">（尚未輸入標題）</div>
+      </div>
+      <div id="previewBody"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottom-bar">
+  <div class="inner">
+    <span class="status-msg" id="statusMsg"></span>
+    <button class="primary-btn" id="downloadBtn" onclick="generateDocx()">下載 Word 檔 (.docx)</button>
+  </div>
+</div>
+
+<script>
+let logo_m11 = null;
+let nextId_m11 = 1;
+let contents_m11 = [];
+let results_m11 = [];
+let photoBlocks_m11 = [];
+let photoCols_m11 = 2;
+
+function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escapeXml(s){
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+}
+function nl2br(s){ return escapeHtml(s).replace(/\n/g,'<br>'); }
+
+/* ---------- 實施內容 ---------- */
+function addContent(){
+  contents_m11.push({id: nextId_m11++, title:'', desc:''});
+  renderContents(); renderPreview();
+}
+function removeContent(id){
+  contents_m11 = contents_m11.filter(c=>c.id!==id);
+  renderContents(); renderPreview();
+}
+function moveContent(id, dir){
+  const idx = contents_m11.findIndex(c=>c.id===id);
+  const n = idx+dir;
+  if(n<0||n>=contents_m11.length) return;
+  [contents_m11[idx],contents_m11[n]]=[contents_m11[n],contents_m11[idx]];
+  renderContents(); renderPreview();
+}
+function onContentChange(id, field, val){
+  const c = contents_m11.find(x=>x.id===id);
+  c[field]=val;
+  renderPreview();
+}
+function renderContents(){
+  const el = document.getElementById('contentContainer');
+  if(contents_m11.length===0){
+    el.innerHTML = '<p style="color:var(--ink-soft);font-size:13px;margin:6px 0 14px;">尚未新增任何實施內容項目。</p>';
+    return;
+  }
+  el.innerHTML = contents_m11.map((c,i)=>`
+    <div class="record">
+      <div class="record-head">
+        <span class="tag">項目 ${i+1}</span>
+        <div class="record-actions">
+          <span class="icon-btn" onclick="moveContent(${c.id},-1)" title="上移">↑</span>
+          <span class="icon-btn" onclick="moveContent(${c.id},1)" title="下移">↓</span>
+          <span class="icon-btn danger" onclick="removeContent(${c.id})" title="刪除">✕</span>
+        </div>
+      </div>
+      <div class="field">
+        <label class="field-label">項目名稱</label>
+        <input type="text" value="${escapeHtml(c.title)}" placeholder="例如：協助學校推動每週150分鐘課間活動" oninput="onContentChange(${c.id},'title',this.value)">
+      </div>
+      <div class="field">
+        <label class="field-label">內容說明</label>
+        <textarea placeholder="說明實施依據、方式、時段內容等" oninput="onContentChange(${c.id},'desc',this.value)">${escapeHtml(c.desc)}</textarea>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ---------- 實際執行成果 ---------- */
+function addResult(){
+  results_m11.push({id: nextId_m11++, date:'', place:'', activity:'', outcome:''});
+  renderResults(); renderPreview();
+}
+function removeResult(id){
+  results_m11 = results_m11.filter(r=>r.id!==id);
+  renderResults(); renderPreview();
+}
+function onResultChange(id, field, val){
+  const r = results_m11.find(x=>x.id===id);
+  r[field]=val;
+  renderPreview();
+}
+function renderResults(){
+  const el = document.getElementById('resultContainer');
+  if(results_m11.length===0){
+    el.innerHTML = '<p style="color:var(--ink-soft);font-size:13px;margin:6px 0 14px;">尚未新增任何執行成果紀錄。</p>';
+    return;
+  }
+  el.innerHTML = results_m11.map((r,i)=>`
+    <div class="record">
+      <div class="record-head">
+        <span class="tag">紀錄 ${i+1}</span>
+        <div class="record-actions">
+          <span class="icon-btn danger" onclick="removeResult(${r.id})" title="刪除">✕</span>
+        </div>
+      </div>
+      <div class="row-grid row-2col">
+        <div class="field"><label class="field-label">日期</label><input type="text" value="${escapeHtml(r.date)}" placeholder="例如：114.05.24" oninput="onResultChange(${r.id},'date',this.value)"></div>
+        <div class="field"><label class="field-label">地點</label><input type="text" value="${escapeHtml(r.place)}" placeholder="例如：操場" oninput="onResultChange(${r.id},'place',this.value)"></div>
+      </div>
+      <div class="field"><label class="field-label">活動內容</label><input type="text" value="${escapeHtml(r.activity)}" placeholder="例如：六年級班際樂樂棒球賽" oninput="onResultChange(${r.id},'activity',this.value)"></div>
+      <div class="field"><label class="field-label">成果說明</label><textarea placeholder="例如：參與人數、達成情形、量化數據等" oninput="onResultChange(${r.id},'outcome',this.value)">${escapeHtml(r.outcome)}</textarea></div>
+    </div>
+  `).join('');
+}
+
+/* ---------- 照片佐證 ---------- */
+const MAX_IMG_EDGE_M11 = 1600;
+function resizeDataUrl(dataUrl, mime){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = function(){
+      const w = img.naturalWidth, h = img.naturalHeight;
+      const scale = MAX_IMG_EDGE_M11 / Math.max(w,h);
+      if(scale >= 1){ resolve({dataUrl, width:w, height:h}); return; }
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(w*scale);
+      canvas.height = Math.round(h*scale);
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      const outMime = mime==='image/png' ? 'image/png' : 'image/jpeg';
+      resolve({dataUrl: canvas.toDataURL(outMime,0.87), width:canvas.width, height:canvas.height});
+    };
+    img.onerror = ()=>reject(new Error('圖片載入失敗'));
+    img.src = dataUrl;
+  });
+}
+function fileToResizedImage(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = e => resizeDataUrl(e.target.result, file.type).then(resolve, reject);
+    reader.onerror = ()=>reject(new Error('讀檔失敗'));
+    reader.readAsDataURL(file);
+  });
+}
+function addPhotoBlock(){
+  photoBlocks_m11.push({id: nextId_m11++, file:null, dataUrl:null, width:0, height:0, caption:''});
+  renderPhotoBlocks(); renderPreview();
+}
+function removePhotoBlock(id){
+  photoBlocks_m11 = photoBlocks_m11.filter(b=>b.id!==id);
+  renderPhotoBlocks(); renderPreview();
+}
+function movePhotoBlock(id, dir){
+  const idx = photoBlocks_m11.findIndex(b=>b.id===id);
+  const n = idx+dir;
+  if(n<0||n>=photoBlocks_m11.length) return;
+  [photoBlocks_m11[idx],photoBlocks_m11[n]]=[photoBlocks_m11[n],photoBlocks_m11[idx]];
+  renderPhotoBlocks(); renderPreview();
+}
+function onPhotoChange(id, input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const b = photoBlocks_m11.find(x=>x.id===id);
+  fileToResizedImage(file).then(r=>{
+    b.file=file; b.dataUrl=r.dataUrl; b.width=r.width; b.height=r.height;
+    renderPhotoBlocks(); renderPreview();
+  }).catch(err=>setStatus('照片載入失敗：'+err.message,'error'));
+}
+function onCaptionChange(id, val){
+  const b = photoBlocks_m11.find(x=>x.id===id);
+  b.caption = val;
+  renderPreview();
+}
+function onBatchPhotos(input){
+  const files = Array.from(input.files||[]).filter(f=>/^image\//.test(f.type));
+  if(!files.length){ input.value=''; return; }
+  setStatus('照片載入中（0/'+files.length+'）…');
+  let pending = files.length;
+  files.forEach((file)=>{
+    const b = {id: nextId_m11++, file:null, dataUrl:null, width:0, height:0, caption:''};
+    photoBlocks_m11.push(b);
+    fileToResizedImage(file).then(r=>{
+      b.file=file; b.dataUrl=r.dataUrl; b.width=r.width; b.height=r.height;
+    }).catch(()=>{}).then(()=>{
+      setStatus('照片載入中（'+(files.length-pending+1)+'/'+files.length+'）…');
+      if(--pending===0){ renderPhotoBlocks(); renderPreview(); setStatus('已載入 '+files.length+' 張照片','ok'); }
+    });
+  });
+  input.value='';
+}
+function clearAllPhotos(){
+  if(photoBlocks_m11.length && !confirm('確定要清除全部照片區塊嗎？')) return;
+  photoBlocks_m11 = [];
+  renderPhotoBlocks(); renderPreview();
+}
+function setPhotoCols(n){
+  photoCols_m11 = n;
+  document.querySelectorAll('.layout-opt').forEach(el=>{
+    el.classList.toggle('active', parseInt(el.dataset.cols)===n);
+  });
+  renderPreview();
+}
+function renderPhotoBlocks(){
+  const el = document.getElementById('photoContainer');
+  if(photoBlocks_m11.length===0){
+    el.innerHTML = '<p style="color:var(--ink-soft);font-size:13px;margin:6px 0 14px;">尚未新增任何照片區塊。</p>';
+    return;
+  }
+  el.innerHTML = photoBlocks_m11.map((b,i)=>`
+    <div class="block">
+      <div class="block-head">
+        <span class="tag">照片 ${i+1}</span>
+        <div class="block-actions">
+          <span class="icon-btn" onclick="movePhotoBlock(${b.id},-1)" title="上移">↑</span>
+          <span class="icon-btn" onclick="movePhotoBlock(${b.id},1)" title="下移">↓</span>
+          <span class="icon-btn danger" onclick="removePhotoBlock(${b.id})" title="刪除">✕</span>
+        </div>
+      </div>
+      <div class="photo-row">
+        <div class="photo-preview">${b.dataUrl ? `<img src="${b.dataUrl}">` : '尚未選擇照片'}</div>
+        <div class="upload-col">
+          <label class="upload-btn">選擇照片
+            <input type="file" accept="image/*" style="display:none" onchange="onPhotoChange(${b.id}, this)">
+          </label>
+          <div class="file-name">${b.file ? b.file.name : '尚未上傳照片'}</div>
+        </div>
+      </div>
+      <label class="field-label">說明文字（會自動加上「說明：」）</label>
+      <textarea placeholder="例如：114.05.24 六年級班際樂樂棒球賽" oninput="onCaptionChange(${b.id}, this.value)">${escapeHtml(b.caption)}</textarea>
+    </div>
+  `).join('');
+}
+
+/* ---------- LOGO ---------- */
+function onLogoChange(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const img = new Image();
+    img.onload = function(){
+      logo_m11 = {file, dataUrl:e.target.result, width:img.naturalWidth, height:img.naturalHeight};
+      document.getElementById('logoPreview').innerHTML = `<img src="${e.target.result}">`;
+      document.getElementById('logoFileName').textContent = file.name;
+      document.getElementById('logoClearBtn').style.display = 'inline-flex';
+      renderPreview();
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function clearLogo(){
+  logo_m11 = null;
+  document.getElementById('logoPreview').innerHTML = '尚未選擇';
+  document.getElementById('logoFileName').textContent = '尚未上傳，標題將維持單獨置中';
+  document.getElementById('logoClearBtn').style.display = 'none';
+  renderPreview();
+}
+
+/* ---------- PREVIEW ---------- */
+function renderPreview(){
+  const title = document.getElementById('docTitle').value.trim();
+  document.getElementById('previewTitle').textContent = title || '（尚未輸入標題）';
+  const logoImg = document.getElementById('previewLogo');
+  if(logo_m11){ logoImg.src = logo_m11.dataUrl; logoImg.style.display='block'; } else { logoImg.style.display='none'; }
+
+  const coachName = document.getElementById('coachName').value.trim();
+  const schoolName = document.getElementById('schoolName').value.trim();
+  const sportType = document.getElementById('sportType').value.trim();
+  const schoolYear = document.getElementById('schoolYear').value.trim();
+  const targetObject = document.getElementById('targetObject').value.trim();
+  const targetCount = document.getElementById('targetCount').value.trim();
+
+  let html = '';
+  html += `<table class="preview-info-table">
+    <tr><td class="k">學年度</td><td>${escapeHtml(schoolYear)||'－'}</td><td class="k">教練姓名</td><td>${escapeHtml(coachName)||'－'}</td></tr>
+    <tr><td class="k">服務學校</td><td>${escapeHtml(schoolName)||'－'}</td><td class="k">運動專長</td><td>${escapeHtml(sportType)||'－'}</td></tr>
+  </table>`;
+
+  html += `<div class="preview-section-title">一、實施內容</div>`;
+  if(contents_m11.length===0){
+    html += `<div class="empty-hint">尚未填寫實施內容</div>`;
+  } else {
+    html += contents_m11.map((c,i)=>`<div class="preview-content-item"><span class="t">${i+1}. ${escapeHtml(c.title)||'（未命名項目）'}</span><br>${nl2br(c.desc)}</div>`).join('');
+  }
+
+  html += `<div class="preview-section-title">二、實施對象與人數</div>`;
+  html += `<table class="preview-info-table">
+    <tr><td class="k">實施對象</td><td>${nl2br(targetObject)||'－'}</td></tr>
+    <tr><td class="k">人數</td><td>${escapeHtml(targetCount)||'－'}</td></tr>
+  </table>`;
+
+  html += `<div class="preview-section-title">三、實際執行成果</div>`;
+  if(results_m11.length===0){
+    html += `<div class="empty-hint">尚未填寫執行成果紀錄</div>`;
+  } else {
+    html += `<table class="preview-table"><tr><th>日期</th><th>地點</th><th>活動內容</th><th>成果說明</th></tr>`;
+    html += results_m11.map(r=>`<tr><td>${escapeHtml(r.date)}</td><td>${escapeHtml(r.place)}</td><td>${escapeHtml(r.activity)}</td><td>${nl2br(r.outcome)}</td></tr>`).join('');
+    html += `</table>`;
+  }
+
+  html += `<div class="preview-section-title">四、照片佐證資料</div>`;
+  if(photoBlocks_m11.length===0){
+    html += `<div class="empty-hint">尚未新增任何照片</div>`;
+  } else {
+    html += `<div class="preview-grid grid-c${photoCols_m11}">`;
+    html += photoBlocks_m11.map(b=>`
+      <div class="preview-cell">
+        <div class="preview-photo">${b.dataUrl ? `<img src="${b.dataUrl}">` : '尚未上傳照片'}</div>
+        <div class="preview-caption">說明：${escapeHtml(b.caption)}</div>
+      </div>
+    `).join('');
+    html += `</div>`;
+  }
+
+  document.getElementById('previewBody').innerHTML = html;
+}
+
+function setStatus(msg, type){
+  const el = document.getElementById('statusMsg');
+  el.textContent = msg;
+  el.className = 'status-msg' + (type ? ' '+type : '');
+}
+
+document.getElementById('docTitle').addEventListener('input', renderPreview);
+document.getElementById('coachName').addEventListener('input', renderPreview);
+document.getElementById('schoolName').addEventListener('input', renderPreview);
+document.getElementById('sportType').addEventListener('input', renderPreview);
+document.getElementById('schoolYear').addEventListener('input', renderPreview);
+
+/* ================= DOCX GENERATION ================= */
+const PAGE_CONTENT_WIDTH_DXA = 10466; // A4, 0.5in margins
+const EMU_PER_DXA = 635;
+const EMU_PER_PX = 9525;
+
+function getColWidths(n){
+  const base = Math.floor(PAGE_CONTENT_WIDTH_DXA / n);
+  const widths = Array(n).fill(base);
+  widths[n-1] += PAGE_CONTENT_WIDTH_DXA - base*n;
+  return widths;
+}
+
+function headingXml(text){
+  return `<w:p><w:pPr><w:spacing w:before="240" w:after="120"/><w:pBdr><w:left w:val="single" w:sz="18" w:space="6" w:color="8B2E2E"/></w:pBdr><w:ind w:left="120"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="26"/><w:color w:val="223A52"/></w:rPr><w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r></w:p>`;
+}
+function paraXml(text, opts){
+  opts = opts || {};
+  const lines = (text||'').split('\n');
+  const runProps = opts.bold ? '<w:rPr><w:b/></w:rPr>' : '';
+  const runs = lines.map((line,i)=>{
+    const t = `<w:r>${runProps}<w:t xml:space="preserve">${escapeXml(line)}</w:t></w:r>`;
+    return i<lines.length-1 ? t+'<w:r><w:br/></w:r>' : t;
+  }).join('');
+  return `<w:p><w:pPr><w:spacing w:after="120"/></w:pPr>${runs}</w:p>`;
+}
+function twoColTableXml(rows){
+  // rows: [[label,value],...]
+  const labelW = 1800, valueW = PAGE_CONTENT_WIDTH_DXA - labelW;
+  const trs = rows.map(([label,value])=>{
+    const labelCell = `<w:tc><w:tcPr><w:tcW w:w="${labelW}" w:type="dxa"/><w:shd w:val="clear" w:fill="F6F4EE"/></w:tcPr><w:p><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">${escapeXml(label)}</w:t></w:r></w:p></w:tc>`;
+    const lines = (value||'').split('\n');
+    const runs = lines.map((line,i)=>{
+      const t = `<w:r><w:t xml:space="preserve">${escapeXml(line)}</w:t></w:r>`;
+      return i<lines.length-1 ? t+'<w:r><w:br/></w:r>' : t;
+    }).join('');
+    const valueCell = `<w:tc><w:tcPr><w:tcW w:w="${valueW}" w:type="dxa"/></w:tcPr><w:p>${runs}</w:p></w:tc>`;
+    return `<w:tr>${labelCell}${valueCell}</w:tr>`;
+  }).join('');
+  return `<w:tbl><w:tblPr><w:tblW w:w="${PAGE_CONTENT_WIDTH_DXA}" w:type="dxa"/><w:tblBorders><w:top w:val="single" w:sz="4" w:color="AAAAAA"/><w:left w:val="single" w:sz="4" w:color="AAAAAA"/><w:bottom w:val="single" w:sz="4" w:color="AAAAAA"/><w:right w:val="single" w:sz="4" w:color="AAAAAA"/><w:insideH w:val="single" w:sz="4" w:color="AAAAAA"/><w:insideV w:val="single" w:sz="4" w:color="AAAAAA"/></w:tblBorders><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid><w:gridCol w:w="${labelW}"/><w:gridCol w:w="${valueW}"/></w:tblGrid>${trs}</w:tbl>`;
+}
+function dataTableXml(headers, rows){
+  const n = headers.length;
+  const widths = getColWidths(n);
+  const grid = widths.map(w=>`<w:gridCol w:w="${w}"/>`).join('');
+  const headTr = `<w:tr>${headers.map((h,i)=>`<w:tc><w:tcPr><w:tcW w:w="${widths[i]}" w:type="dxa"/><w:shd w:val="clear" w:fill="EFEAE0"/></w:tcPr><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">${escapeXml(h)}</w:t></w:r></w:p></w:tc>`).join('')}</w:tr>`;
+  const bodyTrs = rows.map(row=>{
+    return `<w:tr>${row.map((cell,i)=>{
+      const lines = (cell||'').split('\n');
+      const runs = lines.map((line,j)=>{
+        const t = `<w:r><w:t xml:space="preserve">${escapeXml(line)}</w:t></w:r>`;
+        return j<lines.length-1 ? t+'<w:r><w:br/></w:r>' : t;
+      }).join('');
+      return `<w:tc><w:tcPr><w:tcW w:w="${widths[i]}" w:type="dxa"/></w:tcPr><w:p>${runs}</w:p></w:tc>`;
+    }).join('')}</w:tr>`;
+  }).join('');
+  return `<w:tbl><w:tblPr><w:tblW w:w="${PAGE_CONTENT_WIDTH_DXA}" w:type="dxa"/><w:tblBorders><w:top w:val="single" w:sz="4" w:color="AAAAAA"/><w:left w:val="single" w:sz="4" w:color="AAAAAA"/><w:bottom w:val="single" w:sz="4" w:color="AAAAAA"/><w:right w:val="single" w:sz="4" w:color="AAAAAA"/><w:insideH w:val="single" w:sz="4" w:color="AAAAAA"/><w:insideV w:val="single" w:sz="4" w:color="AAAAAA"/></w:tblBorders><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${grid}</w:tblGrid>${headTr}${bodyTrs}</w:tbl>`;
+}
+
+function imageParagraphXml(relId, cx, cy, docPrId){
+  return `<w:p><w:pPr><w:spacing w:after="80"/><w:jc w:val="center"/></w:pPr><w:r><w:drawing>` +
+    `<wp:inline distT="0" distB="0" distL="0" distR="0">` +
+    `<wp:extent cx="${cx}" cy="${cy}"/>` +
+    `<wp:docPr id="${docPrId}" name="Picture ${docPrId}"/>` +
+    `<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">` +
+    `<a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
+    `<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
+    `<pic:nvPicPr><pic:cNvPr id="${docPrId}" name="Picture ${docPrId}"/><pic:cNvPicPr/></pic:nvPicPr>` +
+    `<pic:blipFill><a:blip r:embed="${relId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>` +
+    `<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>` +
+    `</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+}
+function placeholderParagraphXml(){
+  return `<w:p><w:pPr><w:spacing w:before="200" w:after="200"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:color w:val="999999"/><w:i/></w:rPr><w:t>（尚未上傳照片）</w:t></w:r></w:p>`;
+}
+function captionParagraphXml(text){
+  const full = '說明：'+(text||'');
+  const lines = full.split('\n');
+  const runs = lines.map((line,i)=>{
+    const t = `<w:r><w:t xml:space="preserve">${escapeXml(line)}</w:t></w:r>`;
+    return i<lines.length-1 ? t+'<w:r><w:br/></w:r>' : t;
+  }).join('');
+  return `<w:p><w:pPr><w:spacing w:after="120"/></w:pPr>${runs}</w:p>`;
+}
+
+async function generateDocx(){
+  const title = document.getElementById('docTitle').value.trim();
+  if(!title){ setStatus('請先輸入文件標題','error'); return; }
+
+  const btn = document.getElementById('downloadBtn');
+  btn.disabled = true;
+  setStatus('產生中，請稍候…');
+
+  try{
+    const coachName = document.getElementById('coachName').value.trim();
+    const schoolName = document.getElementById('schoolName').value.trim();
+    const sportType = document.getElementById('sportType').value.trim();
+    const schoolYear = document.getElementById('schoolYear').value.trim();
+    const targetObject = document.getElementById('targetObject').value.trim();
+    const targetCount = document.getElementById('targetCount').value.trim();
+
+    const zip = new JSZip();
+    const mediaFiles = [];
+    const rels = [];
+    let picId = 1;
+    let bodyXml = '';
+
+    // 基本資料
+    bodyXml += twoColTableXml([
+      ['學年度', schoolYear],
+      ['教練姓名', coachName],
+      ['服務學校', schoolName],
+      ['運動專長', sportType],
+    ]);
+    bodyXml += '<w:p/>';
+
+    // 一、實施內容
+    bodyXml += headingXml('一、實施內容');
+    if(contents_m11.length===0){
+      bodyXml += paraXml('（尚未填寫）');
+    } else {
+      contents_m11.forEach((c,i)=>{
+        bodyXml += paraXml(`${i+1}. ${c.title||'（未命名項目）'}`, {bold:true});
+        bodyXml += paraXml(c.desc||'');
+      });
+    }
+
+    // 二、實施對象與人數
+    bodyXml += headingXml('二、實施對象與人數');
+    bodyXml += twoColTableXml([
+      ['實施對象', targetObject],
+      ['人數', targetCount],
+    ]);
+    bodyXml += '<w:p/>';
+
+    // 三、實際執行成果
+    bodyXml += headingXml('三、實際執行成果');
+    if(results_m11.length===0){
+      bodyXml += paraXml('（尚未填寫）');
+    } else {
+      bodyXml += dataTableXml(['日期','地點','活動內容','成果說明'], results_m11.map(r=>[r.date,r.place,r.activity,r.outcome]));
+      bodyXml += '<w:p/>';
+    }
+
+    // 四、照片佐證資料
+    bodyXml += headingXml('四、照片佐證資料');
+    if(photoBlocks_m11.length===0){
+      bodyXml += paraXml('（尚未上傳照片）');
+    } else {
+      const colWidths = getColWidths(photoCols_m11);
+      const cellPaddingDxa = 220;
+      const maxImgHeightEmu = 2600000;
+
+      let photoCells = [], captionCells = [];
+      for(let i=0;i<photoBlocks_m11.length;i++){
+        const b = photoBlocks_m11[i];
+        const colIdx = i % photoCols_m11;
+        const colWidth = colWidths[colIdx];
+        const maxImgWidthEmu = (colWidth - cellPaddingDxa) * EMU_PER_DXA;
+        let photoInner;
+        if(b.file && b.dataUrl){
+          const ext = (b.file.type === 'image/png') ? 'png' : 'jpeg';
+          const base64 = b.dataUrl.split(',')[1];
+          const idx = mediaFiles.length+1;
+          const fname = `image${idx}.${ext}`;
+          mediaFiles.push({name:fname, base64});
+          const relId = `rId${100+idx}`;
+          rels.push({id:relId, target:`media/${fname}`});
+          const ratio = b.width / b.height;
+          let cx = maxImgWidthEmu;
+          let cy = Math.round(cx/ratio);
+          if(cy > maxImgHeightEmu){ cy = maxImgHeightEmu; cx = Math.round(cy*ratio); }
+          photoInner = imageParagraphXml(relId, Math.round(cx), Math.round(cy), picId++);
+        } else {
+          photoInner = placeholderParagraphXml();
+        }
+        const captionInner = captionParagraphXml(b.caption);
+        const cellMar = `<w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="110" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="110" w:type="dxa"/></w:tcMar>`;
+        const vAlign = `<w:vAlign w:val="center"/>`;
+        photoCells.push(`<w:tc><w:tcPr><w:tcW w:w="${colWidth}" w:type="dxa"/>${cellMar}${vAlign}</w:tcPr>${photoInner}</w:tc>`);
+        captionCells.push(`<w:tc><w:tcPr><w:tcW w:w="${colWidth}" w:type="dxa"/>${cellMar}</w:tcPr>${captionInner}</w:tc>`);
+      }
+      while(photoCells.length % photoCols_m11 !== 0){
+        const colIdx = photoCells.length % photoCols_m11;
+        photoCells.push(`<w:tc><w:tcPr><w:tcW w:w="${colWidths[colIdx]}" w:type="dxa"/></w:tcPr><w:p/></w:tc>`);
+        captionCells.push(`<w:tc><w:tcPr><w:tcW w:w="${colWidths[colIdx]}" w:type="dxa"/></w:tcPr><w:p/></w:tc>`);
+      }
+      let rowsXml = '';
+      for(let i=0;i<photoCells.length;i+=photoCols_m11){
+        rowsXml += `<w:tr>${photoCells.slice(i,i+photoCols_m11).join('')}</w:tr>`;
+        rowsXml += `<w:tr>${captionCells.slice(i,i+photoCols_m11).join('')}</w:tr>`;
+      }
+      const gridCols = colWidths.map(w=>`<w:gridCol w:w="${w}"/>`).join('');
+      bodyXml += `<w:tbl><w:tblPr><w:tblW w:w="${PAGE_CONTENT_WIDTH_DXA}" w:type="dxa"/><w:tblBorders><w:top w:val="single" w:sz="4" w:color="AAAAAA"/><w:left w:val="single" w:sz="4" w:color="AAAAAA"/><w:bottom w:val="single" w:sz="4" w:color="AAAAAA"/><w:right w:val="single" w:sz="4" w:color="AAAAAA"/><w:insideH w:val="single" w:sz="4" w:color="AAAAAA"/><w:insideV w:val="single" w:sz="4" w:color="AAAAAA"/></w:tblBorders><w:tblLayout w:type="fixed"/></w:tblPr><w:tblGrid>${gridCols}</w:tblGrid>${rowsXml}</w:tbl>`;
+    }
+
+    // ---- Header (logo_m11 + title) ----
+    const headerRels = [];
+    let headerPicId = 1;
+    let headerContentXml;
+    if(logo_m11 && logo_m11.dataUrl){
+      const ext = (logo_m11.file.type === 'image/png') ? 'png' : 'jpeg';
+      const base64 = logo_m11.dataUrl.split(',')[1];
+      const idx = mediaFiles.length+1;
+      const fname = `image${idx}.${ext}`;
+      mediaFiles.push({name:fname, base64});
+      const relId = 'rId1';
+      headerRels.push({id:relId, target:`media/${fname}`});
+      const maxLogoWEmu = 2600000, maxLogoHEmu = 400000;
+      const wEmu = logo_m11.width*EMU_PER_PX, hEmu = logo_m11.height*EMU_PER_PX;
+      const scale = Math.min(maxLogoWEmu/wEmu, maxLogoHEmu/hEmu, 1) || 1;
+      const cx = Math.round(wEmu*scale), cy = Math.round(hEmu*scale);
+      let leftColWidth = Math.round(cx/EMU_PER_DXA)+300;
+      leftColWidth = Math.max(1400, Math.min(leftColWidth, 3000));
+      const rightColWidth = 500;
+      const midColWidth = PAGE_CONTENT_WIDTH_DXA - leftColWidth - rightColWidth;
+      const logoCell = `<w:tc><w:tcPr><w:tcW w:w="${leftColWidth}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>` +
+        `<w:p><w:pPr><w:spacing w:after="0"/><w:jc w:val="left"/></w:pPr><w:r><w:drawing>` +
+        `<wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${headerPicId}" name="Picture ${headerPicId}"/>` +
+        `<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">` +
+        `<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${headerPicId}" name="Picture ${headerPicId}"/><pic:cNvPicPr/></pic:nvPicPr>` +
+        `<pic:blipFill><a:blip r:embed="${relId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>` +
+        `<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>` +
+        `</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p></w:tc>`;
+      headerPicId++;
+      const titleCell = `<w:tc><w:tcPr><w:tcW w:w="${midColWidth}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>` +
+        `<w:p><w:pPr><w:spacing w:after="0"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="30"/></w:rPr><w:t xml:space="preserve">${escapeXml(title)}</w:t></w:r></w:p></w:tc>`;
+      const spacerCell = `<w:tc><w:tcPr><w:tcW w:w="${rightColWidth}" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p><w:pPr><w:spacing w:after="0"/></w:pPr></w:p></w:tc>`;
+      headerContentXml = `<w:tbl><w:tblPr><w:tblW w:w="${PAGE_CONTENT_WIDTH_DXA}" w:type="dxa"/>` +
+        `<w:tblBorders><w:top w:val="none" w:sz="0" w:color="auto"/><w:left w:val="none" w:sz="0" w:color="auto"/><w:bottom w:val="single" w:sz="12" w:color="8B2E2E"/><w:right w:val="none" w:sz="0" w:color="auto"/><w:insideH w:val="none" w:sz="0" w:color="auto"/><w:insideV w:val="none" w:sz="0" w:color="auto"/></w:tblBorders>` +
+        `<w:tblLayout w:type="fixed"/></w:tblPr>` +
+        `<w:tblGrid><w:gridCol w:w="${leftColWidth}"/><w:gridCol w:w="${midColWidth}"/><w:gridCol w:w="${rightColWidth}"/></w:tblGrid>` +
+        `<w:tr>${logoCell}${titleCell}${spacerCell}</w:tr></w:tbl>`;
+    } else {
+      headerContentXml = `<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="12" w:space="6" w:color="8B2E2E"/></w:pBdr><w:spacing w:after="0"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="30"/></w:rPr><w:t xml:space="preserve">${escapeXml(title)}</w:t></w:r></w:p>`;
+    }
+
+    const headerXmlFile = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:hdr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+${headerContentXml}
+</w:hdr>`;
+
+    const headerRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+${headerRels.map(r=>`<Relationship Id="${r.id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${r.target}"/>`).join('\n')}
+</Relationships>`;
+
+    rels.push({id:'rId900', target:'header1.xml', type:'http://schemas.openxmlformats.org/officeDocument/2006/relationships/header'});
+
+    const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture">
+<w:body>
+${bodyXml}
+<w:p/>
+<w:sectPr><w:headerReference w:type="default" r:id="rId900"/><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1417" w:right="720" w:bottom="720" w:left="720" w:header="340" w:footer="720" w:gutter="0"/></w:sectPr>
+</w:body>
+</w:document>`;
+
+    const relsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+${rels.map(r=>`<Relationship Id="${r.id}" Type="${r.type || 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image'}" Target="${r.target}"/>`).join('\n')}
+</Relationships>`;
+
+    const contentTypesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Default Extension="png" ContentType="image/png"/>
+<Default Extension="jpeg" ContentType="image/jpeg"/>
+<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+<Override PartName="/word/header1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml"/>
+<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>
+</Types>`;
+
+    const rootRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
+</Relationships>`;
+
+    const coreXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/">
+<dc:title>${escapeXml(title)}</dc:title>
+<dc:creator>專任運動教練成果報告匯出工具</dc:creator>
+</cp:coreProperties>`;
+
+    zip.file('[Content_Types].xml', contentTypesXml);
+    zip.folder('_rels').file('.rels', rootRelsXml);
+    zip.folder('docProps').file('core.xml', coreXml);
+    const wordFolder = zip.folder('word');
+    wordFolder.file('document.xml', documentXml);
+    wordFolder.file('header1.xml', headerXmlFile);
+    const wordRelsFolder = wordFolder.folder('_rels');
+    wordRelsFolder.file('document.xml.rels', relsXml);
+    wordRelsFolder.file('header1.xml.rels', headerRelsXml);
+    const mediaFolder = wordFolder.folder('media');
+    mediaFiles.forEach(m=>mediaFolder.file(m.name, m.base64, {base64:true}));
+
+    const blob = await zip.generateAsync({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    const filename = (title.replace(/[\\/:*?"<>|]/g,'') || '專任運動教練成果報告') + '.docx';
+    saveAs(blob, filename);
+    setStatus('已產生並下載：'+filename, 'ok');
+  }catch(err){
+    console.error(err);
+    setStatus('產生失敗：'+err.message, 'error');
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+// init
+addContent();
+addResult();
+addPhotoBlock();
+renderPreview();
+</script>
