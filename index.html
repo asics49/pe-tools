@@ -241,6 +241,17 @@ MODULES.forEach(function(m){
     + '<span class="module-card-arrow" style="color:#3A6B5A;">開啟工具 →</span>';
   mc.appendChild(a);
 })();
+(function(){
+  var a = document.createElement('a');
+  a.className = 'module-card';
+  a.href = 'https://asics49.github.io/pe/';
+  a.target = '_blank';
+  a.style.borderColor = '#1565C0';
+  a.innerHTML = '<span class="module-card-badge" style="background:#1565C0;">網站</span>'
+    + '<span class="module-card-name">右昌體育公佈欄</span>'
+    + '<span class="module-card-arrow" style="color:#1565C0;">開啟網站 →</span>';
+  mc.appendChild(a);
+})();
 // ── 工具使用說明：一律放在最後一張卡片（新增模組時仍維持在最末） ──
 (function(){
   var a = document.createElement('a');
